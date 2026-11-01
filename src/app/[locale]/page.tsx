@@ -9,6 +9,8 @@ import { calculateServerOrderQuote } from "@/server/pricing/quote-service";
 import { getPublicStaffStatusData } from "@/server/staff/staff-availability";
 import { getPublicReviewsData } from "@/server/reviews/public-reviews";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
+import { CinematicIntro } from "@/components/public/CinematicIntro";
+import { MobileNotificationPrompt } from "@/components/public/MobileNotificationPrompt";
 import { HeroGallery } from "@/components/public/HeroGallery";
 import { TrailTimelineAndMapSection } from "@/components/public/TrailTimelineAndMapSection";
 import { PriceQuotaCalculator } from "@/components/public/PriceQuotaCalculator";
@@ -77,6 +79,8 @@ export default async function HomePage({
 
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
+      <CinematicIntro />
+      <MobileNotificationPrompt />
       <PublicNavbar user={navbarUser} />
 
       <main id="konten-utama" className="flex-1">

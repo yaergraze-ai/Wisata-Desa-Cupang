@@ -3,6 +3,7 @@ import type { AppLocale } from "@/i18n/routing";
 import { getPublicCatalogData } from "@/server/catalog/public-catalog";
 import { getRoleHomePath, getServerAuthContext } from "@/server/auth/guards";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
+import { MobileNotificationPrompt } from "@/components/public/MobileNotificationPrompt";
 import { TrailNavigatorClient } from "@/components/trail/TrailNavigatorClient";
 import { ContactAndFooterSection } from "@/components/public/ContactAndFooterSection";
 
@@ -57,6 +58,7 @@ export default async function TrailNavigatorPage({
 
   return (
     <div className="flex min-h-dvh flex-col bg-obsidian text-kabut">
+      <MobileNotificationPrompt />
       <PublicNavbar
         user={
           authCtx

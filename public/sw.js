@@ -58,6 +58,51 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// Penanganan Klik Notifikasi di Layar HP
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Penanganan Web Push Otomatis
+self.addEventListener("push", (event) => {
+  let data = {
+    title: "Wisata Desa Cupang, Cirebon",
+    body: "Pembaruan kuota tiket & jalur pendakian.",
+    url: "/",
+  };
+  if (event.data) {
+    try {
+      data = { ...data, ...event.data.json() };
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    vibrate: [200, 100, 200],
+    data: { url: data.url || "/" },
+    tag: data.tag || "wdc-notification",
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
