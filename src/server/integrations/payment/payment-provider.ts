@@ -287,7 +287,9 @@ export class MidtransSnapAdapter implements PaymentProvider {
         };
 
         if (res.ok && (data.status_code === "200" || data.status_code === "201")) {
-          const qrUrl = data.actions?.find((a) => a.name === "generate-qr-code")?.url;
+          const qrUrl = data.actions?.find(
+            (a) => a.name === "generate-qr-code-v2" || a.name === "generate-qr-code"
+          )?.url;
           const qrString = data.qr_string || simulatedQrString;
           return {
             qrString,

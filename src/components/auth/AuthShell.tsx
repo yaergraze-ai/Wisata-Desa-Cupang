@@ -22,27 +22,28 @@ export async function AuthShell({
 
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-      <header className="border-b border-kabut/15 bg-obsidian/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-hutan border border-telaga-700 text-fajar">
+      <header className="sticky top-0 z-40 border-b border-kabut/15 bg-obsidian/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-fajar backdrop-blur-md shadow-sm">
               <i className="bi bi-compass text-lg" aria-hidden="true" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fajar shadow-[0_0_10px_#f2a65a] animate-pulse" />
             </span>
-            <div>
-              <p className="font-heading text-base font-bold leading-tight text-kabut">
+            <div className="shrink-0 leading-tight">
+              <p className="font-heading text-sm sm:text-base font-bold text-kabut whitespace-nowrap">
                 {tNav("brandTitle")}
               </p>
-              <p className="text-xs text-kabut/80">{tNav("brandSubtitle")}</p>
+              <p className="hidden sm:block text-xs text-kabut/80 whitespace-nowrap">{tNav("brandSubtitle")}</p>
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Suspense fallback={null}>
               <LocaleSwitcher />
             </Suspense>
-            <Link href="/" className="btn-ui btn-glass">
+            <Link href="/" className="btn-ui btn-glass whitespace-nowrap shrink-0 px-3 py-2 text-xs sm:text-sm">
               <i className="bi bi-arrow-left" aria-hidden="true" />
-              <span>{tAuth("backToHome")}</span>
+              <span className="hidden sm:inline">{tAuth("backToHome")}</span>
             </Link>
           </div>
         </div>

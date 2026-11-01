@@ -35,7 +35,7 @@ export function AdminRefundsView() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/refunds");
+      const res = await fetch("/api/admin/refunds");
       if (!res.ok) {
         const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(errJson?.error || `Gagal memuat antrean refund (${res.status}).`);
@@ -53,7 +53,7 @@ export function AdminRefundsView() {
     let ignore = false;
     async function loadInitial() {
       try {
-        const res = await fetch("/api/refunds");
+        const res = await fetch("/api/admin/refunds");
         if (!res.ok) {
           const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
           throw new Error(errJson?.error || `Gagal memuat antrean refund (${res.status}).`);

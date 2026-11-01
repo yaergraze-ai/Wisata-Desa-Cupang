@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
     if (!orderId) {
       if (
         auth.user.role === Role.ADMIN ||
-        auth.user.role === Role.SUPER_ADMIN
+        auth.user.role === Role.SUPER_ADMIN ||
+        auth.user.role === Role.STAFF
       ) {
         const requests = await listRefundRequestsForAdmin();
         return NextResponse.json({ requests });

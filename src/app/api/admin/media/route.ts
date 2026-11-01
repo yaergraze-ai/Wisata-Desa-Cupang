@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+    await requireApiRole([Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN], {
       headers: req.headers,
       requireTwoFactor: false,
     });
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+    const auth = await requireApiRole([Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN], {
       headers: req.headers,
       requireTwoFactor: false,
     });
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+    const auth = await requireApiRole([Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN], {
       headers: req.headers,
       requireTwoFactor: false,
     });
