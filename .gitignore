@@ -18,7 +18,8 @@
 /scratch/
 
 # Local uploaded media (dev local storage driver)
-/public/uploads/
+/public/uploads/*
+!/public/uploads/.gitkeep
 /storage/
 
 # Generated offline map tiles if large / built via npm run maps:build
