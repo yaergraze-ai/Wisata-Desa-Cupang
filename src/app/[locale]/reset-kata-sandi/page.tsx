@@ -4,6 +4,8 @@ import type { AppLocale } from "@/i18n/routing";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

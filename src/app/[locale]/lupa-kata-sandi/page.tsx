@@ -6,6 +6,8 @@ import { db } from "@/server/db";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {
@@ -29,7 +31,9 @@ export default async function ForgotPasswordPage({
 
   const [t, managerWa] = await Promise.all([
     getTranslations({ locale, namespace: "Auth" }),
-    db.siteSetting.findUnique({ where: { key: "managerWhatsapp" } }),
+    db.siteSetting
+      .findUnique({ where: { key: "managerWhatsapp" } })
+      .catch(() => null),
   ]);
 
   const flags = getIntegrationFlags();
