@@ -511,7 +511,7 @@ export function HeroGallery({
           decoding="sync"
           quality={75}
           sizes="(max-width: 640px) 360px, 100vw"
-          className="object-cover opacity-52"
+          className="object-cover opacity-75 sm:opacity-85"
         />
 
         {gsapReady && activeIndex !== 0 ? (
@@ -531,8 +531,8 @@ export function HeroGallery({
           </div>
         ) : null}
 
-        <div className="absolute inset-0 bg-gradient-to-b from-obsidian/80 via-obsidian/55 to-obsidian" />
-        <div className="absolute inset-0 bg-gradient-to-r from-obsidian/85 via-transparent to-obsidian/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-obsidian/50 via-obsidian/25 to-obsidian" />
+        <div className="absolute inset-0 bg-gradient-to-r from-obsidian/75 via-obsidian/25 to-obsidian/75" />
       </div>
 
       {/* Pembaca Layar aria-live untuk Kartu Aktif (Fixed 1x1 agar 0 CLS §7.1) */}
@@ -637,22 +637,22 @@ export function HeroGallery({
                       sizes="(max-width: 640px) 240px, 280px"
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/45 to-obsidian/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian/95 via-obsidian/30 to-transparent" />
 
                     <div className="relative flex h-full flex-col justify-between p-4 sm:p-5">
-                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-kabut/25 bg-obsidian/85 px-2.5 py-1 text-[11px] font-bold tracking-wide text-fajar uppercase">
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/25 bg-obsidian/60 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold tracking-wide text-fajar uppercase shadow-sm">
                         <i className="bi bi-compass-fill" aria-hidden="true" />
                         <span>{card.shortLabel}</span>
                       </span>
 
                       <div>
-                        <p className="text-[11px] font-bold tracking-wider text-telaga-200 uppercase">
+                        <p className="text-[11px] font-bold tracking-wider text-telaga-200 uppercase drop-shadow-sm">
                           {card.badge}
                         </p>
-                        <h2 className="mt-1 font-heading text-lg font-bold leading-snug text-kabut sm:text-xl">
+                        <h2 className="mt-1 font-heading text-lg font-bold leading-snug text-kabut sm:text-xl drop-shadow-md">
                           {card.title}
                         </h2>
-                        <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-hutan/90 border border-telaga-700 px-2.5 py-1 text-xs font-semibold text-kabut">
+                        <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-obsidian/60 border border-white/20 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-kabut shadow-sm">
                           <i className="bi bi-tag-fill text-fajar" aria-hidden="true" />
                           <span>{card.meta}</span>
                         </p>
@@ -745,10 +745,10 @@ export function HeroGallery({
                         onClick={() => setSelectedPackageCode(code)}
                         aria-pressed={isSelected}
                         className={cn(
-                          "w-full rounded-xl border p-4 text-left transition-all cursor-pointer",
+                          "w-full rounded-2xl border p-4 text-left transition-all cursor-pointer backdrop-blur-md",
                           isSelected
-                            ? "border-fajar bg-obsidian/90 ring-2 ring-fajar/35"
-                            : "border-kabut/20 bg-obsidian/60 hover:border-kabut/45"
+                            ? "border-fajar bg-fajar/15 ring-2 ring-fajar/40 shadow-lg shadow-fajar/10"
+                            : "border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30"
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -777,11 +777,11 @@ export function HeroGallery({
                           </div>
 
                           <div className="text-right shrink-0">
-                            <p className="font-heading text-xl font-extrabold text-fajar">
+                            <p className="font-heading text-xl font-extrabold text-fajar drop-shadow-sm">
                               {formatRupiah(prod.totalPrice, locale)}
                             </p>
                             {isSelected ? (
-                              <span className="inline-block mt-0.5 rounded bg-fajar/20 px-2 py-0.5 text-[11px] font-bold text-fajar">
+                              <span className="inline-block mt-0.5 rounded-full bg-fajar/25 border border-fajar/40 px-2.5 py-0.5 text-[11px] font-bold text-fajar">
                                 {tHero("panelSelected")}
                               </span>
                             ) : null}
@@ -793,8 +793,8 @@ export function HeroGallery({
               </div>
 
               {/* Ringkasan Kuota Hari Ini dari DB */}
-              <div className="mt-4 rounded-xl border border-kabut/15 bg-obsidian/70 p-3.5">
-                <p className="text-xs font-semibold text-kabut/80">
+              <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md p-3.5">
+                <p className="text-xs font-semibold text-kabut/85">
                   {tHero("quotaTodayLabel", {
                     date: formatVisitDateDisplay(todayYmd, locale),
                   })}
@@ -803,7 +803,7 @@ export function HeroGallery({
                   {destinations.map((dest) => (
                     <div
                       key={dest.id}
-                      className="rounded-lg border border-kabut/15 bg-hutan/70 px-3 py-2"
+                      className="rounded-xl border border-white/10 bg-black/20 p-2.5"
                     >
                       <p className="font-semibold text-kabut">{dest.name}</p>
                       <p className="mt-0.5 font-bold text-fajar">
