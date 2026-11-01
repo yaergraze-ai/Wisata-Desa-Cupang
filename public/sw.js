@@ -3,7 +3,7 @@
  * Menyediakan shell aplikasi offline, fallback halaman /offline, dan cache peta PMTiles (§6.G & §10.8).
  */
 
-const SHELL_CACHE_NAME = "wisata-cirebon-shell-v1";
+const SHELL_CACHE_NAME = "wisata-cirebon-shell-v2";
 const MAP_CACHE_NAME = "wisata_cirebon_map_cache";
 
 const PRECACHE_URLS = [

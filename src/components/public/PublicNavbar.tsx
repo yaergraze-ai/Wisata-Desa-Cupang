@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
 
 export interface PublicNavbarUser {
@@ -14,10 +14,24 @@ type NavTab = "home" | "trail" | "tickets" | "map" | "account";
 
 export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
   const tNav = useTranslations("Nav");
+  const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<NavTab>("home");
+  const isScrollingProgrammatically = useRef(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function syncFromHash() {
+    // 1. Sinkronisasi tab awal berdasarkan path dan hash
+    function syncFromHashOrPath() {
+      if (pathname.includes("/jalur")) {
+        setActiveTab("map");
+        return;
+      }
+      if (pathname.includes("/masuk") || pathname.includes("/dashboard")) {
+        setActiveTab("account");
+        return;
+      }
+
       const h = window.location.hash;
       if (h === "#jalur-aturan") {
         setActiveTab("trail");
@@ -25,50 +39,117 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         setActiveTab("tickets");
       } else if (h === "#peta-jalur") {
         setActiveTab("map");
-      } else if (h === "#konten-utama" || !h) {
-        setActiveTab("home");
+      } else {
+        if (window.scrollY < 180) {
+          setActiveTab("home");
+        }
       }
     }
 
-    syncFromHash();
-    window.addEventListener("hashchange", syncFromHash);
+    syncFromHashOrPath();
+    window.addEventListener("hashchange", syncFromHashOrPath);
 
-    // Scroll spy untuk memindahkan highlight oranye otomatis saat halaman digulir
-    const sectionTargets: { id: string; tab: NavTab }[] = [
-      { id: "konten-utama", tab: "home" },
-      { id: "jalur-aturan", tab: "trail" },
-      { id: "kalkulator-tiket", tab: "tickets" },
-      { id: "pilihan-tiket", tab: "tickets" },
-      { id: "peta-jalur", tab: "map" },
-    ];
+    // 2. Scroll Spy deterministik berbasis getBoundingClientRect
+    let ticking = false;
+    function onScroll() {
+      if (isScrollingProgrammatically.current) return;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          ticking = false;
+          if (isScrollingProgrammatically.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting);
-        const first = visible[0];
-        if (first) {
-          const match = sectionTargets.find((s) => s.id === first.target.id);
-          if (match) {
-            setActiveTab(match.tab);
+          // Jika halaman bukan beranda utama (misal di /jalur), jangan timpa tab
+          if (pathname !== "/" && pathname !== "/en") return;
+
+          // Jika berada di dekat bagian atas layar
+          if (window.scrollY < 180) {
+            setActiveTab("home");
+            return;
           }
-        }
-      },
-      {
-        rootMargin: "-15% 0px -40% 0px",
-        threshold: [0.1, 0.25],
-      }
-    );
 
-    sectionTargets.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+          // Cek posisi tiap section dari bawah ke atas
+          const sections: { id: string; tab: NavTab }[] = [
+            { id: "peta-jalur", tab: "map" },
+            { id: "kalkulator-tiket", tab: "tickets" },
+            { id: "pilihan-tiket", tab: "tickets" },
+            { id: "jalur-aturan", tab: "trail" },
+          ];
+
+          const anchorY = window.innerHeight * 0.35; // 35% dari batas atas viewport
+          for (const s of sections) {
+            const el = document.getElementById(s.id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= anchorY && rect.bottom > 60) {
+                setActiveTab(s.tab);
+                return;
+              }
+            }
+          }
+
+          // Fallback jika di atas semua section
+          setActiveTab("home");
+        });
+        ticking = true;
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("hashchange", syncFromHash);
-      observer.disconnect();
+      window.removeEventListener("hashchange", syncFromHashOrPath);
+      window.removeEventListener("scroll", onScroll);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
-  }, []);
+  }, [pathname]);
+
+  const handleMobileNavClick =
+    (tab: NavTab, targetId?: string, fallbackUrl?: string) =>
+    (e: React.MouseEvent) => {
+      // 1. Langsung ubah warna tombol seketika saat disentuh/diklik
+      setActiveTab(tab);
+
+      if (tab === "home") {
+        const isHomePage = pathname === "/" || pathname === "/en";
+        if (isHomePage) {
+          e.preventDefault();
+          isScrollingProgrammatically.current = true;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          window.history.replaceState(null, "", " ");
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => {
+            isScrollingProgrammatically.current = false;
+          }, 900);
+          return;
+        } else {
+          router.push("/");
+          return;
+        }
+      }
+
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+          e.preventDefault();
+          isScrollingProgrammatically.current = true;
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.history.replaceState(null, "", `#${targetId}`);
+
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => {
+            isScrollingProgrammatically.current = false;
+          }, 900);
+          return;
+        } else if (fallbackUrl) {
+          router.push(fallbackUrl);
+          return;
+        }
+      }
+
+      if (fallbackUrl) {
+        router.push(fallbackUrl);
+      }
+    };
 
   return (
     <>
@@ -178,9 +259,9 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         <ul className="mx-auto grid max-w-lg grid-cols-5 px-1 py-1">
           <li>
             <a
-              href="#konten-utama"
-              onClick={() => setActiveTab("home")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 ${
+              href="#beranda"
+              onClick={handleMobileNavClick("home", "beranda", "/")}
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "home"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
                   : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
@@ -198,8 +279,8 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
           <li>
             <a
               href="#jalur-aturan"
-              onClick={() => setActiveTab("trail")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 ${
+              onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "trail"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
                   : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
@@ -217,8 +298,8 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
           <li>
             <a
               href="#kalkulator-tiket"
-              onClick={() => setActiveTab("tickets")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 ${
+              onClick={handleMobileNavClick("tickets", "kalkulator-tiket", "/#kalkulator-tiket")}
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "tickets"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
                   : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
@@ -238,8 +319,8 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
           <li>
             <a
               href="#peta-jalur"
-              onClick={() => setActiveTab("map")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 ${
+              onClick={handleMobileNavClick("map", "peta-jalur", "/#peta-jalur")}
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "map"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
                   : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
@@ -258,7 +339,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <Link
               href={user ? user.dashboardPath : "/masuk"}
               onClick={() => setActiveTab("account")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "account"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
                   : "border border-transparent font-medium text-kabut/80 hover:text-fajar"

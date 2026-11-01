@@ -81,18 +81,20 @@ export default async function HomePage({
 
       <main id="konten-utama" className="flex-1">
         {/* 1. Satu Galeri Hero Terpadu Berbasis GSAP + Panel Tiket Kaca (§7.1) */}
-        <HeroGallery
-          locale={locale}
-          todayYmd={catalog.todayYmd}
-          offTrailThresholdM={
-            Number.parseInt(catalog.settings["offTrailThresholdM"] ?? "", 10) ||
-            offTrailThresholdM
-          }
-          destinations={catalog.destinations}
-          products={catalog.products}
-          trailPoints={catalog.trailPoints}
-          mediaSlots={catalog.mediaSlots}
-        />
+        <div id="beranda" className="scroll-mt-24">
+          <HeroGallery
+            locale={locale}
+            todayYmd={catalog.todayYmd}
+            offTrailThresholdM={
+              Number.parseInt(catalog.settings["offTrailThresholdM"] ?? "", 10) ||
+              offTrailThresholdM
+            }
+            destinations={catalog.destinations}
+            products={catalog.products}
+            trailPoints={catalog.trailPoints}
+            mediaSlots={catalog.mediaSlots}
+          />
+        </div>
 
         {/* 2. Tentang Jalur, Kuota Destinasi, Aturan Tiket, Linimasa SVG & Kalkulator Server (§6.A & §7.2) */}
         <section
