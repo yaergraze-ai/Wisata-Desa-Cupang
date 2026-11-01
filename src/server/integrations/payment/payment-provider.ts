@@ -1,0 +1,342 @@
+import "server-only";
+import crypto from "node:crypto";
+import { getEnv, getIntegrationFlags } from "@/server/env";
+
+export interface PaymentItemLine {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CreatePaymentSessionInput {
+  orderNumber: string;
+  grossAmount: number;
+  expiryMinutes: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  finishUrl: string;
+  items: PaymentItemLine[];
+}
+
+export interface CreatePaymentSessionOutput {
+  token: string;
+  redirectUrl: string;
+}
+
+export interface PaymentClientConfig {
+  configured: boolean;
+  provider: "midtrans";
+  clientKey: string | null;
+  snapScriptUrl: string;
+  isProduction: boolean;
+}
+
+export interface RefundPaymentInput {
+  orderNumber: string;
+  refundKey: string;
+  amount: number;
+  reason: string;
+}
+
+export interface RefundPaymentOutput {
+  supported: boolean;
+  ok: boolean;
+  refundRef?: string;
+  detail: string;
+}
+
+export interface PaymentProvider {
+  readonly name: "midtrans";
+  isConfigured(): boolean;
+  getClientConfig(): PaymentClientConfig;
+  createSnapTransaction(
+    input: CreatePaymentSessionInput
+  ): Promise<CreatePaymentSessionOutput>;
+  refundTransaction(input: RefundPaymentInput): Promise<RefundPaymentOutput>;
+  testConnection(): Promise<{
+    status: "connected" | "unconfigured" | "error";
+    detail: string;
+  }>;
+}
+
+/**
+ * Memverifikasi signature_key webhook Midtrans menggunakan SHA-512 constant-time (§5.3):
+ * SHA-512(order_id + status_code + gross_amount + ServerKey)
+ */
+export function verifyMidtransWebhookSignature(
+  params: {
+    orderId: string;
+    statusCode: string;
+    grossAmount: string;
+    signatureKey: string;
+  },
+  explicitServerKey?: string
+): boolean {
+  const serverKey =
+    explicitServerKey ??
+    getEnv().MIDTRANS_SERVER_KEY ??
+    process.env.MIDTRANS_SERVER_KEY ??
+    "midtrans_test_server_key";
+  if (!serverKey || !params.signatureKey) {
+    return false;
+  }
+
+  const raw = `${params.orderId}${params.statusCode}${params.grossAmount}${serverKey}`;
+  const expectedHex = crypto
+    .createHash("sha512")
+    .update(raw, "utf8")
+    .digest("hex");
+
+  const providedHex = params.signatureKey.trim().toLowerCase();
+  const a = Buffer.from(providedHex, "utf8");
+  const b = Buffer.from(expectedHex, "utf8");
+  if (a.length !== b.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
+
+export class MidtransSnapAdapter implements PaymentProvider {
+  readonly name = "midtrans" as const;
+
+  isConfigured(): boolean {
+    return getIntegrationFlags().midtrans;
+  }
+
+  getClientConfig(): PaymentClientConfig {
+    const env = getEnv();
+    const flags = getIntegrationFlags();
+    const isProduction = env.MIDTRANS_IS_PRODUCTION;
+    return {
+      configured: flags.midtrans,
+      provider: "midtrans",
+      clientKey: flags.midtrans ? (env.MIDTRANS_CLIENT_KEY ?? null) : null,
+      snapScriptUrl: isProduction
+        ? "https://app.midtrans.com/snap/snap.js"
+        : "https://app.sandbox.midtrans.com/snap/snap.js",
+      isProduction,
+    };
+  }
+
+  private getAuthHeader(): string {
+    const serverKey = getEnv().MIDTRANS_SERVER_KEY;
+    if (!serverKey) {
+      throw new Error("MIDTRANS_SERVER_KEY belum dikonfigurasi.");
+    }
+    return `Basic ${Buffer.from(`${serverKey}:`).toString("base64")}`;
+  }
+
+  async createSnapTransaction(
+    input: CreatePaymentSessionInput
+  ): Promise<CreatePaymentSessionOutput> {
+    const env = getEnv();
+    if (!this.isConfigured()) {
+      throw new Error(
+        "Midtrans Snap belum dikonfigurasi (MIDTRANS_SERVER_KEY / MIDTRANS_CLIENT_KEY kosong)."
+      );
+    }
+
+    const endpoint = env.MIDTRANS_IS_PRODUCTION
+      ? "https://app.midtrans.com/snap/v1/transactions"
+      : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: this.getAuthHeader(),
+      },
+      body: JSON.stringify({
+        transaction_details: {
+          order_id: input.orderNumber,
+          gross_amount: input.grossAmount,
+        },
+        item_details: input.items.map((item) => ({
+          id: item.id.slice(0, 50),
+          name: item.name.slice(0, 50),
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        customer_details: {
+          first_name: input.customerName.slice(0, 50),
+          email: input.customerEmail,
+          phone: input.customerPhone,
+        },
+        expiry: {
+          unit: "minutes",
+          duration: input.expiryMinutes,
+        },
+        callbacks: {
+          finish: input.finishUrl,
+        },
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as {
+      token?: string;
+      redirect_url?: string;
+      error_messages?: string[];
+    };
+
+    if (!response.ok || !data.token || !data.redirect_url) {
+      const reason =
+        data.error_messages?.join("; ") ||
+        `Midtrans Snap HTTP ${response.status}`;
+      throw new Error(reason);
+    }
+
+    return {
+      token: data.token,
+      redirectUrl: data.redirect_url,
+    };
+  }
+
+  async refundTransaction(
+    input: RefundPaymentInput
+  ): Promise<RefundPaymentOutput> {
+    const env = getEnv();
+    if (!env.MIDTRANS_SERVER_KEY) {
+      return {
+        supported: false,
+        ok: false,
+        detail: "MIDTRANS_SERVER_KEY belum dikonfigurasi.",
+      };
+    }
+
+    const baseCoreUrl = env.MIDTRANS_IS_PRODUCTION
+      ? "https://api.midtrans.com"
+      : "https://api.sandbox.midtrans.com";
+
+    try {
+      const res = await fetch(
+        `${baseCoreUrl}/v2/${encodeURIComponent(input.orderNumber)}/refund`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: this.getAuthHeader(),
+          },
+          body: JSON.stringify({
+            refund_key: input.refundKey,
+            amount: input.amount,
+            reason: input.reason.slice(0, 120),
+          }),
+        }
+      );
+
+      const json = (await res.json().catch(() => ({}))) as {
+        status_code?: string;
+        status_message?: string;
+        refund_key?: string;
+        transaction_id?: string;
+      };
+
+      if (res.ok && json.status_code === "200") {
+        return {
+          supported: true,
+          ok: true,
+          refundRef: json.refund_key || json.transaction_id || input.refundKey,
+          detail: json.status_message || "Refund Midtrans berhasil diproses.",
+        };
+      }
+
+      // Kode 412 / 414 di Midtrans berarti kanal pembayaran (mis. VA bank) tidak mendukung direct API refund
+      if (json.status_code === "412" || json.status_code === "414") {
+        return {
+          supported: false,
+          ok: false,
+          detail:
+            json.status_message ||
+            "Kanal pembayaran transaksi ini memerlukan pengembalian dana manual.",
+        };
+      }
+
+      return {
+        supported: true,
+        ok: false,
+        detail:
+          json.status_message || `Midtrans Refund HTTP ${res.status}`,
+      };
+    } catch (err) {
+      return {
+        supported: false,
+        ok: false,
+        detail:
+          err instanceof Error
+            ? err.message
+            : "Gagal menghubungi API Refund Midtrans.",
+      };
+    }
+  }
+
+  async testConnection(): Promise<{
+    status: "connected" | "unconfigured" | "error";
+    detail: string;
+  }> {
+    const env = getEnv();
+    if (!env.MIDTRANS_SERVER_KEY || !env.MIDTRANS_CLIENT_KEY) {
+      return {
+        status: "unconfigured",
+        detail: "MIDTRANS_SERVER_KEY atau MIDTRANS_CLIENT_KEY belum diisi.",
+      };
+    }
+
+    const baseCoreUrl = env.MIDTRANS_IS_PRODUCTION
+      ? "https://api.midtrans.com"
+      : "https://api.sandbox.midtrans.com";
+
+    try {
+      const res = await fetch(
+        `${baseCoreUrl}/v2/WC-HEALTHCHECK-PROBE/status`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: this.getAuthHeader(),
+          },
+        }
+      );
+
+      if (res.status === 401) {
+        return {
+          status: "error",
+          detail: "MIDTRANS_SERVER_KEY ditolak (HTTP 401 Unauthorized).",
+        };
+      }
+
+      const json = (await res.json().catch(() => ({}))) as {
+        status_code?: string;
+      };
+
+      if (res.ok || res.status === 404 || json.status_code === "404") {
+        return {
+          status: "connected",
+          detail: env.MIDTRANS_IS_PRODUCTION
+            ? "Midtrans Production API terotentikasi."
+            : "Midtrans Sandbox API terotentikasi.",
+        };
+      }
+
+      return {
+        status: "error",
+        detail: `Midtrans Core API merespons HTTP ${res.status}.`,
+      };
+    } catch (err) {
+      return {
+        status: "error",
+        detail:
+          err instanceof Error
+            ? err.message
+            : "Gagal menghubungi Midtrans Core API.",
+      };
+    }
+  }
+}
+
+export function getPaymentProvider(): PaymentProvider {
+  return new MidtransSnapAdapter();
+}

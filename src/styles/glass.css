@@ -1,0 +1,111 @@
+/* ==========================================================================
+ * GLASSMORPHISM & PERMUKAAN SOLID — WISATA CIREBON (AGENTS.md §4)
+ * Glass hanya dipakai di atas latar foto/visual; data padat memakai solid.
+ * ========================================================================== */
+
+.glass-panel {
+  background: rgb(255 255 255 / 0.14);
+  border: 1px solid rgb(255 255 255 / 0.24);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+    0 12px 32px rgb(8 17 14 / 0.34);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-radius: var(--radius-panel);
+}
+
+.glass-dark {
+  background: rgb(15 42 36 / 0.72);
+  border: 1px solid rgb(232 241 236 / 0.22);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.18),
+    0 14px 36px rgb(8 17 14 / 0.48);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-radius: var(--radius-panel);
+}
+
+.btn-glass {
+  background: rgb(255 255 255 / 0.13);
+  color: var(--color-kabut);
+  border: 1px solid rgb(232 241 236 / 0.28);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.2);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.btn-glass:not(:disabled):hover {
+  background: rgb(255 255 255 / 0.22);
+  border-color: var(--color-fajar);
+}
+
+/* Fallback wajib bila browser tidak mendukung backdrop-filter */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-dark {
+    background: rgb(15 42 36 / 0.94);
+  }
+  .btn-glass {
+    background: rgb(15 42 36 / 0.92);
+  }
+}
+
+/* Fallback wajib untuk aksesibilitas prefers-reduced-transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .glass-dark,
+  .btn-glass {
+    background: var(--color-hutan);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ==========================================================================
+ * PERMUKAAN SOLID KONTRAS TINGGI (Tabel, Checkout, Scanner, Peta, Laporan)
+ * ========================================================================== */
+
+.surface-solid-dark {
+  background-color: var(--color-hutan);
+  color: var(--color-kabut);
+  border: 1px solid color-mix(in srgb, var(--color-telaga) 55%, transparent);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 12px 30px rgb(6 15 12 / 0.6);
+}
+
+.surface-solid-light {
+  background-color: var(--color-kabut);
+  color: var(--color-hutan);
+  border: 1px solid color-mix(in srgb, var(--color-batu) 55%, transparent);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 10px 26px rgb(8 17 14 / 0.22);
+}
+
+/* ==========================================================================
+ * DESAIN KHAS KARTU TIKET (Perforasi Fisik: Tiket Putih vs Tiket Reguler)
+ * ========================================================================== */
+
+.ticket-card-putih {
+  position: relative;
+  background: linear-gradient(140deg, #ffffff 0%, #f5f9f7 62%, #e8f1ec 100%);
+  color: var(--color-hutan);
+  border: 2px solid var(--color-telaga-700);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 14px 32px rgb(8 17 14 / 0.28);
+}
+
+.ticket-card-reguler {
+  position: relative;
+  background: linear-gradient(140deg, #13382e 0%, #0f2a24 100%);
+  color: var(--color-kabut);
+  border: 2px solid var(--color-telaga);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 14px 32px rgb(4 10 8 / 0.52);
+}
+
+/* Takik perforasi kiri & kanan untuk kesan kertas tiket sungguhan */
+.ticket-perforation-divider {
+  position: relative;
+  border-top: 1.5px dashed currentColor;
+  opacity: 0.28;
+}

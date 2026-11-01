@@ -1,0 +1,175 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
+
+export interface PublicNavbarUser {
+  name: string;
+  dashboardPath: string;
+}
+
+export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
+  const tNav = useTranslations("Nav");
+
+  return (
+    <>
+      <a
+        href="#konten-utama"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 btn-ui btn-fajar"
+      >
+        {tNav("skipToContent")}
+      </a>
+
+      <header className="sticky top-0 z-40 border-b border-kabut/15 bg-obsidian/96 sm:bg-obsidian/92 sm:backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 min-h-[44px] min-w-0">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-hutan border border-telaga-700 text-fajar">
+              <i className="bi bi-compass text-lg" aria-hidden="true" />
+            </span>
+            <div className="leading-tight min-w-0">
+              <p className="font-heading text-sm sm:text-base font-bold text-kabut truncate">
+                {tNav("brandTitle")}
+              </p>
+              <p className="hidden sm:block text-xs text-kabut/80 truncate">
+                {tNav("brandSubtitle")}
+              </p>
+            </div>
+          </Link>
+
+          <nav
+            aria-label={tNav("primaryNavAria")}
+            className="hidden lg:flex items-center gap-1"
+          >
+            <a
+              href="#jalur-aturan"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("trail")}
+            </a>
+            <a
+              href="#pilihan-tiket"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("tickets")}
+            </a>
+            <a
+              href="#peta-jalur"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("map")}
+            </a>
+            <a
+              href="#petugas-siaga"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("staff")}
+            </a>
+            <a
+              href="#ulasan-pengunjung"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("reviews")}
+            </a>
+            <a
+              href="#kontak"
+              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+            >
+              {tNav("contact")}
+            </a>
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <LocaleSwitcher />
+
+            {user ? (
+              <Link
+                href={user.dashboardPath}
+                className="hidden md:inline-flex btn-ui btn-hutan"
+              >
+                <i className="bi bi-person-badge" aria-hidden="true" />
+                <span>{tNav("dashboard")}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/masuk"
+                className="hidden md:inline-flex btn-ui btn-hutan"
+              >
+                <i className="bi bi-box-arrow-in-right" aria-hidden="true" />
+                <span>{tNav("loginRegister")}</span>
+              </Link>
+            )}
+
+            <a
+              href="#kalkulator-tiket"
+              aria-label={tNav("buyTicket")}
+              className="btn-ui btn-fajar min-w-[44px] px-3 sm:px-4"
+            >
+              <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
+              <span className="hidden sm:inline">{tNav("buyTicket")}</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      {/* Tab Bar Bawah Khusus Ponsel (§6.A) */}
+      <nav
+        aria-label={tNav("mobileNavAria")}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-kabut/20 bg-obsidian/98 lg:hidden"
+      >
+        <ul className="mx-auto grid max-w-lg grid-cols-5 px-1 py-1">
+          <li>
+            <a
+              href="#konten-utama"
+              className="flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium text-kabut/85 hover:text-fajar"
+            >
+              <i className="bi bi-house-door text-base" aria-hidden="true" />
+              <span className="truncate max-w-full">{tNav("home")}</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#jalur-aturan"
+              className="flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium text-kabut/85 hover:text-fajar"
+            >
+              <i className="bi bi-signpost-split text-base" aria-hidden="true" />
+              <span className="truncate max-w-full">{tNav("trail")}</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#kalkulator-tiket"
+              className="flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg bg-fajar/15 border border-fajar/40 px-1 py-1 text-xs font-bold text-fajar"
+            >
+              <i className="bi bi-ticket-perforated-fill text-base" aria-hidden="true" />
+              <span className="truncate max-w-full">{tNav("tickets")}</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#peta-jalur"
+              className="flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium text-kabut/85 hover:text-fajar"
+            >
+              <i className="bi bi-geo-alt text-base" aria-hidden="true" />
+              <span className="truncate max-w-full">{tNav("map")}</span>
+            </a>
+          </li>
+          <li>
+            <Link
+              href={user ? user.dashboardPath : "/masuk"}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium text-kabut/85 hover:text-fajar"
+            >
+              <i
+                className={user ? "bi bi-person-check-fill text-base" : "bi bi-person-circle text-base"}
+                aria-hidden="true"
+              />
+              <span className="truncate max-w-full">
+                {user ? tNav("dashboard") : tNav("account")}
+              </span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+    </>
+  );
+}

@@ -1,0 +1,21 @@
+{
+  "name": "wisata-cirebon-cupang-gempol",
+  "bbox": [
+    108.36,
+    -6.75,
+    108.41,
+    -6.71
+  ],
+  "center": [
+    108.3822,
+    -6.7322,
+    14
+  ],
+  "pmtiles": "/maps/cirebon.pmtiles",
+  "sha256": "68d2c2c26db870b8b1db88d7b1ac0777e43e366126cc4207cb416200fd70f65c",
+  "sizeBytes": 532,
+  "updatedAt": "2026-10-31T18:12:58.080Z",
+  "fallbackOnlineTileUrl": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  "glyphsUrl": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "attribution": "© OpenStreetMap contributors | Wisata Cirebon"
+}

@@ -1,0 +1,301 @@
+@import "tailwindcss";
+@import "./bootstrap-icons-swap.css";
+
+@theme {
+  /* ========================================================================
+   * SKALA TOKEN WARNA 50–950 — WISATA CIREBON (AGENTS.md §4)
+   * Kontras telah diverifikasi matematis sesuai standar WCAG 2.1 AA (≥4.5:1)
+   * ======================================================================== */
+
+  /* OBSIDIAN — Kanvas gelap utama (#08110E pada 950 / DEFAULT) */
+  --color-obsidian: #08110e;
+  --color-obsidian-50: #e9efed;
+  --color-obsidian-100: #cedbd6;
+  --color-obsidian-200: #a1bab1;
+  --color-obsidian-300: #73968a;
+  --color-obsidian-400: #4c7366;
+  --color-obsidian-500: #2f5247;
+  --color-obsidian-600: #213e35;
+  --color-obsidian-700: #172d26;
+  --color-obsidian-800: #10201b;
+  --color-obsidian-900: #0b1713;
+  --color-obsidian-950: #08110e;
+
+  /* HUTAN — Permukaan solid gelap (#0F2A24 pada 900 / DEFAULT) */
+  --color-hutan: #0f2a24;
+  --color-hutan-50: #eaf3f0;
+  --color-hutan-100: #cde3dc;
+  --color-hutan-200: #9ec8bc;
+  --color-hutan-300: #6daa99;
+  --color-hutan-400: #448a77;
+  --color-hutan-500: #286d5b;
+  --color-hutan-600: #1e5748;
+  --color-hutan-700: #18463a;
+  --color-hutan-800: #13382e;
+  --color-hutan-900: #0f2a24;
+  --color-hutan-950: #091a16;
+
+  /* KABUT — Teks di atas gelap & permukaan solid terang (#E8F1EC pada 100 / DEFAULT) */
+  --color-kabut: #e8f1ec;
+  --color-kabut-50: #f6faf8;
+  --color-kabut-100: #e8f1ec;
+  --color-kabut-200: #d1e3d9;
+  --color-kabut-300: #b0cfc0;
+  --color-kabut-400: #89b5a0;
+  --color-kabut-500: #659780;
+  --color-kabut-600: #4d7965;
+  --color-kabut-700: #3d6051;
+  --color-kabut-800: #324e42;
+  --color-kabut-900: #2a4037;
+  --color-kabut-950: #16241e;
+
+  /* TELAGA — Aksen utama (#2F8F83 pada 500; #23746A pada 700 = 4.82:1 thd kabut; #195E56 pada 800 = 6.56:1) */
+  --color-telaga: #2f8f83;
+  --color-telaga-50: #ecf8f6;
+  --color-telaga-100: #d0efe9;
+  --color-telaga-200: #a4dfd5;
+  --color-telaga-300: #6ec8bb;
+  --color-telaga-400: #45ab9e;
+  --color-telaga-500: #2f8f83;
+  --color-telaga-600: #287f74;
+  --color-telaga-700: #23746a;
+  --color-telaga-800: #195e56;
+  --color-telaga-900: #154b45;
+  --color-telaga-950: #0b2c28;
+
+  /* FAJAR — Aksen hangat, CTA utama, & rating (#F2A65A pada 400 / DEFAULT = 7.54:1 thd hutan) */
+  --color-fajar: #f2a65a;
+  --color-fajar-50: #fef7ee;
+  --color-fajar-100: #fdedd7;
+  --color-fajar-200: #fad7ae;
+  --color-fajar-300: #f6bc7d;
+  --color-fajar-400: #f2a65a;
+  --color-fajar-500: #eb8b34;
+  --color-fajar-600: #dc7122;
+  --color-fajar-700: #b6561e;
+  --color-fajar-800: #91441f;
+  --color-fajar-900: #75391c;
+  --color-fajar-950: #3f1b0c;
+
+  /* BATU — Garis halus, ikon dekoratif, & teks sekunder di atas latar terang (#5B6B66 pada 500) */
+  --color-batu: #5b6b66;
+  --color-batu-50: #f3f6f5;
+  --color-batu-100: #e2e8e6;
+  --color-batu-200: #c7d2ce;
+  --color-batu-300: #a3b3ae;
+  --color-batu-400: #7d918b;
+  --color-batu-500: #5b6b66;
+  --color-batu-600: #4c5a56;
+  --color-batu-700: #3f4e49;
+  --color-batu-800: #34403c;
+  --color-batu-900: #2d3633;
+  --color-batu-950: #181e1c;
+
+  /* TIPOGRAFI (dihubungkan ke variabel next/font pada <html>) */
+  --font-heading: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+
+  /* SKALA UKURAN TEKS (minimal 12px untuk konten bermakna) */
+  --text-scale-12: 0.75rem;
+  --text-scale-12--line-height: 1.45;
+  --text-scale-14: 0.875rem;
+  --text-scale-14--line-height: 1.5;
+  --text-scale-16: 1rem;
+  --text-scale-16--line-height: 1.6;
+  --text-scale-20: 1.25rem;
+  --text-scale-20--line-height: 1.4;
+  --text-scale-28: 1.75rem;
+  --text-scale-28--line-height: 1.22;
+  --text-scale-40: 2.5rem;
+  --text-scale-40--line-height: 1.12;
+
+  /* RADIUS SUDUT */
+  --radius-panel: 1.25rem;
+  --radius-control: 0.75rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-obsidian);
+    color: var(--color-kabut);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-obsidian);
+    color: var(--color-kabut);
+    overflow-x: hidden;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+  }
+
+  /* Indikator fokus jelas & aksesibel (AGENTS.md §6) */
+  :focus-visible {
+    outline: 3px solid var(--color-fajar);
+    outline-offset: 2px;
+  }
+}
+
+/* Motif Khas: Tekstur Garis Kontur Topografi Pegunungan (Opasitas ~5%) */
+.bg-topo-contour {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360' fill='none'%3E%3Cpath d='M-20 70C45 35 110 95 180 65C250 35 310 85 380 55' stroke='%23E8F1EC' stroke-opacity='0.05' stroke-width='1.2'/%3E%3Cpath d='M-20 140C60 105 125 165 195 130C265 95 315 155 380 125' stroke='%23E8F1EC' stroke-opacity='0.045' stroke-width='1.2'/%3E%3Cpath d='M-20 215C50 180 140 240 210 200C280 160 320 225 380 195' stroke='%232F8F83' stroke-opacity='0.06' stroke-width='1.2'/%3E%3Cpath d='M-20 290C75 255 150 315 225 275C300 235 330 295 380 265' stroke='%23E8F1EC' stroke-opacity='0.045' stroke-width='1.2'/%3E%3Cellipse cx='185' cy='180' rx='92' ry='44' transform='rotate(-11 185 180)' stroke='%23E8F1EC' stroke-opacity='0.04' stroke-width='1'/%3E%3Cellipse cx='185' cy='180' rx='52' ry='23' transform='rotate(-11 185 180)' stroke='%23F2A65A' stroke-opacity='0.045' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 360px 360px;
+}
+
+/* Tipografi Display Hero */
+.hero-display-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(2.35rem, 8vw, 7.25rem);
+  line-height: 0.92;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-kabut);
+}
+
+/* Geometri Awal 3D Coverflow Hero (SSR Tanpa Pergeseran Hidrasi, Ponsel Hanya 3 Kartu §7.1) */
+.hero-stage {
+  --hero-spread: 112px;
+}
+
+@media (min-width: 640px) {
+  .hero-stage {
+    --hero-spread: 164px;
+  }
+}
+
+@media (max-width: 639px) {
+  .hero-card[data-abs-offset="2"] {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Optimasi Render Seksi Bawah Lipatan & Animasi Masuk GPU expo.out (§7.1) */
+.section-cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 680px;
+}
+
+@keyframes heroCharRise {
+  from {
+    transform: translate3d(0, 26%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.hero-split-char {
+  display: inline-block;
+  animation: heroCharRise 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Sistem Tombol Standar (Target Sentuh ≥44px, Tahan Panjang Teks ID/EN) */
+@layer components {
+.btn-ui {
+  min-height: 44px;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: var(--text-scale-14);
+  font-weight: 600;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-ui:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-ui:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* Varian Telaga — Memakai telaga-700 (#23746A) agar lulus WCAG AA 4.82:1 thd kabut */
+.btn-telaga {
+  background-color: var(--color-telaga-700);
+  color: var(--color-kabut);
+  border: 1px solid color-mix(in srgb, var(--color-kabut) 22%, transparent);
+  box-shadow: 0 6px 18px rgb(25 94 86 / 0.35);
+}
+
+.btn-telaga:not(:disabled):hover {
+  background-color: var(--color-telaga-800);
+}
+
+/* Varian Fajar — CTA Utama (hutan #0F2A24 di atas fajar #F2A65A = 7.54:1 AAA) */
+.btn-fajar {
+  background-color: var(--color-fajar);
+  color: var(--color-hutan-950);
+  border: 1px solid color-mix(in srgb, var(--color-hutan) 20%, transparent);
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgb(242 166 90 / 0.26);
+}
+
+.btn-fajar:not(:disabled):hover {
+  background-color: var(--color-fajar-300);
+}
+
+/* Varian Hutan — Di atas permukaan terang / Tiket Putih */
+.btn-hutan {
+  background-color: var(--color-hutan);
+  color: var(--color-kabut);
+  border: 1px solid var(--color-telaga-700);
+}
+
+.btn-hutan:not(:disabled):hover {
+  background-color: var(--color-hutan-800);
+}
+
+/* Varian Kabut — Kontras tinggi di atas permukaan gelap */
+.btn-kabut {
+  background-color: var(--color-kabut);
+  color: var(--color-hutan);
+  border: 1px solid #ffffff;
+  font-weight: 700;
+}
+
+.btn-kabut:not(:disabled):hover {
+  background-color: var(--color-fajar);
+  border-color: var(--color-fajar);
+}
+}

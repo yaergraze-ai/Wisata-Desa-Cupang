@@ -1,0 +1,767 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import type { Map as MapInstance, Marker as MarkerInstance } from "maplibre-gl";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/cn";
+import {
+  computeTrailTelemetry,
+  GUNUNG_BENDERA_TRAIL_POSTS,
+  type GeoCoord,
+  type TrailTelemetryResult,
+} from "@/lib/geo";
+
+export interface TrailNavigatorClientProps {
+  offTrailThresholdM: number;
+}
+
+type MapLibreModule = typeof import("maplibre-gl");
+
+function getOnlineSnapshot() {
+  return typeof navigator !== "undefined" ? navigator.onLine : true;
+}
+
+function subscribeOnline(callback: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
+interface OfflineMapManifest {
+  name: string;
+  bbox: [number, number, number, number];
+  center: [number, number, number];
+  pmtiles: string;
+  sha256: string;
+  sizeBytes: number;
+  updatedAt: string;
+  fallbackOnlineTileUrl: string;
+  attribution: string;
+}
+
+const MAP_CACHE_NAME = "wisata_cirebon_map_cache";
+
+export function TrailNavigatorClient({
+  offTrailThresholdM,
+}: TrailNavigatorClientProps) {
+  const t = useTranslations("Navigator");
+  const tLegal = useTranslations("Legal");
+
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<MapInstance | null>(null);
+  const userMarkerRef = useRef<MarkerInstance | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const isOnline = useSyncExternalStore(subscribeOnline, getOnlineSnapshot, () => true);
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "requesting" | "active" | "denied">("idle");
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [userLocation, setUserLocation] = useState<GeoCoord | null>(null);
+  const [userAccuracyM, setUserAccuracyM] = useState<number | null>(null);
+  const [telemetry, setTelemetry] = useState<TrailTelemetryResult | null>(null);
+  const [selectedPostCode, setSelectedPostCode] = useState<string>("TRAILHEAD");
+
+  // Offline map downloader state
+  const [isCachedOffline, setIsCachedOffline] = useState(false);
+  const [isDownloadingMap, setIsDownloadingMap] = useState(false);
+  const [downloadProgressPct, setDownloadProgressPct] = useState(0);
+  const [downloadBytesText, setDownloadBytesText] = useState("");
+
+  // Cek apakah peta offline sudah ada di CacheStorage
+  useEffect(() => {
+    if (typeof window === "undefined" || !("caches" in window)) return;
+    caches.open(MAP_CACHE_NAME).then((cache) => {
+      cache.match("/maps/cirebon.pmtiles").then((matched) => {
+        setIsCachedOffline(Boolean(matched));
+      });
+    }).catch(() => undefined);
+  }, []);
+
+  // Inisialisasi MapLibre GL 6 + PMTiles Protocol
+  useEffect(() => {
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    let cancelled = false;
+
+    async function initMap() {
+      try {
+        const [maplibreMod, pmtilesMod] = await Promise.all([
+          import("maplibre-gl"),
+          import("pmtiles"),
+        ]);
+
+        if (cancelled || !mapContainerRef.current) return;
+
+        const maplibregl = ("default" in maplibreMod
+          ? maplibreMod.default
+          : maplibreMod) as unknown as MapLibreModule & {
+          setWorkerUrl?: (url: string) => void;
+        };
+        const { Protocol } = pmtilesMod;
+
+        // Pasang worker URL lokal dan protokol PMTiles
+        if (typeof maplibregl.setWorkerUrl === "function") {
+          maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
+        }
+        const protocol = new Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        const centerLng = 108.3822;
+        const centerLat = -6.7322;
+
+        const map = new maplibregl.Map({
+          container: mapContainerRef.current,
+          style: {
+            version: 8,
+            glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+            sources: {
+              "osm-raster": {
+                type: "raster",
+                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                tileSize: 256,
+                attribution: "© OpenStreetMap contributors | Wisata Cirebon",
+              },
+            },
+            layers: [
+              {
+                id: "osm-raster-layer",
+                type: "raster",
+                source: "osm-raster",
+                minzoom: 0,
+                maxzoom: 19,
+              },
+            ],
+          },
+          center: [centerLng, centerLat],
+          zoom: 15.2,
+          minZoom: 12,
+          maxZoom: 18,
+          pitch: 35,
+          bearing: -10,
+        });
+
+        mapInstanceRef.current = map;
+
+        map.on("load", () => {
+          if (cancelled) return;
+          setMapLoaded(true);
+
+          // 1. Tambahkan GeoJSON garis jalur Gunung Bendera
+          const lineCoordinates = GUNUNG_BENDERA_TRAIL_POSTS.map((p) => [p.lng, p.lat]);
+
+          map.addSource("trail-track", {
+            type: "geojson",
+            data: {
+              type: "Feature",
+              properties: { name: "Jalur Gunung Bendera" },
+              geometry: {
+                type: "LineString",
+                coordinates: lineCoordinates,
+              },
+            },
+          });
+
+          // Bayangan luar jalur
+          map.addLayer({
+            id: "trail-track-casing",
+            type: "line",
+            source: "trail-track",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#08110E",
+              "line-width": 8,
+              "line-opacity": 0.85,
+            },
+          });
+
+          // Garis jalur utama hijau zamrud terang
+          map.addLayer({
+            id: "trail-track-line",
+            type: "line",
+            source: "trail-track",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#2F8F83",
+              "line-width": 4.5,
+            },
+          });
+
+          // 2. Tambahkan Pin Marker untuk 6 Pos Resmi
+          GUNUNG_BENDERA_TRAIL_POSTS.forEach((post) => {
+            const el = document.createElement("div");
+            el.className =
+              "flex flex-col items-center cursor-pointer select-none group transition-transform hover:scale-110";
+            el.innerHTML = `
+              <div class="flex items-center gap-1 px-2 py-1 rounded-full border-2 border-[#F2A65A] bg-[#08110E]/90 text-[11px] font-black text-[#F4F1EA] shadow-xl">
+                <span class="w-2 h-2 rounded-full ${post.code === "SUMMIT" ? "bg-red-500 animate-ping" : "bg-[#2F8F83]"}"></span>
+                <span>${post.code}</span>
+              </div>
+              <div class="w-0.5 h-3 bg-[#F2A65A]"></div>
+            `;
+
+            el.addEventListener("click", () => {
+              setSelectedPostCode(post.code);
+              map.flyTo({ center: [post.lng, post.lat], zoom: 16.5, speed: 1.2 });
+            });
+
+            new maplibregl.Marker({ element: el, anchor: "bottom" })
+              .setLngLat([post.lng, post.lat])
+              .addTo(map);
+          });
+
+          // Kontrol navigasi bawaan MapLibre
+          map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
+        });
+      } catch (err) {
+        console.error("Gagal memuat peta MapLibre:", err);
+      }
+    }
+
+    void initMap();
+
+    return () => {
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handler update posisi GPS pengguna
+  const handlePositionUpdate = useCallback(
+    (pos: GeolocationPosition) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      const coord: GeoCoord = { lat: latitude, lng: longitude };
+      setUserLocation(coord);
+      setUserAccuracyM(Math.round(accuracy));
+      setGpsStatus("active");
+
+      // Hitung telemetri jalur & deteksi deviasi keluar jalur
+      const tel = computeTrailTelemetry(coord, GUNUNG_BENDERA_TRAIL_POSTS, offTrailThresholdM);
+      setTelemetry(tel);
+
+      // Getarkan perangkat jika keluar jalur (> thresholdMeters)
+      if (tel.isOffTrail && typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+
+      // Update marker pengguna pada peta
+      const map = mapInstanceRef.current;
+      if (map && mapLoaded) {
+        if (!userMarkerRef.current) {
+          const el = document.createElement("div");
+          el.className = "relative flex items-center justify-center";
+          el.innerHTML = `
+            <div class="absolute w-8 h-8 rounded-full bg-[#F2A65A]/40 animate-ping"></div>
+            <div class="relative w-5 h-5 rounded-full border-2 border-white bg-[#F2A65A] shadow-2xl flex items-center justify-center text-obsidian text-[10px]">
+              <i class="bi bi-person-fill"></i>
+            </div>
+          `;
+          import("maplibre-gl").then((m) => {
+            const maplibregl = ("default" in m
+              ? m.default
+              : m) as unknown as MapLibreModule;
+            userMarkerRef.current = new maplibregl.Marker({ element: el })
+              .setLngLat([longitude, latitude])
+              .addTo(map);
+          });
+        } else {
+          userMarkerRef.current.setLngLat([longitude, latitude]);
+        }
+      }
+    },
+    [mapLoaded, offTrailThresholdM]
+  );
+
+  const handlePositionError = useCallback((err: GeolocationPositionError) => {
+    console.warn("Geolocation error:", err.message);
+    setGpsStatus("denied");
+  }, []);
+
+  // Mulai pelacakan GPS
+  const startGpsTracking = useCallback(() => {
+    setShowPermissionDialog(false);
+    if (!navigator.geolocation) {
+      setGpsStatus("denied");
+      return;
+    }
+
+    setGpsStatus("requesting");
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      handlePositionUpdate,
+      handlePositionError,
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 4000,
+      }
+    );
+  }, [handlePositionError, handlePositionUpdate]);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null && typeof navigator !== "undefined") {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
+  // Pusatkan peta ke posisi pengguna
+  const handleRecenterToUser = useCallback(() => {
+    if (!userLocation || !mapInstanceRef.current) return;
+    mapInstanceRef.current.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: 16.5,
+      speed: 1.2,
+    });
+  }, [userLocation]);
+
+  // Unduh peta offline PMTiles dan simpan ke CacheStorage
+  const handleDownloadOfflineMap = useCallback(async () => {
+    if (isDownloadingMap || typeof window === "undefined" || !("caches" in window)) return;
+    setIsDownloadingMap(true);
+    setDownloadProgressPct(0);
+
+    try {
+      const manifestRes = await fetch("/maps/manifest.json");
+      if (!manifestRes.ok) throw new Error("Manifest peta tidak ditemukan.");
+      const manifest = (await manifestRes.json()) as OfflineMapManifest;
+
+      const pmtilesRes = await fetch(manifest.pmtiles);
+      if (!pmtilesRes.ok) throw new Error("Berkas PMTiles tidak dapat diunduh.");
+
+      const contentLength = Number(pmtilesRes.headers.get("Content-Length")) || manifest.sizeBytes;
+      const reader = pmtilesRes.body?.getReader();
+
+      if (!reader) {
+        const blob = await pmtilesRes.blob();
+        const cache = await caches.open(MAP_CACHE_NAME);
+        await cache.put(manifest.pmtiles, new Response(blob));
+        await cache.put("/maps/manifest.json", new Response(JSON.stringify(manifest)));
+        setIsCachedOffline(true);
+        setIsDownloadingMap(false);
+        return;
+      }
+
+      let receivedBytes = 0;
+      const chunks: Uint8Array[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          receivedBytes += value.length;
+          const pct = Math.min(100, Math.round((receivedBytes / contentLength) * 100));
+          setDownloadProgressPct(pct);
+          setDownloadBytesText(`${Math.round(receivedBytes / 1024)} KB / ${Math.round(contentLength / 1024)} KB`);
+        }
+      }
+
+      const totalBlob = new Blob(chunks as BlobPart[]);
+      const cache = await caches.open(MAP_CACHE_NAME);
+      await cache.put(manifest.pmtiles, new Response(totalBlob));
+      await cache.put("/maps/manifest.json", new Response(JSON.stringify(manifest)));
+
+      setIsCachedOffline(true);
+    } catch (err) {
+      console.error("Gagal mengunduh peta offline:", err);
+    } finally {
+      setIsDownloadingMap(false);
+    }
+  }, [isDownloadingMap]);
+
+  // Hapus cache peta offline
+  const handleDeleteOfflineMap = useCallback(async () => {
+    if (typeof window === "undefined" || !("caches" in window)) return;
+    const cache = await caches.open(MAP_CACHE_NAME);
+    await cache.delete("/maps/cirebon.pmtiles");
+    await cache.delete("/maps/manifest.json");
+    setIsCachedOffline(false);
+  }, []);
+
+  const selectedPost = useMemo(
+    () =>
+      GUNUNG_BENDERA_TRAIL_POSTS.find((p) => p.code === selectedPostCode) ??
+      GUNUNG_BENDERA_TRAIL_POSTS[0]!,
+    [selectedPostCode]
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* BANNER PERINGATAN KELUAR JALUR RESMI (>35m) (§6.F) */}
+      {telemetry?.isOffTrail ? (
+        <div
+          data-testid="off-trail-alert-banner"
+          className="rounded-2xl border-4 border-red-500 bg-[#2E0808] p-5 text-white shadow-2xl animate-pulse"
+        >
+          <div className="flex items-start gap-4">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-600 text-2xl text-white">
+              <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+            </span>
+            <div className="space-y-1">
+              <h2 className="font-heading text-lg font-black uppercase tracking-tight text-red-200 sm:text-xl">
+                {t("offTrailAlertTitle")}
+              </h2>
+              <p className="text-xs font-bold text-red-100 sm:text-sm">
+                {t("offTrailAlertDesc", {
+                  distance: telemetry.distanceToTrailM,
+                  direction: telemetry.returnDirectionCode,
+                  bearing: telemetry.returnBearingDeg,
+                })}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* HEADER NAVIGATOR & BADGE STATUS */}
+      <section className="rounded-3xl border-2 border-kabut/20 bg-obsidian p-5 sm:p-7">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-telaga-500 bg-telaga-950 px-3 py-1 text-xs font-extrabold text-telaga-200 uppercase">
+                <i className="bi bi-compass-fill" aria-hidden="true" />
+                <span>{t("eyebrow")}</span>
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+                  isOnline
+                    ? "bg-telaga-500/20 text-telaga-300 border border-telaga-500/40"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                )}
+              >
+                <i className={cn("bi", isOnline ? "bi-globe" : "bi-wifi-off")} aria-hidden="true" />
+                <span>{isOnline ? t("onlineMapBadge") : t("offlineModeBadge")}</span>
+              </span>
+            </div>
+
+            <h1 className="mt-2 font-heading text-2xl font-black text-kabut sm:text-3xl">
+              {t("heading")}
+            </h1>
+            <p className="mt-1 text-xs text-kabut/80 max-w-2xl">{t("lead")}</p>
+          </div>
+
+          {/* Tombol Kontrol GPS & Tombol Beranda */}
+          <div className="flex flex-wrap items-center gap-2">
+            {gpsStatus === "active" ? (
+              <button
+                type="button"
+                data-testid="recenter-gps-btn"
+                onClick={handleRecenterToUser}
+                className="btn-ui btn-fajar py-2.5 text-xs font-black"
+              >
+                <i className="bi bi-crosshair" aria-hidden="true" />
+                <span>{t("recenterMapBtn")}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="enable-gps-btn"
+                onClick={() => setShowPermissionDialog(true)}
+                className="btn-ui btn-telaga py-2.5 text-xs font-black"
+              >
+                <i className="bi bi-geo-alt-fill" aria-hidden="true" />
+                <span>{t("gpsEnableBtn")}</span>
+              </button>
+            )}
+
+            <Link href="/" className="btn-ui btn-glass py-2.5 text-xs font-bold">
+              <i className="bi bi-arrow-left" aria-hidden="true" />
+              <span>{tLegal("backHome")}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Status GPS teks baris */}
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-kabut/10 pt-3 text-xs">
+          <span className="font-bold text-kabut/75">{t("gpsStatusLabel")}</span>
+          {gpsStatus === "active" ? (
+            <span data-testid="gps-active-badge" className="font-bold text-telaga-300">
+              <i className="bi bi-check-circle-fill mr-1" aria-hidden="true" />
+              {t("gpsActiveStatus", { acc: userAccuracyM ?? 10 })}
+            </span>
+          ) : gpsStatus === "denied" ? (
+            <span data-testid="gps-denied-badge" className="font-bold text-red-400">
+              <i className="bi bi-exclamation-circle-fill mr-1" aria-hidden="true" />
+              {t("gpsDenied")}
+            </span>
+          ) : (
+            <span className="text-kabut/60">
+              <i className="bi bi-dash-circle mr-1" aria-hidden="true" />
+              {t("gpsInactiveStatus")}
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* CONTAINER PETA MAPLIBRE GL PENUH */}
+      <section className="relative overflow-hidden rounded-3xl border-2 border-kabut/25 bg-black shadow-2xl">
+        <div
+          ref={mapContainerRef}
+          data-testid="maplibre-container"
+          className="h-[480px] w-full sm:h-[560px]"
+        />
+
+        {/* Overlay Kontrol Cepat di Sudut Kiri Bawah Peta */}
+        <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+          {telemetry ? (
+            <div className="pointer-events-auto rounded-2xl border-2 border-kabut/30 bg-obsidian/90 p-3.5 text-xs shadow-xl backdrop-blur-md space-y-1">
+              <p className="font-bold text-fajar">
+                {t("nearestPost")}: <strong>{telemetry.nearestPost.name}</strong> ({t("distanceUnit", { meters: telemetry.distanceToNearestPostM })})
+              </p>
+              {telemetry.nextPost ? (
+                <p className="text-kabut/90">
+                  {t("nextPost")}: <strong>{telemetry.nextPost.name}</strong> {t("telemetryRemaining", { meters: telemetry.distanceToNextPostM, mins: telemetry.estimatedMinutesToNextPost })}
+                </p>
+              ) : (
+                <p className="font-bold text-telaga-200">{t("atSummitBadge")}</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* PANEL TELEMETRI DAN PENGUNDUH PETA OFFLINE PMTILES */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* KARTU 1: TELEMETRI LENGKAP PENDAKI */}
+        <section className="surface-solid-dark p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-lg font-black text-kabut">
+              {t("telemetryHeading")}
+            </h2>
+            <span className="font-mono text-xs text-fajar">
+              {t("deviationLimitLabel", { meters: offTrailThresholdM })}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl border border-kabut/15 bg-obsidian p-3">
+              <span className="text-kabut/70">{t("currentElevation")}</span>
+              <p className="mt-1 font-mono text-lg font-black text-fajar">
+                {t("elevationDisplay", { elevation: telemetry ? telemetry.nearestPost.elevationM : selectedPost.elevationM })}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-kabut/15 bg-obsidian p-3">
+              <span className="text-kabut/70">{t("totalGain")}</span>
+              <p className="mt-1 font-mono text-lg font-black text-telaga-200">
+                {t("elevationGainValue")}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-kabut/15 bg-obsidian p-3">
+              <span className="text-kabut/70">{t("nearestPost")}</span>
+              <p className="mt-1 font-heading text-sm font-bold text-kabut truncate">
+                {telemetry ? telemetry.nearestPost.name : selectedPost.name}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-kabut/15 bg-obsidian p-3">
+              <span className="text-kabut/70">{t("nextPost")}</span>
+              <p className="mt-1 font-heading text-sm font-bold text-kabut truncate">
+                {telemetry?.nextPost ? telemetry.nextPost.name : t("summitTarget")}
+              </p>
+            </div>
+          </div>
+
+          {/* Bar Progres Jalur */}
+          <div className="space-y-1.5 pt-2">
+            <div className="flex justify-between text-xs font-extrabold text-kabut">
+              <span>{t("trailProgress")}</span>
+              <span className="font-mono text-fajar">
+                {telemetry ? Math.round(telemetry.progressRatio * 100) : 0}%
+              </span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full border border-kabut/20 bg-obsidian">
+              <div
+                className="h-full bg-gradient-to-r from-telaga-500 to-fajar transition-all duration-500"
+                style={{
+                  width: `${telemetry ? Math.round(telemetry.progressRatio * 100) : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* KARTU 2: PENGUNDUH PETA OFFLINE PMTILES (§6.G) */}
+        <section className="surface-solid-dark p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-fajar bg-obsidian text-fajar">
+              <i className="bi bi-hdd-fill" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="font-heading text-base font-black text-kabut">
+                {t("offlineMapHeading")}
+              </h2>
+              <p className="text-xs text-kabut/75">{t("offlineMapDesc")}</p>
+            </div>
+          </div>
+
+          {isCachedOffline ? (
+            <div className="rounded-2xl border-2 border-telaga-500/40 bg-hutan p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-telaga-200">
+                <i className="bi bi-check-circle-fill text-fajar text-base" aria-hidden="true" />
+                <span>{t("mapCachedSuccess")}</span>
+              </div>
+              <p className="text-xs text-kabut/75">
+                {t("mapCachedDetail")}
+              </p>
+              <button
+                type="button"
+                data-testid="delete-map-cache-btn"
+                onClick={handleDeleteOfflineMap}
+                className="btn-ui btn-glass py-2 text-xs font-bold text-red-300"
+              >
+                <i className="bi bi-trash" aria-hidden="true" />
+                <span>{t("deleteOfflineMapBtn")}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-2xl border-2 border-kabut/20 bg-obsidian p-4 space-y-3">
+              {isDownloadingMap ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-fajar">
+                    <span>{t("downloadingProgress", { pct: downloadProgressPct, loaded: downloadBytesText.split("/")[0]?.trim() || "0 KB", total: downloadBytesText.split("/")[1]?.trim() || "532 KB" })}</span>
+                    <span>{downloadProgressPct}%</span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-hutan">
+                    <div
+                      className="h-full bg-fajar transition-all duration-200"
+                      style={{ width: `${downloadProgressPct}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="download-offline-map-btn"
+                  onClick={handleDownloadOfflineMap}
+                  className="btn-ui btn-fajar w-full py-3 text-xs font-black"
+                >
+                  <i className="bi bi-cloud-arrow-down-fill text-sm" aria-hidden="true" />
+                  <span>{t("downloadOfflineMapBtn")}</span>
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* RINCIAN 6 POS RESMI JALUR PENDAKIAN */}
+      <section className="surface-solid-dark p-6 space-y-4">
+        <h2 className="font-heading text-lg font-black text-kabut">
+          {t("postsListHeading")}
+        </h2>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {GUNUNG_BENDERA_TRAIL_POSTS.map((post) => {
+            const isSelected = selectedPostCode === post.code;
+            return (
+              <button
+                key={post.code}
+                type="button"
+                data-testid={`trail-post-card-${post.code}`}
+                onClick={() => {
+                  setSelectedPostCode(post.code);
+                  if (mapInstanceRef.current) {
+                    mapInstanceRef.current.flyTo({
+                      center: [post.lng, post.lat],
+                      zoom: 16.5,
+                      speed: 1.2,
+                    });
+                  }
+                }}
+                className={cn(
+                  "flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all",
+                  isSelected
+                    ? "border-fajar bg-fajar/15 shadow-lg"
+                    : "border-kabut/15 bg-obsidian hover:border-kabut/40"
+                )}
+              >
+                <div className="flex w-full items-center justify-between text-xs font-extrabold">
+                  <span className="rounded bg-hutan px-2 py-0.5 text-fajar">
+                    {post.code}
+                  </span>
+                  <span className="text-kabut/80">{t("elevationDisplay", { elevation: post.elevationM })}</span>
+                </div>
+                <h3 className="mt-2 font-heading text-sm font-black text-kabut">
+                  {post.name}
+                </h3>
+                <p className="mt-1 font-mono text-[11px] text-telaga-300">
+                  {post.lat.toFixed(6)}, {post.lng.toFixed(6)}
+                </p>
+                <p className="mt-2 text-xs font-bold text-fajar">
+                  {post.order === 0
+                    ? t("startPointBadge")
+                    : t("segmentDetail", { meters: post.distFromPrevM, mins: post.minsFromPrev })}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* DIALOG PENJELASAN IZIN GPS RAMAH PENGGUNA SEBELUM watchPosition (§6.F) */}
+      {showPermissionDialog ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border-2 border-fajar bg-obsidian p-6 text-kabut shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-fajar bg-hutan text-2xl text-fajar">
+                <i className="bi bi-shield-check" aria-hidden="true" />
+              </span>
+              <div>
+                <h3 className="font-heading text-lg font-black text-kabut">
+                  {t("gpsPreDialogTitle")}
+                </h3>
+                <span className="text-xs text-telaga-200">
+                  {t("privacyProtected")}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-kabut/85 leading-relaxed">
+              {t("gpsPreDialogDesc")}
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPermissionDialog(false)}
+                className="btn-ui btn-glass text-xs"
+              >
+                {t("cancelBtn")}
+              </button>
+              <button
+                type="button"
+                data-testid="confirm-enable-gps-btn"
+                onClick={startGpsTracking}
+                className="btn-ui btn-fajar text-xs font-black"
+              >
+                <i className="bi bi-geo-alt-fill mr-1" aria-hidden="true" />
+                <span>{t("gpsEnableBtn")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

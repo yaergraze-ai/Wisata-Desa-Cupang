@@ -1,0 +1,26 @@
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "../styles/tokens.css";
+@import "../styles/glass.css";
+
+:root {
+  --font-bricolage: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
+  --font-jakarta: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+/* Aksesibilitas WCAG AA: Fokus terlihat jelas & prefers-reduced-motion (§7.1, §10.2) */
+:focus-visible {
+  outline: 2px solid #f2a65a;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
