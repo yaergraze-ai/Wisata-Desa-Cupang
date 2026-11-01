@@ -70,6 +70,36 @@
   transform: translateY(-1px);
 }
 
+.btn-glass-fajar {
+  background: linear-gradient(
+    135deg,
+    rgba(242, 166, 90, 0.28) 0%,
+    rgba(242, 166, 90, 0.12) 100%
+  );
+  color: var(--color-fajar);
+  border: 1px solid rgba(242, 166, 90, 0.45);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 20px -4px rgba(242, 166, 90, 0.25);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-glass-fajar:not(:disabled):hover {
+  background: linear-gradient(
+    135deg,
+    rgba(242, 166, 90, 0.42) 0%,
+    rgba(242, 166, 90, 0.22) 100%
+  );
+  border-color: var(--color-fajar);
+  box-shadow:
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.55),
+    0 12px 28px -4px rgba(242, 166, 90, 0.4);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
 /* Fallback wajib bila browser tidak mendukung backdrop-filter */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-panel,
@@ -97,11 +127,28 @@
  * ========================================================================== */
 
 .surface-solid-dark {
-  background-color: var(--color-hutan);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(15, 36, 30, 0.6) 45%,
+    rgba(8, 17, 14, 0.88) 100%
+  );
   color: var(--color-kabut);
-  border: 1px solid color-mix(in srgb, var(--color-telaga) 55%, transparent);
-  border-radius: var(--radius-panel);
-  box-shadow: 0 12px 30px rgb(6 15 12 / 0.6);
+  border: 1px solid rgba(232, 241, 236, 0.16);
+  border-radius: var(--radius-panel, 20px);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    0 16px 36px -10px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.surface-solid-dark:hover {
+  border-color: rgba(232, 241, 236, 0.28);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.3),
+    0 20px 44px -10px rgba(0, 0, 0, 0.75);
 }
 
 .surface-solid-light {

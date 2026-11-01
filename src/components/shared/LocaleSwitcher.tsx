@@ -24,7 +24,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
       role="group"
       aria-label={t("langLabel")}
       className={cn(
-        "inline-flex items-center rounded-lg border border-kabut/25 bg-hutan/80 p-0.5 text-xs font-semibold",
+        "inline-flex items-center rounded-xl border border-white/15 bg-white/5 backdrop-blur-md p-0.5 text-xs font-semibold shadow-inner",
         className
       )}
     >
@@ -33,10 +33,10 @@ export function LocaleSwitcher({ className }: { className?: string }) {
         onClick={() => switchLocale("id")}
         aria-pressed={locale === "id"}
         className={cn(
-          "min-h-[44px] min-w-[44px] rounded-md px-3 py-1 transition-colors cursor-pointer",
+          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all cursor-pointer",
           locale === "id"
-            ? "bg-fajar text-hutan-950 font-bold"
-            : "text-kabut/85 hover:text-kabut"
+            ? "bg-white/15 border border-white/25 text-kabut font-bold shadow-sm backdrop-blur-sm"
+            : "text-kabut/75 hover:text-kabut hover:bg-white/5"
         )}
       >
         ID
@@ -46,10 +46,10 @@ export function LocaleSwitcher({ className }: { className?: string }) {
         onClick={() => switchLocale("en")}
         aria-pressed={locale === "en"}
         className={cn(
-          "min-h-[44px] min-w-[44px] rounded-md px-3 py-1 transition-colors cursor-pointer",
+          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all cursor-pointer",
           locale === "en"
-            ? "bg-fajar text-hutan-950 font-bold"
-            : "text-kabut/85 hover:text-kabut"
+            ? "bg-white/15 border border-white/25 text-kabut font-bold shadow-sm backdrop-blur-sm"
+            : "text-kabut/75 hover:text-kabut hover:bg-white/5"
         )}
       >
         EN

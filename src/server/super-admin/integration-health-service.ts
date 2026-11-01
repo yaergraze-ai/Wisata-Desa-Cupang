@@ -118,28 +118,55 @@ export async function testAllIntegrationsHealth(): Promise<IntegrationHealthItem
     const storageLatency = Math.round(performance.now() - storageStart);
     const isOk = Boolean(getRes && getRes.buffer.byteLength === testBuffer.byteLength);
 
-    const storageDriver = process.env.STORAGE_PROVIDER?.toLowerCase() || "local";
+    const storageDriver = (
+      process.env.STORAGE_DRIVER ||
+      process.env.STORAGE_PROVIDER ||
+      "local"
+    ).toLowerCase();
+
+    const isServerless = Boolean(
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT
+    );
+
+    const driverLabel =
+      storageDriver === "local" && isServerless
+        ? "LOCAL (SERVERLESS TMP)"
+        : storageDriver.toUpperCase();
+
+    results.push({
+      id: "storage",
+      name: `Media Storage (${driverLabel})`,
+      category: "Aset & Foto Ulasan",
+      status: isOk ? "CONNECTED" : "DEGRADED",
+      latencyMs: storageLatency,
+      message: isOk
+        ? `Penyimpanan media ${driverLabel} aktif dan siap digunakan (uji tulis/baca/hapus berhasil).`
+        : "Adaptor penyimpanan gagal memverifikasi integritas berkas.",
+      details: {
+        driver: storageDriver,
+        serverless: isServerless,
+        publicUrlBase: putRes.publicUrl.slice(0, 30) + "...",
+      },
+    });
+  } catch (err: unknown) {
+    const storageDriver = (
+      process.env.STORAGE_DRIVER ||
+      process.env.STORAGE_PROVIDER ||
+      "local"
+    ).toLowerCase();
 
     results.push({
       id: "storage",
       name: `Media Storage (${storageDriver.toUpperCase()})`,
       category: "Aset & Foto Ulasan",
-      status: isOk ? "CONNECTED" : "DEGRADED",
-      latencyMs: storageLatency,
-      message: `Penyimpanan media ${storageDriver.toUpperCase()} berhasil diuji (tulis/baca/hapus).`,
-      details: {
-        driver: storageDriver,
-        publicUrlBase: putRes.publicUrl.slice(0, 30) + "...",
-      },
-    });
-  } catch (err: unknown) {
-    results.push({
-      id: "storage",
-      name: "Media Storage",
-      category: "Aset & Foto Ulasan",
       status: "DEGRADED",
       latencyMs: null,
-      message: err instanceof Error ? err.message : "Gagal menguji adaptor penyimpanan.",
+      message:
+        err instanceof Error
+          ? `${err.message}. Di Vercel, pastikan memakai os.tmpdir() atau konfigurasikan S3/R2/GCS.`
+          : "Gagal menguji adaptor penyimpanan.",
       details: {},
     });
   }

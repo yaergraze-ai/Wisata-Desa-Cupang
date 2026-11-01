@@ -160,10 +160,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         {tNav("skipToContent")}
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-kabut/15 bg-obsidian/96 sm:bg-obsidian/92 sm:backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 min-h-[44px] min-w-0">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-hutan border border-telaga-700 text-fajar">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-fajar backdrop-blur-md shadow-sm">
               <i className="bi bi-compass text-lg" aria-hidden="true" />
             </span>
             <div className="leading-tight min-w-0">
@@ -182,37 +182,37 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
           >
             <a
               href="#jalur-aturan"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("trail")}
             </a>
             <a
               href="#pilihan-tiket"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("tickets")}
             </a>
             <a
               href="#peta-jalur"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("map")}
             </a>
             <a
               href="#petugas-siaga"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("staff")}
             </a>
             <a
               href="#ulasan-pengunjung"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("reviews")}
             </a>
             <a
               href="#kontak"
-              className="min-h-[44px] inline-flex items-center rounded-lg px-3 text-sm font-medium text-kabut/85 hover:bg-hutan hover:text-kabut transition-colors"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >
               {tNav("contact")}
             </a>
@@ -224,7 +224,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             {user ? (
               <Link
                 href={user.dashboardPath}
-                className="hidden md:inline-flex btn-ui btn-hutan"
+                className="hidden md:inline-flex btn-ui btn-glass"
               >
                 <i className="bi bi-person-badge" aria-hidden="true" />
                 <span>{tNav("dashboard")}</span>
@@ -232,7 +232,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             ) : (
               <Link
                 href="/masuk"
-                className="hidden md:inline-flex btn-ui btn-hutan"
+                className="hidden md:inline-flex btn-ui btn-glass"
               >
                 <i className="bi bi-box-arrow-in-right" aria-hidden="true" />
                 <span>{tNav("loginRegister")}</span>
@@ -242,7 +242,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#kalkulator-tiket"
               aria-label={tNav("buyTicket")}
-              className="btn-ui btn-fajar min-w-[44px] px-3 sm:px-4"
+              className="btn-ui btn-glass-fajar min-w-[44px] px-3 sm:px-4"
             >
               <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
               <span className="hidden sm:inline">{tNav("buyTicket")}</span>
@@ -254,17 +254,17 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
       {/* Tab Bar Bawah Khusus Ponsel (§6.A) */}
       <nav
         aria-label={tNav("mobileNavAria")}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-kabut/20 bg-obsidian/98 backdrop-blur-md lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-obsidian/95 backdrop-blur-xl lg:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5 px-1 py-1">
           <li>
             <a
               href="#beranda"
               onClick={handleMobileNavClick("home", "beranda", "/")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "home"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
-                  : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
+                  ? "bg-white/15 border border-white/25 font-bold text-fajar shadow-md shadow-black/25 backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
               <i
@@ -280,10 +280,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#jalur-aturan"
               onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "trail"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
-                  : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
+                  ? "bg-white/15 border border-white/25 font-bold text-fajar shadow-md shadow-black/25 backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
               <i
@@ -299,10 +299,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#kalkulator-tiket"
               onClick={handleMobileNavClick("tickets", "kalkulator-tiket", "/#kalkulator-tiket")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "tickets"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
-                  : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
+                  ? "bg-white/15 border border-white/25 font-bold text-fajar shadow-md shadow-black/25 backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
               <i
@@ -320,10 +320,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#peta-jalur"
               onClick={handleMobileNavClick("map", "peta-jalur", "/#peta-jalur")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "map"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
-                  : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
+                  ? "bg-white/15 border border-white/25 font-bold text-fajar shadow-md shadow-black/25 backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
               <i
@@ -339,10 +339,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <Link
               href={user ? user.dashboardPath : "/masuk"}
               onClick={() => setActiveTab("account")}
-              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
                 activeTab === "account"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-sm shadow-fajar/10"
-                  : "border border-transparent font-medium text-kabut/80 hover:text-fajar"
+                  ? "bg-white/15 border border-white/25 font-bold text-fajar shadow-md shadow-black/25 backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
               <i
