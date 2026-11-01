@@ -11,6 +11,7 @@ import {
 } from "@/server/tickets/ticket-documents";
 import {
   sendTransactionalEmail,
+  buildAntiSpamEmailLayout,
   type EmailAttachment,
 } from "@/server/integrations/email/email-service";
 import { sendWhatsappMessage } from "@/server/integrations/whatsapp/whatsapp-service";
@@ -147,25 +148,42 @@ export async function deliverOrderTicketsNotification(
     ? `Hello ${order.visitorName},\n\nYour payment for order ${order.orderNumber} (${formatRupiah(order.totalAmount, locale)}) has been confirmed.\nVisit Date: ${visitDateHuman} (WIB)\n\nYour PDF e-tickets are attached to this email, and you can open your offline-capable Ticket Wallet anytime at:\n${walletUrl}`
     : `Halo ${order.visitorName},\n\nPembayaran pesanan ${order.orderNumber} (${formatRupiah(order.totalAmount, locale)}) telah terkonfirmasi.\nTanggal Kunjungan: ${visitDateHuman} (WIB)\n\nPDF e-ticket terlampir pada email ini, dan Anda dapat membuka Dompet Tiket (mendukung mode luring) kapan saja di:\n${walletUrl}`;
 
-  const emailHtml = `<div style="font-family:sans-serif;background:#08110E;color:#E8F1EC;padding:28px;border-radius:16px;">
-    <h2 style="color:#F2A65A;margin:0 0 8px 0;">Wisata Cirebon — Batu Lawang &amp; Gunung Bendera</h2>
-    <p style="margin:0 0 16px 0;font-size:14px;">${
-      isEn
-        ? `Hello <strong>${order.visitorName}</strong>, your official e-ticket for <strong>${visitDateHuman}</strong> is ready.`
-        : `Halo <strong>${order.visitorName}</strong>, e-ticket resmi Anda untuk kunjungan <strong>${visitDateHuman}</strong> telah terbit.`
-    }</p>
-    ${ticketCardsHtml.join("\n")}
-    <p style="font-size:13px;margin:18px 0;">${
-      isEn
-        ? `Order Total: <strong>${formatRupiah(order.totalAmount, locale)}</strong> (PDF e-tickets attached).`
-        : `Total Pesanan: <strong>${formatRupiah(order.totalAmount, locale)}</strong> (PDF e-ticket terlampir).`
-    }</p>
-    <p style="margin:22px 0;">
-      <a href="${walletUrl}" style="background:#F2A65A;color:#08110E;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block;">
-        ${isEn ? "Open Ticket Wallet" : "Buka Dompet Tiket"}
-      </a>
-    </p>
-  </div>`;
+  const emailHtml = buildAntiSpamEmailLayout({
+    locale,
+    preheader: isEn
+      ? `Your official e-tickets for order ${order.orderNumber} (${visitDateHuman}) are ready.`
+      : `E-Ticket resmi pesanan ${order.orderNumber} untuk kunjungan ${visitDateHuman} telah terbit.`,
+    badgeText: isEn ? "Official E-Ticket" : "E-Ticket Resmi",
+    badgeColor: "#10b981",
+    title: emailSubject,
+    recipientName: order.visitorName,
+    bodyHtml: `
+      <p style="margin: 0 0 16px 0; font-size: 14px;">
+        ${
+          isEn
+            ? `Your payment for order <strong style="color: #f59e0b;">${order.orderNumber}</strong> (${formatRupiah(order.totalAmount, locale)}) has been verified. Your visit date is <strong style="color: #ffffff;">${visitDateHuman} (WIB)</strong>.`
+            : `Pembayaran pesanan <strong style="color: #f59e0b;">${order.orderNumber}</strong> sebesar <strong style="color: #f59e0b;">${formatRupiah(order.totalAmount, locale)}</strong> telah terkonfirmasi. Tanggal kunjungan Anda adalah <strong style="color: #ffffff;">${visitDateHuman} (WIB)</strong>.`
+        }
+      </p>
+      <div style="margin: 18px 0;">
+        ${ticketCardsHtml.join("\n")}
+      </div>
+      <p style="margin: 16px 0 0 0; font-size: 13px; color: #94a3b8;">
+        ${
+          isEn
+            ? "Berkas e-ticket format PDF resmi ber-QR terlampir pada surel ini dan dapat diunduh langsung."
+            : "Berkas PDF e-ticket resmi dengan enkripsi QR telah dilampirkan pada surel ini."
+        }
+      </p>
+    `,
+    actionButton: {
+      label: isEn ? "Open Ticket Wallet (Offline Mode)" : "Buka Dompet Tiket (Mode Offline)",
+      url: walletUrl,
+    },
+    footerReason: isEn
+      ? "You received this e-ticket because a confirmed ticket reservation was completed on Wisata Desa Cupang portal."
+      : "Anda menerima e-ticket ini karena pemesanan tiket resmi telah diselesaikan di portal Wisata Desa Cupang Cirebon.",
+  });
 
   const waMessage = isEn
     ? `*Wisata Cirebon — Official E-Ticket*\nOrder: *${order.orderNumber}*\nVisit Date: *${visitDateHuman} (WIB)*\nTotal: *${formatRupiah(order.totalAmount, locale)}*\n\nTickets:\n${waLines.join("\n")}\n\nOpen & cache your QR tickets for offline gate scan:\n${walletUrl}`

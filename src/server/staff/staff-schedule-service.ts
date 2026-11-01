@@ -5,7 +5,10 @@ import { getEnv, getIntegrationFlags } from "@/server/env";
 import type { SupportedLocale } from "@/lib/currency";
 import { formatTimestampWib } from "@/lib/datetime-wib";
 import { computeStaffDutyStatusWib, type StaffDutyStatusResult, type WeeklyScheduleMap, parseWeeklySchedule } from "@/server/staff/staff-availability";
-import { sendTransactionalEmail } from "@/server/integrations/email/email-service";
+import {
+  sendTransactionalEmail,
+  buildAntiSpamEmailLayout,
+} from "@/server/integrations/email/email-service";
 import { writeAuditLog } from "@/server/audit/audit";
 
 export interface StaffSelfState {
@@ -337,14 +340,22 @@ export async function requestSuddenLeave(params: {
       ? `Field staff ${result.staffName} has submitted a sudden leave request at ${timeFormatted} for destination ${result.destinationName}.\nReason: ${params.reason || "-"}\n\nThe public staff card has been deactivated automatically.`
       : `Petugas lapangan ${result.staffName} mengajukan libur mendadak pada ${timeFormatted} untuk destinasi ${result.destinationName}.\nAlasan: ${params.reason || "-"}\n\nKartu siaga publik telah dinonaktifkan secara otomatis.`;
 
-    const html = `<div style="font-family:sans-serif;background:#08110E;color:#E8F1EC;padding:24px;border-radius:12px;">
-      <h3 style="color:#F2A65A;margin:0 0 10px 0;">Pemberitahuan Libur Mendadak Petugas</h3>
-      <p style="margin:0 0 6px 0;"><strong>Petugas:</strong> ${result.staffName}</p>
-      <p style="margin:0 0 6px 0;"><strong>Destinasi:</strong> ${result.destinationName}</p>
-      <p style="margin:0 0 6px 0;"><strong>Waktu:</strong> ${timeFormatted}</p>
-      <p style="margin:0 0 12px 0;"><strong>Alasan:</strong> ${params.reason || "-"}</p>
-      <p style="font-size:12px;color:#A7DDD6;">Kartu siaga publik telah dinonaktifkan seketika dan dialihkan ke WhatsApp pengelola.</p>
-    </div>`;
+    const html = buildAntiSpamEmailLayout({
+      locale: isEn ? "en" : "id",
+      preheader: `Pemberitahuan libur mendadak: ${result.staffName} (${result.destinationName}).`,
+      badgeText: "Pemberitahuan Internal",
+      badgeColor: "#f43f5e",
+      title: subject,
+      recipientName: "Manajer Operasional",
+      bodyHtml: `
+        <p style="margin: 0 0 10px 0;"><strong>Petugas:</strong> ${result.staffName}</p>
+        <p style="margin: 0 0 10px 0;"><strong>Destinasi:</strong> ${result.destinationName}</p>
+        <p style="margin: 0 0 10px 0;"><strong>Waktu Pengajuan:</strong> ${timeFormatted}</p>
+        <p style="margin: 0 0 14px 0;"><strong>Alasan:</strong> ${params.reason || "-"}</p>
+        <p style="font-size: 13px; color: #38bdf8; margin: 0;">Kartu siaga publik telah dinonaktifkan seketika dan dialihkan ke WhatsApp pengelola.</p>
+      `,
+      footerReason: "Pesan ini dikirimkan kepada pengelola wisata untuk pembaruan operasional petugas lapangan.",
+    });
 
     await sendTransactionalEmail({
       to: managerEmail,
