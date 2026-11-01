@@ -82,10 +82,12 @@
 .bi-person-badge-fill::before { content: "\f4d2"; }
 .bi-person-badge::before { content: "\f4d3"; }
 .bi-person-check-fill::before { content: "\f4d5"; }
+.bi-person-check::before { content: "\f4d6"; }
 .bi-person-circle::before { content: "\f4d7"; }
 .bi-person-fill::before { content: "\f4da"; }
 .bi-person-plus-fill::before { content: "\f4dc"; }
 .bi-person-x-fill::before { content: "\f4df"; }
+.bi-person::before { content: "\f4e1"; }
 .bi-plus-circle::before { content: "\f4fa"; }
 .bi-receipt-cutoff::before { content: "\f50e"; }
 .bi-receipt::before { content: "\f50f"; }
