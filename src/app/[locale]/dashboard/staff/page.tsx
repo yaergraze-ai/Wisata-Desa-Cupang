@@ -72,6 +72,7 @@ export default async function StaffDashboardPage({
           initialGate={initialGate}
           initialHistory={history}
           initialAdmittedCount={initialAdmittedCount}
+          authCtx={authCtx}
         />
       </main>
     </div>

@@ -963,6 +963,7 @@ export async function processMidtransWebhook(
     headers?: Headers;
     now?: Date;
     skipDelivery?: boolean;
+    skipSignatureVerify?: boolean;
   }
 ): Promise<ProcessMidtransWebhookResult> {
   const parsed = midtransWebhookSchema.safeParse(rawBody);
@@ -975,15 +976,17 @@ export async function processMidtransWebhook(
   }
 
   const payload = parsed.data;
-  const signatureValid = verifyMidtransWebhookSignature(
-    {
-      orderId: payload.order_id,
-      statusCode: payload.status_code,
-      grossAmount: payload.gross_amount,
-      signatureKey: payload.signature_key,
-    },
-    options?.explicitServerKey
-  );
+  const signatureValid =
+    options?.skipSignatureVerify === true ||
+    verifyMidtransWebhookSignature(
+      {
+        orderId: payload.order_id,
+        statusCode: payload.status_code,
+        grossAmount: payload.gross_amount,
+        signatureKey: payload.signature_key,
+      },
+      options?.explicitServerKey
+    );
 
   if (!signatureValid) {
     await writeAuditLog({
@@ -1251,6 +1254,61 @@ export async function processMidtransWebhook(
     status: txOutcome.status,
     ticketsIssued: txOutcome.ticketsIssued,
   };
+}
+
+export async function simulateSettleOrder(params: {
+  orderId: string;
+  actorUserId: string;
+  locale?: SupportedLocale;
+}): Promise<SerializedOrderSummary> {
+  const order = await db.order.findFirst({
+    where: {
+      OR: [{ id: params.orderId }, { orderNumber: params.orderId }],
+    },
+    include: { user: true },
+  });
+
+  if (!order) {
+    throw new OrderDomainError("ORDER_NOT_FOUND", 404, "Pesanan tidak ditemukan.");
+  }
+
+  const actor = await db.user.findUnique({
+    where: { id: params.actorUserId },
+    select: { id: true, role: true },
+  });
+
+  if (
+    order.userId !== params.actorUserId &&
+    actor?.role !== Role.ADMIN &&
+    actor?.role !== Role.SUPER_ADMIN
+  ) {
+    throw new OrderDomainError("FORBIDDEN", 403, "Akses ditolak untuk pesanan ini.");
+  }
+
+  if (order.status !== OrderStatus.PAID) {
+    const txId = `sim_tx_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const fakePayload = {
+      order_id: order.orderNumber,
+      transaction_status: "settlement",
+      status_code: "200",
+      gross_amount: `${order.totalAmount}.00`,
+      signature_key: "simulated_signature",
+      transaction_id: txId,
+      fraud_status: "accept",
+      payment_type: "qris_sandbox_simulation",
+    };
+
+    await processMidtransWebhook(fakePayload, {
+      skipSignatureVerify: true,
+    });
+  }
+
+  return getSerializedOrderForViewer({
+    orderId: order.id,
+    viewerId: params.actorUserId,
+    viewerRole: actor?.role ?? Role.MEMBER,
+    locale: params.locale ?? "id",
+  });
 }
 
 export async function getSerializedOrderForViewer(params: {

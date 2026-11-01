@@ -14,8 +14,10 @@ import type {
   StaffTicketSearchRow,
 } from "@/server/scan/scan-service";
 import type { StaffSelfState } from "@/server/staff/staff-schedule-service";
+import type { AuthenticatedContext } from "@/server/auth/guards";
+import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
 
-export type StaffTab = "scanner" | "history" | "search" | "schedule";
+export type StaffTab = "scanner" | "history" | "search" | "schedule" | "profile";
 
 export interface StaffDashboardClientProps {
   locale: AppLocale;
@@ -23,6 +25,7 @@ export interface StaffDashboardClientProps {
   initialGate: GateType;
   initialHistory: StaffScanHistoryRow[];
   initialAdmittedCount: number;
+  authCtx?: AuthenticatedContext;
 }
 
 function playScanFeedback(result: "ACCEPTED" | "REJECTED") {
@@ -78,6 +81,7 @@ export function StaffDashboardClient({
   initialGate,
   initialHistory,
   initialAdmittedCount,
+  authCtx,
 }: StaffDashboardClientProps) {
   const t = useTranslations("StaffDashboard");
   const manualInputId = useId();
@@ -512,6 +516,7 @@ export function StaffDashboardClient({
             { id: "history" as const, label: t("tabHistory"), icon: "bi-clock-history" },
             { id: "search" as const, label: t("tabSearch"), icon: "bi-search" },
             { id: "schedule" as const, label: t("tabSchedule"), icon: "bi-calendar2-week" },
+            { id: "profile" as const, label: "Profil Petugas", icon: "bi-person-gear" },
           ].map((tab) => {
             const isCurrent = activeTab === tab.id;
             return (
@@ -1097,6 +1102,11 @@ export function StaffDashboardClient({
             )}
           </div>
         </section>
+      ) : null}
+
+      {/* TAB 5: PROFIL PETUGAS */}
+      {activeTab === "profile" && authCtx ? (
+        <MemberProfileTab authCtx={authCtx} />
       ) : null}
     </div>
   );

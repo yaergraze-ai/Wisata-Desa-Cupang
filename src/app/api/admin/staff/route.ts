@@ -5,6 +5,7 @@ import {
   createStaffAccount,
   getStaffList,
   updateStaffProfile,
+  deleteStaffMember,
 } from "@/server/admin/admin-staff-service";
 
 export async function GET() {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
@@ -67,6 +68,8 @@ export async function PATCH(req: NextRequest) {
 
     const body = (await req.json()) as {
       staffProfileId: string;
+      name?: string;
+      whatsapp?: string;
       assignedGates?: GateType[];
       isMinor?: boolean;
       isActive?: boolean;
@@ -82,6 +85,8 @@ export async function PATCH(req: NextRequest) {
     await updateStaffProfile(
       body.staffProfileId,
       {
+        name: body.name,
+        whatsapp: body.whatsapp,
         assignedGates: body.assignedGates,
         isMinor: body.isMinor,
         isActive: body.isActive,
@@ -89,10 +94,40 @@ export async function PATCH(req: NextRequest) {
       authCtx.user.id
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Profil staf berhasil diperbarui." });
   } catch (err: unknown) {
     const status = (err as { status?: number }).status ?? 500;
     const message = err instanceof Error ? err.message : "Gagal memperbarui profil staf.";
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  return PUT(req);
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      requireTwoFactor: false,
+    });
+
+    const body = (await req.json().catch(() => ({}))) as { staffProfileId?: string };
+    const urlStaffId = req.nextUrl.searchParams.get("staffProfileId");
+    const staffProfileId = body.staffProfileId || urlStaffId;
+
+    if (!staffProfileId) {
+      return NextResponse.json(
+        { error: "staffProfileId wajib disertakan." },
+        { status: 400 }
+      );
+    }
+
+    await deleteStaffMember(staffProfileId, authCtx.user.id);
+    return NextResponse.json({ success: true, message: "Akun staf berhasil dihapus." });
+  } catch (err: unknown) {
+    const status = (err as { status?: number }).status ?? 500;
+    const message = err instanceof Error ? err.message : "Gagal menghapus akun staf.";
     return NextResponse.json({ error: message }, { status });
   }
 }

@@ -90,8 +90,11 @@
 .bi-info-circle::before { content: "\f431"; }
 .bi-journal-text::before { content: "\f444"; }
 .bi-key-fill::before { content: "\f44e"; }
+.bi-lightning-charge-fill::before { content: "\f46c"; }
+.bi-lightning::before { content: "\f46f"; }
 .bi-lock-fill::before { content: "\f47a"; }
 .bi-patch-check-fill::before { content: "\f4b5"; }
+.bi-pencil-square::before { content: "\f4ca"; }
 .bi-people-fill::before { content: "\f4cf"; }
 .bi-person-badge-fill::before { content: "\f4d2"; }
 .bi-person-badge::before { content: "\f4d3"; }

@@ -11,6 +11,8 @@ import { AdminReviewsView } from "@/components/dashboard/admin/AdminReviewsView"
 import { AdminStaffView } from "@/components/dashboard/admin/AdminStaffView";
 import { AdminMediaClient } from "@/components/dashboard/admin/AdminMediaClient";
 import { AdminInboxView } from "@/components/dashboard/admin/AdminInboxView";
+import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
+import type { AuthenticatedContext } from "@/server/auth/guards";
 
 export type AdminTab =
   | "metrics"
@@ -20,15 +22,18 @@ export type AdminTab =
   | "reviews"
   | "staff"
   | "media"
-  | "inbox";
+  | "inbox"
+  | "profile";
 
 export interface AdminDashboardClientProps {
   locale: AppLocale;
+  authCtx: AuthenticatedContext;
   initialTab?: AdminTab;
 }
 
 export function AdminDashboardClient({
   locale,
+  authCtx,
   initialTab = "metrics",
 }: AdminDashboardClientProps) {
   const t = useTranslations("AdminDashboard");
@@ -43,6 +48,7 @@ export function AdminDashboardClient({
     { key: "staff", label: t("tabStaff"), icon: "bi-people-fill" },
     { key: "media", label: t("tabMedia"), icon: "bi-images" },
     { key: "inbox", label: t("tabInbox"), icon: "bi-inbox-fill" },
+    { key: "profile", label: "Profil Admin", icon: "bi-person-gear" },
   ];
 
   return (
@@ -80,6 +86,7 @@ export function AdminDashboardClient({
         {activeTab === "staff" ? <AdminStaffView /> : null}
         {activeTab === "media" ? <AdminMediaClient locale={locale} /> : null}
         {activeTab === "inbox" ? <AdminInboxView /> : null}
+        {activeTab === "profile" ? <MemberProfileTab authCtx={authCtx} /> : null}
       </div>
     </div>
   );

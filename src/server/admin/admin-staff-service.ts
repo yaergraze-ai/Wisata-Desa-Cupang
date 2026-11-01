@@ -147,6 +147,8 @@ export async function createStaffAccount(
 export async function updateStaffProfile(
   staffProfileId: string,
   data: {
+    name?: string;
+    whatsapp?: string;
     assignedGates?: GateType[];
     isMinor?: boolean;
     isActive?: boolean;
@@ -155,18 +157,65 @@ export async function updateStaffProfile(
 ): Promise<void> {
   const profile = await db.staffProfile.findUnique({
     where: { id: staffProfileId },
+    include: { user: true },
   });
   if (!profile) {
     throw new Error("Profil staf tidak ditemukan.");
   }
 
-  await db.staffProfile.update({
-    where: { id: staffProfileId },
-    data: {
-      ...(data.assignedGates !== undefined ? { assignedGates: data.assignedGates } : {}),
-      ...(data.isMinor !== undefined ? { isMinor: data.isMinor } : {}),
-      ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
-    },
+  const staffUpdateData: {
+    assignedGates?: GateType[];
+    isMinor?: boolean;
+    isActive?: boolean;
+    publicName?: string;
+    whatsapp?: string;
+  } = {};
+
+  const userUpdateData: {
+    name?: string;
+    whatsapp?: string;
+    phoneNumber?: string;
+  } = {};
+
+  if (typeof data.name === "string" && data.name.trim().length >= 2) {
+    userUpdateData.name = data.name.trim();
+    staffUpdateData.publicName = data.name.trim();
+  }
+
+  if (typeof data.whatsapp === "string" && data.whatsapp.trim().length > 0) {
+    const normalized = normalizeIndonesianWhatsapp(data.whatsapp);
+    if (!normalized) {
+      throw new Error("Nomor WhatsApp tidak valid untuk format Indonesia.");
+    }
+    userUpdateData.whatsapp = normalized;
+    userUpdateData.phoneNumber = normalized;
+    staffUpdateData.whatsapp = normalized;
+  }
+
+  if (data.assignedGates !== undefined) {
+    staffUpdateData.assignedGates = data.assignedGates;
+  }
+  if (data.isMinor !== undefined) {
+    staffUpdateData.isMinor = data.isMinor;
+  }
+  if (data.isActive !== undefined) {
+    staffUpdateData.isActive = data.isActive;
+  }
+
+  await db.$transaction(async (tx) => {
+    if (Object.keys(staffUpdateData).length > 0) {
+      await tx.staffProfile.update({
+        where: { id: staffProfileId },
+        data: staffUpdateData,
+      });
+    }
+
+    if (Object.keys(userUpdateData).length > 0) {
+      await tx.user.update({
+        where: { id: profile.userId },
+        data: userUpdateData,
+      });
+    }
   });
 
   await writeAuditLog({
@@ -177,6 +226,54 @@ export async function updateStaffProfile(
     entityId: staffProfileId,
     metadata: {
       ...data,
+      staffUserId: profile.userId,
+    },
+  });
+}
+
+export async function deleteStaffMember(
+  staffProfileId: string,
+  actorId: string
+): Promise<void> {
+  const profile = await db.staffProfile.findUnique({
+    where: { id: staffProfileId },
+    include: { user: true },
+  });
+  if (!profile) {
+    throw new Error("Profil staf tidak ditemukan.");
+  }
+
+  const userId = profile.userId;
+
+  await db.$transaction(async (tx) => {
+    await tx.leaveRequest.deleteMany({
+      where: { staffProfileId },
+    });
+
+    await tx.staffProfile.delete({
+      where: { id: staffProfileId },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { role: Role.MEMBER },
+    });
+
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+  });
+
+  await writeAuditLog({
+    actorId,
+    actorRole: Role.ADMIN,
+    action: "STAFF_ACCOUNT_DELETED",
+    entity: "StaffProfile",
+    entityId: staffProfileId,
+    metadata: {
+      deletedStaffName: profile.user.name,
+      deletedStaffEmail: profile.user.email,
+      userId,
     },
   });
 }

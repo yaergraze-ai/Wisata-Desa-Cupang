@@ -25,6 +25,15 @@ export function AdminStaffView() {
   const [newIsMinor, setNewIsMinor] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Modal edit petugas
+  const [editingStaff, setEditingStaff] = useState<StaffListItemDto | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editWa, setEditWa] = useState("");
+  const [editGates, setEditGates] = useState<GateType[]>([]);
+  const [editIsMinor, setEditIsMinor] = useState(false);
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   async function loadData() {
     setIsLoading(true);
     setError(null);
@@ -107,6 +116,69 @@ export function AdminStaffView() {
     }
   }
 
+  function handleOpenEditModal(staff: StaffListItemDto) {
+    setEditingStaff(staff);
+    setEditName(staff.name);
+    setEditWa(staff.whatsapp ?? "");
+    setEditGates([...staff.assignedGates]);
+    setEditIsMinor(staff.isMinor);
+    setEditIsActive(staff.isActive);
+  }
+
+  async function handleSaveEditStaff(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingStaff) return;
+    setIsUpdating(true);
+    try {
+      const res = await fetch("/api/admin/staff", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          staffProfileId: editingStaff.id,
+          name: editName,
+          whatsapp: editWa,
+          assignedGates: editGates,
+          isMinor: editIsMinor,
+          isActive: editIsActive,
+        }),
+      });
+      if (!res.ok) {
+        const errJson = (await res.json()) as { error?: string };
+        throw new Error(errJson.error || "Gagal memperbarui profil staf.");
+      }
+      setEditingStaff(null);
+      await loadData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Gagal memperbarui staf.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  async function handleDeleteStaff(staff: StaffListItemDto) {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin menghapus petugas '${staff.name}'?\nPeran akun akan dikembalikan ke MEMBER dan penugasan gerbang dicabut.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/staff", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffProfileId: staff.id }),
+      });
+      if (!res.ok) {
+        const errJson = (await res.json()) as { error?: string };
+        throw new Error(errJson.error || "Gagal menghapus staf.");
+      }
+      await loadData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Gagal menghapus staf.");
+    }
+  }
+
   async function handleDecideLeave(leaveRequestId: string, status: "APPROVED" | "REJECTED") {
     try {
       const res = await fetch("/api/admin/staff/leave", {
@@ -163,6 +235,7 @@ export function AdminStaffView() {
                   <th className="pb-3 font-semibold">{t("thStaffMinor")}</th>
                   <th className="pb-3 font-semibold">{t("metricScansToday")}</th>
                   <th className="pb-3 font-semibold">{t("thStatus")}</th>
+                  <th className="pb-3 text-right font-semibold">{t("thAction")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-telaga-700/30 text-kabut">
@@ -207,6 +280,28 @@ export function AdminStaffView() {
                       >
                         {s.isActive ? "ACTIVE" : "INACTIVE"}
                       </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(s)}
+                          className="rounded bg-telaga-900/80 border border-telaga-600 px-2.5 py-1 text-[11px] font-bold text-telaga-200 hover:bg-telaga-700 transition cursor-pointer"
+                          title="Edit Profil Petugas"
+                        >
+                          <i className="bi bi-pencil-square mr-1" aria-hidden="true" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteStaff(s)}
+                          className="rounded bg-red-950/60 border border-red-700/70 px-2.5 py-1 text-[11px] font-bold text-red-200 hover:bg-red-900/80 transition cursor-pointer"
+                          title="Hapus / Nonaktifkan Petugas"
+                        >
+                          <i className="bi bi-trash3-fill mr-1 text-red-400" aria-hidden="true" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -400,6 +495,140 @@ export function AdminStaffView() {
                   className="btn-ui btn-fajar rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50"
                 >
                   {isCreating ? t("submittingAddStaffBtn") : t("submitAddStaffBtn")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MODAL EDIT PETUGAS */}
+      {editingStaff ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md"
+        >
+          <div className="relative w-full max-w-md rounded-2xl bg-hutan border border-telaga-700/60 p-6 shadow-2xl text-kabut space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold">Edit Profil Petugas</h3>
+              <button
+                type="button"
+                onClick={() => setEditingStaff(null)}
+                className="text-kabut/60 hover:text-white"
+              >
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditStaff} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold mb-1">Nama Petugas</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3.5 py-2 text-kabut"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Email (Akun)</label>
+                <input
+                  type="email"
+                  value={editingStaff.email}
+                  disabled
+                  className="w-full rounded-xl border border-telaga-700/40 bg-obsidian/50 px-3.5 py-2 text-kabut/50 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Nomor WhatsApp</label>
+                <input
+                  type="tel"
+                  value={editWa}
+                  onChange={(e) => setEditWa(e.target.value)}
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3.5 py-2 text-kabut"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1.5">Penugasan Gerbang</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editGates.includes(GateType.GERBANG_BATU_LAWANG)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditGates([...editGates, GateType.GERBANG_BATU_LAWANG]);
+                        } else {
+                          setEditGates(editGates.filter((g) => g !== GateType.GERBANG_BATU_LAWANG));
+                        }
+                      }}
+                      className="accent-fajar"
+                    />
+                    <span>{t("gateBatuLawang")}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editGates.includes(GateType.PINTU_GUNUNG_BENDERA)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditGates([...editGates, GateType.PINTU_GUNUNG_BENDERA]);
+                        } else {
+                          setEditGates(editGates.filter((g) => g !== GateType.PINTU_GUNUNG_BENDERA));
+                        }
+                      }}
+                      className="accent-fajar"
+                    />
+                    <span>{t("gateGunungBendera")}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block font-semibold mb-1">Status Keaktifan</label>
+                  <select
+                    value={editIsActive ? "ACTIVE" : "INACTIVE"}
+                    onChange={(e) => setEditIsActive(e.target.value === "ACTIVE")}
+                    className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3 py-2 text-kabut text-xs"
+                  >
+                    <option value="ACTIVE">Aktif (Bertugas)</option>
+                    <option value="INACTIVE">Nonaktif (Cuti/Libur)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col justify-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editIsMinor}
+                      onChange={(e) => setEditIsMinor(e.target.checked)}
+                      className="accent-fajar"
+                    />
+                    <span className="font-semibold text-amber-300">Petugas Minor</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-telaga-700/60">
+                <button
+                  type="button"
+                  onClick={() => setEditingStaff(null)}
+                  className="btn-ui rounded-xl bg-obsidian border border-telaga-700 px-4 py-2 text-xs font-semibold text-kabut"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="btn-ui btn-fajar rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {isUpdating ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>

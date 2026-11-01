@@ -162,16 +162,16 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 min-h-[44px] min-w-0">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 min-h-[44px] shrink-0">
             <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-fajar backdrop-blur-md shadow-sm">
               <i className="bi bi-compass text-lg" aria-hidden="true" />
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fajar shadow-[0_0_10px_#f2a65a] animate-pulse" />
             </span>
-            <div className="leading-tight min-w-0">
-              <p className="font-heading text-sm sm:text-base font-bold text-kabut truncate whitespace-nowrap">
+            <div className="leading-tight shrink-0">
+              <p className="font-heading text-sm sm:text-base font-bold text-kabut whitespace-nowrap">
                 {tNav("brandTitle")}
               </p>
-              <p className="hidden sm:block text-xs text-kabut/80 truncate whitespace-nowrap">
+              <p className="hidden sm:block text-xs text-kabut/80 whitespace-nowrap">
                 {tNav("brandSubtitle")}
               </p>
             </div>

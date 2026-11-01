@@ -40,6 +40,7 @@ export default async function AdminDashboardPage({
     "staff",
     "media",
     "inbox",
+    "profile",
   ];
   const activeTab: AdminTab =
     typeof rawQuery.tab === "string" && validTabs.includes(rawQuery.tab as AdminTab)
@@ -65,7 +66,7 @@ export default async function AdminDashboardPage({
         </section>
 
         {/* Client Tabs Controller */}
-        <AdminDashboardClient locale={locale} initialTab={activeTab} />
+        <AdminDashboardClient locale={locale} authCtx={authCtx} initialTab={activeTab} />
       </main>
     </div>
   );

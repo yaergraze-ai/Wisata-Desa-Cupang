@@ -19,6 +19,14 @@ export function SuperAdminUsersView() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  // Edit user modal state
+  const [editingUser, setEditingUser] = useState<SuperAdminUserDto | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editWa, setEditWa] = useState("");
+  const [editRole, setEditRole] = useState<Role>(Role.MEMBER);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+
   async function loadUsers(p = 1, r = roleFilter, q = search) {
     setIsLoading(true);
     setError(null);
@@ -158,6 +166,48 @@ export function SuperAdminUsersView() {
     }
   }
 
+  function handleOpenEditModal(u: SuperAdminUserDto) {
+    setEditingUser(u);
+    setEditName(u.name);
+    setEditEmail(u.email);
+    setEditWa(u.whatsapp ?? "");
+    setEditRole(u.role);
+    setActionError(null);
+    setActionSuccess(null);
+  }
+
+  async function handleSaveEditUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSavingUser(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const res = await fetch("/api/super-admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetUserId: editingUser.id,
+          name: editName,
+          email: editEmail,
+          whatsapp: editWa,
+          role: editRole,
+        }),
+      });
+      if (!res.ok) {
+        const errJson = (await res.json()) as { error?: string };
+        throw new Error(errJson.error || "Gagal memperbarui profil pengguna.");
+      }
+      setEditingUser(null);
+      setActionSuccess("Profil pengguna berhasil diperbarui.");
+      await loadUsers(page, roleFilter, search);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Gagal memperbarui profil pengguna.");
+    } finally {
+      setIsSavingUser(false);
+    }
+  }
+
   return (
     <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 space-y-6" data-testid="super-admin-users-view">
       {/* HEADER & FILTER */}
@@ -280,6 +330,16 @@ export function SuperAdminUsersView() {
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
+                        onClick={() => handleOpenEditModal(u)}
+                        className="rounded bg-telaga-900/80 border border-telaga-600 px-2 py-1 text-[11px] font-bold text-telaga-200 hover:bg-telaga-700 transition cursor-pointer"
+                        title="Edit Profil Pengguna"
+                      >
+                        <i className="bi bi-pencil-square mr-1" aria-hidden="true" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
                         disabled={u.activeSessionsCount === 0}
                         onClick={() => handleRevokeSessions(u.id)}
                         className="rounded bg-obsidian border border-telaga-700/60 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-950/40 hover:border-amber-600 transition disabled:opacity-30"
@@ -330,6 +390,93 @@ export function SuperAdminUsersView() {
             >
               {t("userNextBtn")}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MODAL EDIT DATA PENGGUNA */}
+      {editingUser ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md"
+        >
+          <div className="relative w-full max-w-md rounded-2xl bg-hutan border border-telaga-700/60 p-6 shadow-2xl text-kabut space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold">Edit Profil Pengguna</h3>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="text-kabut/60 hover:text-white"
+              >
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditUser} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold mb-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3.5 py-2 text-kabut"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Alamat Email</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3.5 py-2 text-kabut"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Nomor WhatsApp</label>
+                <input
+                  type="tel"
+                  value={editWa}
+                  onChange={(e) => setEditWa(e.target.value)}
+                  placeholder="08123456789 atau +628123456789"
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3.5 py-2 text-kabut"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Peran Akun (Role)</label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as Role)}
+                  className="w-full rounded-xl border border-telaga-700 bg-obsidian px-3 py-2 text-kabut text-xs"
+                >
+                  <option value="MEMBER">MEMBER (Pengunjung)</option>
+                  <option value="STAFF">STAFF (Petugas Lapangan)</option>
+                  <option value="ADMIN">ADMIN (Pengelola Wisata)</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN (Pengelola Utama)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-telaga-700/60">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="btn-ui rounded-xl bg-obsidian border border-telaga-700 px-4 py-2 text-xs font-semibold text-kabut"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingUser}
+                  className="btn-ui btn-fajar rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {isSavingUser ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ) : null}

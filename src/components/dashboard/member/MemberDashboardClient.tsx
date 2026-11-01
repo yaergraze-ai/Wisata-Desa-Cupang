@@ -453,8 +453,40 @@ export function MemberDashboardClient({
     }
   }
 
+  async function handleSimulatedPayment(orderId: string) {
+    setOpeningSnap(true);
+    try {
+      const res = await fetch(
+        `/api/orders/${encodeURIComponent(orderId)}/pay-simulated?locale=${locale}`,
+        { method: "POST" }
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        order?: SerializedOrderSummary;
+        error?: string;
+      };
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Gagal memproses pembayaran simulasi.");
+      }
+      toast.success("Pembayaran berhasil diselesaikan! E-Tiket Anda telah terbit.");
+      await checkSingleOrderStatus(orderId, true);
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal memproses pembayaran simulasi."
+      );
+    } finally {
+      setOpeningSnap(false);
+    }
+  }
+
   function handleLaunchMidtransSnap(order: SerializedOrderSummary) {
     if (!order.snapToken || typeof window === "undefined") return;
+
+    if (order.snapToken.startsWith("snap-sim-")) {
+      void handleSimulatedPayment(order.id);
+      return;
+    }
+
     const win = window as MidtransSnapWindow;
     if (!win.snap) {
       if (order.snapRedirectUrl) {
@@ -1385,40 +1417,88 @@ export function MemberDashboardClient({
 
                     {initialSnapshot.paymentConfig.configured &&
                     activeCheckoutOrder.snapToken ? (
-                      <div className="space-y-2.5 pt-2">
-                        <button
-                          type="button"
-                          disabled={openingSnap || remainingSeconds <= 0}
-                          onClick={() =>
-                            handleLaunchMidtransSnap(activeCheckoutOrder)
-                          }
-                          className="btn-ui btn-fajar w-full justify-center py-3 text-sm disabled:opacity-45"
-                        >
-                          <i
-                            className="bi bi-qr-code-scan"
-                            aria-hidden="true"
-                          />
-                          <span>
-                            {openingSnap
-                              ? t("openingSnapBusy")
-                              : t("payWithSnapBtn")}
-                          </span>
-                        </button>
+                      <div className="space-y-3 pt-2">
+                        {activeCheckoutOrder.snapToken.startsWith("snap-sim-") ? (
+                          <div className="rounded-xl border border-amber-400/50 bg-gradient-to-br from-amber-950/60 to-obsidian p-4 text-xs text-amber-200 space-y-2.5 shadow-lg">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold flex items-center gap-1.5 text-fajar">
+                                <i className="bi bi-shield-check" aria-hidden="true" />
+                                <span>Simulasi Midtrans Sandbox</span>
+                              </span>
+                              <span className="rounded-full bg-amber-500/20 border border-amber-400/40 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                                SANDBOX MODE
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                              Sesi pembayaran simulasi aktif. Anda dapat langsung mengonfirmasi pembayaran lunas untuk menguji penerbitan tiket dan tanda tangan QR kriptografis.
+                            </p>
+                            <button
+                              type="button"
+                              disabled={openingSnap || remainingSeconds <= 0}
+                              onClick={() => handleSimulatedPayment(activeCheckoutOrder.id)}
+                              className="btn-ui btn-fajar w-full justify-center py-2.5 text-xs font-bold"
+                            >
+                              <i
+                                className={cn(
+                                  "bi mr-1.5",
+                                  openingSnap ? "bi-arrow-repeat animate-spin" : "bi-lightning-charge-fill"
+                                )}
+                                aria-hidden="true"
+                              />
+                              <span>
+                                {openingSnap
+                                  ? "Memproses Pembayaran..."
+                                  : "⚡ Selesaikan Pembayaran (Simulasi Lunas)"}
+                              </span>
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              disabled={openingSnap || remainingSeconds <= 0}
+                              onClick={() =>
+                                handleLaunchMidtransSnap(activeCheckoutOrder)
+                              }
+                              className="btn-ui btn-fajar w-full justify-center py-3 text-sm disabled:opacity-45"
+                            >
+                              <i
+                                className="bi bi-qr-code-scan"
+                                aria-hidden="true"
+                              />
+                              <span>
+                                {openingSnap
+                                  ? t("openingSnapBusy")
+                                  : t("payWithSnapBtn")}
+                              </span>
+                            </button>
 
-                        {activeCheckoutOrder.snapRedirectUrl ? (
-                          <a
-                            href={activeCheckoutOrder.snapRedirectUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-ui btn-glass w-full justify-center text-xs"
-                          >
-                            <i
-                              className="bi bi-box-arrow-up-right"
-                              aria-hidden="true"
-                            />
-                            <span>{t("openRedirectSnapLink")}</span>
-                          </a>
-                        ) : null}
+                            {activeCheckoutOrder.snapRedirectUrl ? (
+                              <a
+                                href={activeCheckoutOrder.snapRedirectUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-ui btn-glass w-full justify-center text-xs"
+                              >
+                                <i
+                                  className="bi bi-box-arrow-up-right"
+                                  aria-hidden="true"
+                                />
+                                <span>{t("openRedirectSnapLink")}</span>
+                              </a>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              disabled={openingSnap || remainingSeconds <= 0}
+                              onClick={() => handleSimulatedPayment(activeCheckoutOrder.id)}
+                              className="rounded-xl border border-telaga-700/60 bg-obsidian/60 hover:bg-obsidian px-3 py-1.5 text-[11px] font-semibold text-kabut/75 hover:text-kabut w-full transition text-center"
+                            >
+                              <i className="bi bi-lightning mr-1 text-fajar" aria-hidden="true" />
+                              <span>Uji Coba Lunas (Bypass Sandbox)</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-fajar/40 bg-hutan p-4 text-xs text-kabut/90 space-y-1.5">
