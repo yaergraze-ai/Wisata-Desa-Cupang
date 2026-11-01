@@ -15,7 +15,10 @@ export function SuperAdminSecurityView() {
     setError(null);
     try {
       const res = await fetch("/api/super-admin/security");
-      if (!res.ok) throw new Error("Gagal memuat status keamanan.");
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(errJson?.error || `Gagal memuat status keamanan (${res.status}).`);
+      }
       const data = (await res.json()) as { security: SecurityOverviewDto };
       setSecurity(data.security);
     } catch (err: unknown) {
@@ -30,7 +33,10 @@ export function SuperAdminSecurityView() {
     async function loadInitial() {
       try {
         const res = await fetch("/api/super-admin/security");
-        if (!res.ok) throw new Error("Gagal memuat status keamanan.");
+        if (!res.ok) {
+          const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(errJson?.error || `Gagal memuat status keamanan (${res.status}).`);
+        }
         const data = (await res.json()) as { security: SecurityOverviewDto };
         if (!ignore) {
           setSecurity(data.security);

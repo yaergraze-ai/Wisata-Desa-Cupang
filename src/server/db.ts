@@ -8,11 +8,32 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL;
+function getOptimizedConnectionString(): string {
+  let connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL belum diatur di environment.");
   }
+
+  // Jika menggunakan Supabase Pooler pada mode session port 5432,
+  // alihkan otomatis ke transaction mode port 6543 untuk mencegah EMAXCONNSESSION (pool exhaustion).
+  try {
+    const u = new URL(connectionString);
+    if (u.hostname.includes("pooler.supabase.com") && (u.port === "5432" || !u.port)) {
+      u.port = "6543";
+      if (!u.searchParams.has("pgbouncer")) {
+        u.searchParams.set("pgbouncer", "true");
+      }
+      connectionString = u.toString();
+    }
+  } catch {
+    // Abaikan jika format non-URL
+  }
+
+  return connectionString;
+}
+
+function createPrismaClient(): PrismaClient {
+  const connectionString = getOptimizedConnectionString();
 
   const pool =
     globalForPrisma.pgPool ??

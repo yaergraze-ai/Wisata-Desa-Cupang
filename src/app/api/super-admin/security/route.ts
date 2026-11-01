@@ -5,7 +5,7 @@ import { getSecurityOverview } from "@/server/super-admin/security-monitor-servi
 
 export async function GET() {
   try {
-    await requireApiRole([Role.SUPER_ADMIN], {
+    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
     const security = await getSecurityOverview();

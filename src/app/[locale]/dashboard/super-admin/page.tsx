@@ -25,7 +25,7 @@ export default async function SuperAdminDashboardPage({
 
   const authCtx = await requirePageRole({
     locale,
-    allowedRoles: [Role.SUPER_ADMIN],
+    allowedRoles: [Role.ADMIN, Role.SUPER_ADMIN],
     currentPath: "/dashboard/super-admin",
     requireTwoFactor: false, // fleksibel untuk pengetesan & verifikasi
   });

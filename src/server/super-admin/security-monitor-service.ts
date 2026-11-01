@@ -22,13 +22,13 @@ export async function getSecurityOverview(): Promise<SecurityOverviewDto> {
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [
-    failedLoginsCount,
-    rateLimitCount,
-    activeSessionsCount,
-    twoFactorEnabledCount,
-    totalUsersCount,
-    suspiciousLogs,
-  ] = await Promise.all([
+    failedLoginsRes,
+    rateLimitRes,
+    activeSessionsRes,
+    twoFactorEnabledRes,
+    totalUsersRes,
+    suspiciousLogsRes,
+  ] = await Promise.allSettled([
     db.auditLog.count({
       where: {
         action: { in: ["AUTH_LOGIN_FAILED", "AUTH_FORBIDDEN_ACCESS", "AUTH_FORBIDDEN_PAGE"] },
@@ -66,6 +66,13 @@ export async function getSecurityOverview(): Promise<SecurityOverviewDto> {
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  const failedLoginsCount = failedLoginsRes.status === "fulfilled" ? failedLoginsRes.value : 0;
+  const rateLimitCount = rateLimitRes.status === "fulfilled" ? rateLimitRes.value : 0;
+  const activeSessionsCount = activeSessionsRes.status === "fulfilled" ? activeSessionsRes.value : 0;
+  const twoFactorEnabledCount = twoFactorEnabledRes.status === "fulfilled" ? twoFactorEnabledRes.value : 0;
+  const totalUsersCount = totalUsersRes.status === "fulfilled" ? totalUsersRes.value : 0;
+  const suspiciousLogs = suspiciousLogsRes.status === "fulfilled" ? suspiciousLogsRes.value : [];
 
   const percentage =
     totalUsersCount > 0

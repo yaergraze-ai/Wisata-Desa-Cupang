@@ -8,7 +8,7 @@ import {
 
 export async function GET() {
   try {
-    await requireApiRole([Role.SUPER_ADMIN], {
+    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
     const settings = await getAllSiteSettingsList();

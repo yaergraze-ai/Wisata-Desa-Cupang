@@ -11,7 +11,7 @@ import {
 
 export async function GET(req: NextRequest) {
   try {
-    await requireApiRole([Role.SUPER_ADMIN], {
+    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
 
