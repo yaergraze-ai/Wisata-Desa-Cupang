@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { AuthenticatedContext } from "@/server/auth/guards";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { ChatOtpCard } from "@/components/auth/ChatOtpCard";
 
 export interface MemberProfileTabProps {
   authCtx: AuthenticatedContext;
@@ -17,6 +18,17 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [whatsapp, setWhatsapp] = useState(authCtx.user.whatsapp ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const [isEmailVerified, setIsEmailVerified] = useState(authCtx.user.emailVerified);
+  const [isWhatsappVerified, setIsWhatsappVerified] = useState(
+    Boolean(authCtx.user.whatsappVerifiedAt)
+  );
+
+  // Verification modal state
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [verifyModalChannel, setVerifyModalChannel] = useState<"whatsapp" | "email">("whatsapp");
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -187,37 +199,95 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
             </div>
 
             <div>
-              <label
-                htmlFor="profile-email"
-                className="block text-xs font-bold text-kabut/90"
-              >
-                {t("profileEmailLabel")}
-              </label>
-              <input
-                id="profile-email"
-                type="email"
-                value={authCtx.user.email}
-                disabled
-                className="mt-1.5 w-full rounded-xl border border-telaga-700/50 bg-obsidian/40 p-3 text-sm text-kabut/60 cursor-not-allowed"
-              />
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="profile-email"
+                  className="block text-xs font-bold text-kabut/90"
+                >
+                  {t("profileEmailLabel")}
+                </label>
+                {isEmailVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                    <i className="bi bi-patch-check-fill text-emerald-400" aria-hidden="true" />
+                    Terverifikasi
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    <i className="bi bi-exclamation-triangle-fill text-amber-400" aria-hidden="true" />
+                    Belum Terverifikasi
+                  </span>
+                )}
+              </div>
+              <div className="mt-1.5 flex gap-2 items-center">
+                <input
+                  id="profile-email"
+                  type="email"
+                  value={authCtx.user.email}
+                  disabled
+                  className="flex-1 rounded-xl border border-telaga-700/50 bg-obsidian/40 p-3 text-sm text-kabut/60 cursor-not-allowed"
+                />
+                {!isEmailVerified && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerifyModalChannel("email");
+                      setVerifyError(null);
+                      setIsVerifyModalOpen(true);
+                    }}
+                    className="btn-ui btn-fajar whitespace-nowrap text-xs font-bold px-3 py-2.5 rounded-xl shadow-md"
+                  >
+                    <i className="bi bi-envelope-check mr-1" aria-hidden="true" />
+                    <span>Verifikasi Email</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>
-              <label
-                htmlFor="profile-whatsapp"
-                className="block text-xs font-bold text-kabut/90"
-              >
-                {t("profileWaLabel")}
-              </label>
-              <input
-                id="profile-whatsapp"
-                data-testid="profile-whatsapp-input"
-                type="tel"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="+628..."
-                className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-3 text-sm text-kabut focus:border-fajar focus:outline-none"
-              />
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="profile-whatsapp"
+                  className="block text-xs font-bold text-kabut/90"
+                >
+                  {t("profileWaLabel")}
+                </label>
+                {isWhatsappVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                    <i className="bi bi-patch-check-fill text-emerald-400" aria-hidden="true" />
+                    Terverifikasi
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    <i className="bi bi-exclamation-triangle-fill text-amber-400" aria-hidden="true" />
+                    Belum Terverifikasi
+                  </span>
+                )}
+              </div>
+              <div className="mt-1.5 flex gap-2 items-center">
+                <input
+                  id="profile-whatsapp"
+                  data-testid="profile-whatsapp-input"
+                  type="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="+628..."
+                  className="flex-1 rounded-xl border border-telaga-700/80 bg-obsidian/70 p-3 text-sm text-kabut focus:border-fajar focus:outline-none"
+                />
+                {!isWhatsappVerified && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerifyModalChannel("whatsapp");
+                      setVerifyError(null);
+                      setIsVerifyModalOpen(true);
+                    }}
+                    className="btn-ui btn-fajar whitespace-nowrap text-xs font-bold px-3 py-2.5 rounded-xl shadow-md"
+                  >
+                    <i className="bi bi-whatsapp mr-1" aria-hidden="true" />
+                    <span>Verifikasi WA</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>
@@ -456,6 +526,71 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Modal Verifikasi OTP Symmetrical (WhatsApp / Email) */}
+      {isVerifyModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/85 backdrop-blur-xl animate-fade-in">
+          <div className="surface-glass-modal w-full max-w-md p-6 sm:p-7 rounded-3xl border border-white/20 shadow-2xl relative space-y-5">
+            <button
+              type="button"
+              onClick={() => setIsVerifyModalOpen(false)}
+              className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-kabut hover:text-white transition"
+              aria-label="Tutup modal"
+            >
+              <i className="bi bi-x-lg text-sm" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fajar/10 border border-fajar/30 text-xs font-bold text-fajar mb-1">
+                <i
+                  className={`bi ${
+                    verifyModalChannel === "email" ? "bi-envelope-check-fill" : "bi-whatsapp"
+                  }`}
+                />
+                <span>
+                  {verifyModalChannel === "email" ? "Verifikasi Surel Resmi" : "Verifikasi WhatsApp Resmi"}
+                </span>
+              </div>
+              <h3 className="font-heading text-xl font-bold text-kabut">
+                {verifyModalChannel === "email"
+                  ? "Verifikasi Alamat Email"
+                  : "Verifikasi Nomor WhatsApp"}
+              </h3>
+              <p className="text-xs text-kabut/75 leading-relaxed">
+                {verifyModalChannel === "email"
+                  ? `Kode OTP 6-digit akan dikirimkan ke alamat email ${authCtx.user.email} Anda.`
+                  : "Kode OTP 6-digit dikirimkan melalui obrolan resmi WhatsApp Business ke nomor Anda."}
+              </p>
+            </div>
+
+            {verifyError ? (
+              <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-200">
+                {verifyError}
+              </div>
+            ) : null}
+
+            <ChatOtpCard
+              initialPhone={whatsapp}
+              initialEmail={authCtx.user.email}
+              lockChannel={verifyModalChannel}
+              isLoading={verifyLoading}
+              setIsLoading={setVerifyLoading}
+              onError={setVerifyError}
+              onSuccess={async () => {
+                if (verifyModalChannel === "email") {
+                  setIsEmailVerified(true);
+                  setProfileSuccess("Email Anda telah berhasil diverifikasi!");
+                } else {
+                  setIsWhatsappVerified(true);
+                  setProfileSuccess("Nomor WhatsApp Anda telah berhasil diverifikasi!");
+                }
+                setIsVerifyModalOpen(false);
+                router.refresh();
+              }}
+            />
           </div>
         </div>
       ) : null}

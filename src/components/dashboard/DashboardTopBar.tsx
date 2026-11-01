@@ -73,10 +73,10 @@ export async function DashboardTopBar({
           </Suspense>
           <Link
             href="/"
-            className="btn-ui btn-glass px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold hover:border-fajar/60 hover:text-fajar transition"
+            className="btn-ui group relative inline-flex items-center gap-2 rounded-xl border border-sky-400/30 bg-gradient-to-r from-sky-500/10 via-sky-400/5 to-transparent px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-bold text-sky-200 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-400/70 hover:bg-sky-500/20 hover:text-white hover:shadow-[0_0_24px_rgba(56,189,248,0.35)] active:translate-y-0"
             title={tDash("publicHomeLink")}
           >
-            <i className="bi bi-house" aria-hidden="true" />
+            <i className="bi bi-house-door-fill text-sky-400 group-hover:scale-110 transition-transform duration-200" aria-hidden="true" />
             <span className="hidden sm:inline">{tDash("publicHomeLink")}</span>
           </Link>
           <SignOutButton />

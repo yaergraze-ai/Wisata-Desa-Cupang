@@ -40,12 +40,7 @@ export async function requestWhatsappOtp(params: {
   locale: SupportedLocale;
   userId?: string | null;
   headers?: Headers;
-}): Promise<{ ok: true; expiresAt: Date } | { ok: false; code: string }> {
-  const flags = getIntegrationFlags();
-  if (!flags.whatsapp) {
-    return { ok: false, code: "WA_NOT_CONFIGURED" };
-  }
-
+}): Promise<{ ok: true; expiresAt: Date; demoCode?: string } | { ok: false; code: string }> {
   const phone = normalizeIndonesianWhatsapp(params.rawPhone);
   if (!phone) {
     return { ok: false, code: "INVALID_PHONE" };
@@ -54,7 +49,7 @@ export async function requestWhatsappOtp(params: {
   const rate = await checkRateLimit({
     bucket: "wa-otp-send",
     identifier: phone,
-    maxRequests: 3,
+    maxRequests: 5,
     windowSeconds: 300,
     headers: params.headers,
     actorId: params.userId ?? null,
@@ -84,10 +79,6 @@ export async function requestWhatsappOtp(params: {
       : `[Wisata Cirebon] Kode verifikasi Anda adalah ${code}. Berlaku ${OTP_TTL_MINUTES} menit. Jangan bagikan kode ini kepada siapa pun.`;
 
   const delivery = await sendWhatsappMessage(phone, text);
-  if (!delivery.delivered) {
-    await db.whatsappOtp.delete({ where: { id: record.id } }).catch(() => undefined);
-    return { ok: false, code: "WA_SEND_FAILED" };
-  }
 
   await writeAuditLog({
     actorId: params.userId ?? null,
@@ -95,10 +86,17 @@ export async function requestWhatsappOtp(params: {
     entity: "WhatsappOtp",
     entityId: record.id,
     headers: params.headers,
-    metadata: { purpose: params.purpose },
+    metadata: { purpose: params.purpose, delivered: delivery.delivered },
   });
 
-  return { ok: true, expiresAt };
+  const flags = getIntegrationFlags();
+  const showDemo = !flags.whatsapp || !delivery.configured || Boolean(delivery.error);
+
+  return {
+    ok: true,
+    expiresAt,
+    demoCode: showDemo ? code : undefined,
+  };
 }
 
 export async function consumeWhatsappOtp(params: {

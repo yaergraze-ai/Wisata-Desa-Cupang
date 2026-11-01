@@ -7,6 +7,7 @@ import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
 export interface ChatOtpCardProps {
   initialPhone?: string;
   initialEmail?: string;
+  lockChannel?: "whatsapp" | "email";
   onSuccess: () => Promise<void>;
   onError: (msg: string) => void;
   isLoading: boolean;
@@ -16,13 +17,14 @@ export interface ChatOtpCardProps {
 export function ChatOtpCard({
   initialPhone = "",
   initialEmail = "",
+  lockChannel,
   onSuccess,
   onError,
   isLoading,
   setIsLoading,
 }: ChatOtpCardProps) {
   const t = useTranslations("Auth");
-  const [channel, setChannel] = useState<"whatsapp" | "email">("whatsapp");
+  const [channel, setChannel] = useState<"whatsapp" | "email">(lockChannel ?? "whatsapp");
   const [phone, setPhone] = useState(initialPhone);
   const [email, setEmail] = useState(initialEmail);
   const [otpSent, setOtpSent] = useState(false);
@@ -105,10 +107,17 @@ export function ChatOtpCard({
       }
       setIsLoading(true);
       try {
-        // Simulasi pengiriman OTP email aman
-        await new Promise((r) => setTimeout(r, 600));
+        const res = await fetch("/api/user/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "request" }),
+        });
+        const data = (await res.json()) as { ok?: boolean; error?: string; demoCode?: string };
+        if (!res.ok) throw new Error(data.error || "Gagal mengirim OTP Email.");
+
         setOtpSent(true);
         setCountdown(60);
+        if (data.demoCode) setDemoCode(data.demoCode);
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : "Gagal mengirim OTP Email.");
       } finally {
@@ -133,13 +142,18 @@ export function ChatOtpCard({
         const res = await fetch("/api/auth/whatsapp-otp/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: normalized, code: fullCode }),
+          body: JSON.stringify({ whatsapp: normalized, code: fullCode }),
         });
-        const data = (await res.json()) as { success?: boolean; error?: string };
+        const data = (await res.json()) as { ok?: boolean; error?: string };
         if (!res.ok) throw new Error(data.error || "Kode OTP salah atau kedaluwarsa.");
       } else {
-        // Email OTP verify
-        await new Promise((r) => setTimeout(r, 600));
+        const res = await fetch("/api/user/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "verify", code: fullCode }),
+        });
+        const data = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok) throw new Error(data.error || "Kode OTP email salah atau kedaluwarsa.");
       }
       await onSuccess();
     } catch (err: unknown) {
@@ -154,39 +168,41 @@ export function ChatOtpCard({
 
   return (
     <div className="space-y-4">
-      {/* Switch Channel: WhatsApp vs Email */}
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-obsidian/80 p-1 border border-white/10 text-xs font-semibold">
-        <button
-          type="button"
-          onClick={() => {
-            setChannel("whatsapp");
-            setOtpSent(false);
-          }}
-          className={`btn-ui py-2 rounded-lg transition-all ${
-            channel === "whatsapp"
-              ? "bg-emerald-600 text-white shadow-md"
-              : "text-kabut/70 hover:text-white"
-          }`}
-        >
-          <i className="bi bi-whatsapp mr-1.5 text-sm" />
-          <span>OTP WhatsApp</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setChannel("email");
-            setOtpSent(false);
-          }}
-          className={`btn-ui py-2 rounded-lg transition-all ${
-            channel === "email"
-              ? "bg-fajar text-obsidian shadow-md font-bold"
-              : "text-kabut/70 hover:text-white"
-          }`}
-        >
-          <i className="bi bi-envelope mr-1.5 text-sm" />
-          <span>OTP Email</span>
-        </button>
-      </div>
+      {/* Switch Channel: WhatsApp vs Email (hanya jika channel tidak dikunci) */}
+      {!lockChannel && (
+        <div className="grid grid-cols-2 gap-2 rounded-xl bg-obsidian/80 p-1 border border-white/10 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => {
+              setChannel("whatsapp");
+              setOtpSent(false);
+            }}
+            className={`btn-ui py-2 rounded-lg transition-all ${
+              channel === "whatsapp"
+                ? "bg-emerald-600 text-white shadow-md"
+                : "text-kabut/70 hover:text-white"
+            }`}
+          >
+            <i className="bi bi-whatsapp mr-1.5 text-sm" />
+            <span>OTP WhatsApp</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setChannel("email");
+              setOtpSent(false);
+            }}
+            className={`btn-ui py-2 rounded-lg transition-all ${
+              channel === "email"
+                ? "bg-fajar text-obsidian shadow-md font-bold"
+                : "text-kabut/70 hover:text-white"
+            }`}
+          >
+            <i className="bi bi-envelope-fill mr-1.5 text-sm" />
+            <span>OTP Email</span>
+          </button>
+        </div>
+      )}
 
       {!otpSent ? (
         <div className="space-y-3.5">

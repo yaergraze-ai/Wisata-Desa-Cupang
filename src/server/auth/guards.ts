@@ -37,6 +37,7 @@ export interface AuthenticatedContext {
     locale: AppLocale;
     whatsapp: string | null;
     whatsappVerifiedAt: Date | null;
+    emailVerified: boolean;
     twoFactorEnabled: boolean;
     assignedGates: GateType[];
     staffProfileId: string | null;
@@ -111,6 +112,7 @@ export async function getServerAuthContext(
       locale: dbUser.locale === "en" ? "en" : "id",
       whatsapp: dbUser.whatsapp,
       whatsappVerifiedAt: dbUser.whatsappVerifiedAt,
+      emailVerified: Boolean(dbUser.emailVerified),
       twoFactorEnabled: Boolean(dbUser.twoFactorEnabled),
       assignedGates: dbUser.staffProfile?.assignedGates ?? [],
       staffProfileId: dbUser.staffProfile?.id ?? null,

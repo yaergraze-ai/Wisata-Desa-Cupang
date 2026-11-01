@@ -10,23 +10,26 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      headers: req.headers,
       requireTwoFactor: false,
     });
     const slots = await getAllMediaSlots();
     return NextResponse.json({ slots });
   } catch (err: unknown) {
+    const status = (err as { status?: number }).status ?? 500;
     const message =
       err instanceof Error ? err.message : "Gagal memuat slot media.";
-    return NextResponse.json({ error: message }, { status: 403 });
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      headers: req.headers,
       requireTwoFactor: false,
     });
 
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      headers: req.headers,
       requireTwoFactor: false,
     });
     const body = (await req.json()) as { slot?: string };

@@ -168,10 +168,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fajar shadow-[0_0_10px_#f2a65a] animate-pulse" />
             </span>
             <div className="leading-tight min-w-0">
-              <p className="font-heading text-sm sm:text-base font-bold text-kabut truncate">
+              <p className="font-heading text-sm sm:text-base font-bold text-kabut truncate whitespace-nowrap">
                 {tNav("brandTitle")}
               </p>
-              <p className="hidden sm:block text-xs text-kabut/80 truncate">
+              <p className="hidden sm:block text-xs text-kabut/80 truncate whitespace-nowrap">
                 {tNav("brandSubtitle")}
               </p>
             </div>
@@ -179,47 +179,51 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
 
           <nav
             aria-label={tNav("primaryNavAria")}
-            className="hidden lg:flex items-center gap-0.5 xl:gap-1.5"
+            className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 shrink-0"
           >
             <a
               href="#jalur-aturan"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Jalur
+              <span className="xl:hidden">Jalur</span>
+              <span className="hidden xl:inline">Jalur &amp; Aturan</span>
             </a>
             <a
               href="#pilihan-tiket"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
               Tiket
             </a>
             <a
               href="#peta-jalur"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Peta GPS
+              <span className="xl:hidden">Peta</span>
+              <span className="hidden xl:inline">Peta GPS</span>
             </a>
             <a
               href="#petugas-siaga"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Petugas
+              <span className="xl:hidden">Petugas</span>
+              <span className="hidden xl:inline">Petugas Siaga</span>
             </a>
             <a
               href="#galeri-wisata"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Galeri
+              <span className="xl:hidden">Galeri</span>
+              <span className="hidden xl:inline">Galeri Spot</span>
             </a>
             <a
               href="#ulasan-pengunjung"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
               Ulasan
             </a>
             <a
               href="#kontak"
-              className="min-h-[40px] inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
               Kontak
             </a>

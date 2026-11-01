@@ -168,3 +168,41 @@ export async function sendPasswordResetEmailMessage(params: {
 
   return sendTransactionalEmail({ to: params.to, subject, text, html });
 }
+
+export async function sendOtpEmailMessage(params: {
+  to: string;
+  name: string;
+  code: string;
+  locale: SupportedLocale;
+}): Promise<EmailDeliveryResult> {
+  const isEn = params.locale === "en";
+  const subject = isEn
+    ? `[Wisata Cirebon] ${params.code} is your email verification code`
+    : `[Wisata Cirebon] ${params.code} adalah kode verifikasi email Anda`;
+
+  const text = isEn
+    ? `Hello ${params.name},\n\nYour Wisata Cirebon verification code is: ${params.code}\nThis code expires in 10 minutes. Do not share this code with anyone.`
+    : `Halo ${params.name},\n\nKode verifikasi email Wisata Cirebon Anda adalah: ${params.code}\nKode ini berlaku selama 10 menit. Jangan bagikan kode ini kepada siapa pun.`;
+
+  const html = `<div style="font-family:sans-serif;background:#05070e;color:#f8fafc;padding:32px;border-radius:16px;max-width:520px;margin:0 auto;border:1px solid rgba(255,255,255,0.1);">
+    <h2 style="color:#f59e0b;margin:0 0 16px 0;font-size:22px;">Wisata Cirebon</h2>
+    <p style="font-size:14px;color:#cbd5e1;line-height:1.6;">${isEn ? `Hello ${params.name},` : `Halo ${params.name},`}</p>
+    <p style="font-size:14px;color:#cbd5e1;line-height:1.6;">${
+      isEn
+        ? "Use the following 6-digit verification code to complete your email verification:"
+        : "Gunakan 6-digit kode verifikasi berikut untuk menyelesaikan verifikasi email akun Anda:"
+    }</p>
+    <div style="margin:24px 0;padding:16px;background:rgba(245,158,11,0.1);border:1px dashed #f59e0b;border-radius:12px;text-align:center;">
+      <span style="font-size:32px;font-weight:800;letter-spacing:6px;color:#f59e0b;font-family:monospace;">${params.code}</span>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;">${
+      isEn
+        ? "This code is valid for 10 minutes. If you did not request this, please ignore this email."
+        : "Kode ini berlaku selama 10 menit. Jika Anda tidak merasa meminta kode ini, abaikan email ini."
+    }</p>
+  </div>`;
+
+  console.log(`[Email Sandbox Sim] Penerima: ${params.to} | Kode OTP: ${params.code}`);
+  const delivery = await sendTransactionalEmail({ to: params.to, subject, text, html });
+  return delivery;
+}

@@ -60,6 +60,7 @@
 .bi-credit-card-2-front-fill::before { content: "\f2d9"; }
 .bi-dash-circle::before { content: "\f2e6"; }
 .bi-download::before { content: "\f30a"; }
+.bi-envelope-fill::before { content: "\f32c"; }
 .bi-envelope::before { content: "\f32f"; }
 .bi-exclamation-circle-fill::before { content: "\f332"; }
 .bi-exclamation-octagon-fill::before { content: "\f336"; }
@@ -82,7 +83,6 @@
 .bi-hourglass-split::before { content: "\f41f"; }
 .bi-house-door-fill::before { content: "\f422"; }
 .bi-house-door::before { content: "\f423"; }
-.bi-house::before { content: "\f425"; }
 .bi-image-fill::before { content: "\f429"; }
 .bi-images::before { content: "\f42b"; }
 .bi-inbox-fill::before { content: "\f42c"; }
@@ -139,6 +139,8 @@
 .bi-activity::before { content: "\f66b"; }
 .bi-graph-up-arrow::before { content: "\f673"; }
 .bi-person-workspace::before { content: "\f67a"; }
+.bi-envelope-check-fill::before { content: "\f68b"; }
+.bi-envelope-check::before { content: "\f68c"; }
 .bi-qr-code-scan::before { content: "\f6ad"; }
 .bi-qr-code::before { content: "\f6ae"; }
 .bi-send-fill::before { content: "\f6b9"; }

@@ -229,50 +229,96 @@ async function autoSeedDefaultMediaSlots() {
 }
 
 export async function getAllMediaSlots(): Promise<MediaSlotItemDto[]> {
-  let slots = await db.mediaSlot.findMany({
-    include: {
-      asset: true,
-    },
-    orderBy: { slot: "asc" },
-  });
+  try {
+    let slots = await db.mediaSlot.findMany({
+      include: {
+        asset: true,
+      },
+      orderBy: { slot: "asc" },
+    });
 
-  if (slots.length === 0) {
-    try {
-      await autoSeedDefaultMediaSlots();
-      slots = await db.mediaSlot.findMany({
-        include: {
-          asset: true,
-        },
-        orderBy: { slot: "asc" },
-      });
-    } catch (e) {
-      console.error("Gagal auto-seed media slots:", e);
+    if (slots.length === 0) {
+      try {
+        await autoSeedDefaultMediaSlots();
+        slots = await db.mediaSlot.findMany({
+          include: {
+            asset: true,
+          },
+          orderBy: { slot: "asc" },
+        });
+      } catch (e) {
+        console.error("Gagal auto-seed media slots:", e);
+      }
     }
+
+    if (slots.length === 0) {
+      // Fallback statis jika database belum ter-seed agar UI tidak kosong / error
+      return DEFAULT_MEDIA_SLOTS_DATA.map((item) => ({
+        id: `default-${item.slot}`,
+        slot: item.slot,
+        labelId: item.labelId,
+        labelEn: item.labelEn,
+        updatedAt: new Date().toISOString(),
+        asset: {
+          id: `asset-${item.slot}`,
+          storageKey: `/media/defaults/${item.filename}`,
+          url: `/images/gallery/${item.filename}`,
+          mimeType: "image/webp",
+          width: item.width,
+          height: item.height,
+          sizeBytes: item.sizeBytes,
+          altId: item.altId,
+          altEn: item.altEn,
+          isDefault: true,
+        },
+      }));
+    }
+
+    const storage = getStorageProvider();
+
+    return slots.map((s) => ({
+      id: s.id,
+      slot: s.slot,
+      labelId: s.labelId,
+      labelEn: s.labelEn,
+      updatedAt: s.updatedAt ? s.updatedAt.toISOString() : new Date().toISOString(),
+      asset: {
+        id: s.asset?.id ?? `asset-${s.slot}`,
+        storageKey: s.asset?.storageKey ?? `/media/defaults/${s.slot}.webp`,
+        url: s.asset?.storageKey?.startsWith("/")
+          ? s.asset.storageKey
+          : storage.getUrl(s.asset?.storageKey ?? ""),
+        mimeType: s.asset?.mimeType ?? "image/webp",
+        width: s.asset?.width ?? 1200,
+        height: s.asset?.height ?? 800,
+        sizeBytes: s.asset?.sizeBytes ?? 0,
+        altId: s.asset?.altId ?? s.labelId,
+        altEn: s.asset?.altEn ?? s.labelEn,
+        isDefault: s.asset?.isDefault ?? true,
+      },
+    }));
+  } catch (err) {
+    console.error("Error in getAllMediaSlots:", err);
+    return DEFAULT_MEDIA_SLOTS_DATA.map((item) => ({
+      id: `default-${item.slot}`,
+      slot: item.slot,
+      labelId: item.labelId,
+      labelEn: item.labelEn,
+      updatedAt: new Date().toISOString(),
+      asset: {
+        id: `asset-${item.slot}`,
+        storageKey: `/media/defaults/${item.filename}`,
+        url: `/images/gallery/${item.filename}`,
+        mimeType: "image/webp",
+        width: item.width,
+        height: item.height,
+        sizeBytes: item.sizeBytes,
+        altId: item.altId,
+        altEn: item.altEn,
+        isDefault: true,
+      },
+    }));
   }
-
-  const storage = getStorageProvider();
-
-  return slots.map((s) => ({
-    id: s.id,
-    slot: s.slot,
-    labelId: s.labelId,
-    labelEn: s.labelEn,
-    updatedAt: s.updatedAt.toISOString(),
-    asset: {
-      id: s.asset.id,
-      storageKey: s.asset.storageKey,
-      url: s.asset.storageKey.startsWith("/")
-        ? s.asset.storageKey
-        : storage.getUrl(s.asset.storageKey),
-      mimeType: s.asset.mimeType,
-      width: s.asset.width,
-      height: s.asset.height,
-      sizeBytes: s.asset.sizeBytes,
-      altId: s.asset.altId,
-      altEn: s.asset.altEn,
-      isDefault: s.asset.isDefault,
-    },
-  }));
 }
 
 export async function updateMediaSlotAsset(

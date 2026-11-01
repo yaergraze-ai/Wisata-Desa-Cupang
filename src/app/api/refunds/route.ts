@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireApiRole(
       [Role.MEMBER, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
-      { requireTwoFactor: false }
+      { headers: req.headers, requireTwoFactor: false }
     );
 
     const url = new URL(req.url);
@@ -38,9 +38,10 @@ export async function GET(req: NextRequest) {
     const eligibility = await checkRefundEligibility(auth.user.id, orderId);
     return NextResponse.json(eligibility);
   } catch (err: unknown) {
+    const status = (err as { status?: number }).status ?? 500;
     const message =
       err instanceof Error ? err.message : "Gagal memeriksa kelayakan refund.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiRole(
       [Role.MEMBER, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
-      { requireTwoFactor: false }
+      { headers: req.headers, requireTwoFactor: false }
     );
 
     const body = (await req.json()) as { orderId?: string; reason?: string };

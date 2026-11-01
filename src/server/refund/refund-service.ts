@@ -438,35 +438,40 @@ export interface AdminRefundItemDto {
 }
 
 export async function listRefundRequestsForAdmin(): Promise<AdminRefundItemDto[]> {
-  const rows = await db.refundRequest.findMany({
-    include: {
-      order: {
-        select: {
-          id: true,
-          orderNumber: true,
-          visitorName: true,
-          visitorWhatsapp: true,
-          visitDate: true,
-          totalAmount: true,
+  try {
+    const rows = await db.refundRequest.findMany({
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            visitorName: true,
+            visitorWhatsapp: true,
+            visitDate: true,
+            totalAmount: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
 
-  return rows.map((r) => ({
-    id: r.id,
-    orderId: r.orderId,
-    orderNumber: r.order?.orderNumber ?? "-",
-    visitorName: r.order?.visitorName ?? "-",
-    visitorWhatsapp: r.order?.visitorWhatsapp ?? "-",
-    visitDate: r.order?.visitDate ? r.order.visitDate.toISOString().slice(0, 10) : "-",
-    totalAmount: r.amount ?? r.order?.totalAmount ?? 0,
-    reason: r.reason,
-    notes: r.note,
-    status: r.status,
-    createdAt: r.createdAt.toISOString(),
-  }));
+    return rows.map((r) => ({
+      id: r.id,
+      orderId: r.orderId,
+      orderNumber: r.order?.orderNumber ?? "-",
+      visitorName: r.order?.visitorName ?? "-",
+      visitorWhatsapp: r.order?.visitorWhatsapp ?? "-",
+      visitDate: r.order?.visitDate ? r.order.visitDate.toISOString().slice(0, 10) : "-",
+      totalAmount: r.amount ?? r.order?.totalAmount ?? 0,
+      reason: r.reason,
+      notes: r.note,
+      status: r.status,
+      createdAt: r.createdAt ? r.createdAt.toISOString() : new Date().toISOString(),
+    }));
+  } catch (err) {
+    console.error("Error in listRefundRequestsForAdmin:", err);
+    return [];
+  }
 }
 

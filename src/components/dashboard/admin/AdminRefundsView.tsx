@@ -36,9 +36,12 @@ export function AdminRefundsView() {
     setError(null);
     try {
       const res = await fetch("/api/refunds");
-      if (!res.ok) throw new Error("Gagal memuat antrean refund.");
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(errJson?.error || `Gagal memuat antrean refund (${res.status}).`);
+      }
       const data = (await res.json()) as { requests: AdminRefundItemDto[] };
-      setRequests(data.requests);
+      setRequests(data.requests ?? []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal memuat antrean refund.");
     } finally {
@@ -51,10 +54,13 @@ export function AdminRefundsView() {
     async function loadInitial() {
       try {
         const res = await fetch("/api/refunds");
-        if (!res.ok) throw new Error("Gagal memuat antrean refund.");
+        if (!res.ok) {
+          const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(errJson?.error || `Gagal memuat antrean refund (${res.status}).`);
+        }
         const data = (await res.json()) as { requests: AdminRefundItemDto[] };
         if (!ignore) {
-          setRequests(data.requests);
+          setRequests(data.requests ?? []);
           setIsLoading(false);
         }
       } catch (err: unknown) {

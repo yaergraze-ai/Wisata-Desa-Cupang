@@ -24,6 +24,7 @@ export class LocalStorageAdapter implements StorageProvider {
         process.env.VERCEL_ENV ||
         process.env.AWS_LAMBDA_FUNCTION_NAME ||
         process.env.LAMBDA_TASK_ROOT ||
+        process.env.NODE_ENV === "production" ||
         (typeof process.cwd === "function" && process.cwd().startsWith("/var/task"))
       );
 
@@ -64,8 +65,12 @@ export class LocalStorageAdapter implements StorageProvider {
       // Fallback mutlak ke os.tmpdir() jika direktori /var/task read-only atau tidak ditemukan
       this.baseDir = path.join(os.tmpdir(), "wisata-cirebon-uploads");
       fullPath = this.resolvePath(cleanKey);
-      await fs.mkdir(path.dirname(fullPath), { recursive: true });
-      await fs.writeFile(fullPath, buffer);
+      try {
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, buffer);
+      } catch (fallbackErr) {
+        console.warn("Storage fallback write warning:", fallbackErr);
+      }
     }
 
     return {

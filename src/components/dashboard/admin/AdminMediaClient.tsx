@@ -31,9 +31,12 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
     setError(null);
     try {
       const res = await fetch("/api/admin/media");
-      if (!res.ok) throw new Error("Gagal memuat slot media.");
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(errJson?.error || `Gagal memuat slot media (${res.status}).`);
+      }
       const data = (await res.json()) as { slots: MediaSlotItemDto[] };
-      setSlots(data.slots);
+      setSlots(data.slots ?? []);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Gagal memuat slot media."
@@ -48,10 +51,13 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
     async function loadInitial() {
       try {
         const res = await fetch("/api/admin/media");
-        if (!res.ok) throw new Error("Gagal memuat slot media.");
+        if (!res.ok) {
+          const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(errJson?.error || `Gagal memuat slot media (${res.status}).`);
+        }
         const data = (await res.json()) as { slots: MediaSlotItemDto[] };
         if (!ignore) {
-          setSlots(data.slots);
+          setSlots(data.slots ?? []);
         }
       } catch (err: unknown) {
         if (!ignore) {
