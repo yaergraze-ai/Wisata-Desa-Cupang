@@ -6,7 +6,7 @@ import { createOTP } from "@better-auth/utils/otp";
 import { auth } from "@/server/auth/auth";
 import { db } from "@/server/db";
 import { getEnv } from "@/server/env";
-import { redirect } from "@/i18n/navigation";
+import { redirect } from "next/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { writeAuditLog } from "@/server/audit/audit";
 
@@ -196,11 +196,7 @@ export async function requirePageRole(params: {
 }): Promise<AuthenticatedContext> {
   const ctx = await getServerAuthContext();
   if (!ctx) {
-    redirect({
-      href: `/masuk?next=${encodeURIComponent(params.currentPath)}`,
-      locale: params.locale,
-    });
-    throw new Error("Redirecting to login");
+    redirect(`/${params.locale}/masuk?next=${encodeURIComponent(params.currentPath)}`);
   }
 
   if (!params.allowedRoles.includes(ctx.user.role)) {
@@ -216,20 +212,14 @@ export async function requirePageRole(params: {
       },
     }).catch(() => undefined);
 
-    redirect({
-      href: getRoleHomePath(ctx.user.role),
-      locale: params.locale,
-    });
-    throw new Error("Redirecting to role dashboard");
+    redirect(`/${params.locale}${getRoleHomePath(ctx.user.role)}`);
   }
 
   const mustHave2fa = Boolean(params.requireTwoFactor);
   if (mustHave2fa && !ctx.user.twoFactorEnabled) {
-    redirect({
-      href: `/verifikasi-2fa?setup=1&next=${encodeURIComponent(params.currentPath)}`,
-      locale: params.locale,
-    });
-    throw new Error("Redirecting to mandatory 2FA setup");
+    redirect(
+      `/${params.locale}/verifikasi-2fa?setup=1&next=${encodeURIComponent(params.currentPath)}`
+    );
   }
 
   return ctx;

@@ -53,7 +53,7 @@ export function GoogleFirstTimeSetupModal() {
     setIsOpen(false);
   }
 
-  if (!isOpen || !mounted) return null;
+  if (!isOpen || !mounted || typeof document === "undefined" || !document.body) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
