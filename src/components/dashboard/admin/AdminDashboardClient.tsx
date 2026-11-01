@@ -48,7 +48,7 @@ export function AdminDashboardClient({
   return (
     <div className="space-y-8" data-testid="admin-dashboard-client">
       {/* TAB NAVIGATION BAR */}
-      <div className="surface-solid-dark p-2 rounded-2xl border border-telaga-700/60 flex flex-wrap items-center gap-1.5 overflow-x-auto">
+      <div className="surface-solid-dark p-2 rounded-2xl border border-telaga-700/60 flex items-center gap-1.5 overflow-x-auto scrollbar-none snap-x">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
@@ -57,7 +57,7 @@ export function AdminDashboardClient({
               type="button"
               data-testid={`admin-tab-${tab.key}`}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
+              className={`shrink-0 snap-start flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
                 isActive
                   ? "bg-fajar text-obsidian shadow-md"
                   : "bg-obsidian/40 text-kabut hover:bg-obsidian hover:text-white"
@@ -78,11 +78,7 @@ export function AdminDashboardClient({
         {activeTab === "refunds" ? <AdminRefundsView /> : null}
         {activeTab === "reviews" ? <AdminReviewsView /> : null}
         {activeTab === "staff" ? <AdminStaffView /> : null}
-        {activeTab === "media" ? (
-          <div className="surface-solid-dark p-6 sm:p-8 rounded-2xl border border-telaga-700/60">
-            <AdminMediaClient locale={locale} />
-          </div>
-        ) : null}
+        {activeTab === "media" ? <AdminMediaClient locale={locale} /> : null}
         {activeTab === "inbox" ? <AdminInboxView /> : null}
       </div>
     </div>

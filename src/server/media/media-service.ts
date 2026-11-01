@@ -39,13 +39,216 @@ export interface MediaSlotItemDto {
   };
 }
 
+const DEFAULT_MEDIA_SLOTS_DATA = [
+  {
+    slot: "hero",
+    filename: "hero.webp",
+    width: 1920,
+    height: 1080,
+    sizeBytes: 232200,
+    labelId: "Latar Utama Hero Beranda",
+    labelEn: "Home Hero Main Backdrop",
+    altId: "Siluet tebing kembar Batu Lawang dan kabut fajar Gunung Bendera di Desa Cupang Cirebon",
+    altEn: "Twin limestone cliffs of Batu Lawang and misty dawn ridge of Mount Bendera in Cupang Village Cirebon",
+  },
+  {
+    slot: "footer",
+    filename: "footer.webp",
+    width: 1920,
+    height: 960,
+    sizeBytes: 306620,
+    labelId: "Latar Lanskap Footer",
+    labelEn: "Footer Landscape Backdrop",
+    altId: "Punggung bukit Gunung Bendera berselimut kabut petang di Kecamatan Gempol",
+    altEn: "Mount Bendera ridgeline wrapped in evening mist in Gempol District",
+  },
+  {
+    slot: "card-1",
+    filename: "card-1.webp",
+    width: 900,
+    height: 1200,
+    sizeBytes: 91774,
+    labelId: "Kartu Galeri 1 — Gerbang Tebing Batu Lawang",
+    labelEn: "Gallery Card 1 — Batu Lawang Cliff Gateway",
+    altId: "Tebing batu alam menjulang membentuk celah gerbang di kawasan wisata Batu Lawang",
+    altEn: "Natural rock cliffs towering into a gateway cleft at Batu Lawang tourism area",
+  },
+  {
+    slot: "card-2",
+    filename: "card-2.webp",
+    width: 900,
+    height: 1200,
+    sizeBytes: 66462,
+    labelId: "Kartu Galeri 2 — Puncak Gunung Bendera 520 mdpl",
+    labelEn: "Gallery Card 2 — Mount Bendera Summit 520 masl",
+    altId: "Puncak terbuka Gunung Bendera setinggi 520 mdpl menghadap bentang alam Cirebon",
+    altEn: "Open 520 masl summit of Mount Bendera overlooking the Cirebon landscape",
+  },
+  {
+    slot: "card-3",
+    filename: "card-3.webp",
+    width: 900,
+    height: 1200,
+    sizeBytes: 79186,
+    labelId: "Kartu Galeri 3 — Kanopi Hutan Desa Cupang",
+    labelEn: "Gallery Card 3 — Cupang Forest Canopy",
+    altId: "Pepohonan teduh dan sinar pagi menembus kabut di jalur awal pendakian",
+    altEn: "Shaded forest canopy with morning sunbeams piercing mist along the lower trail",
+  },
+  {
+    slot: "card-4",
+    filename: "card-4.webp",
+    width: 900,
+    height: 1200,
+    sizeBytes: 106530,
+    labelId: "Kartu Galeri 4 — Jalur Tanjakan Batu Pos Tengah",
+    labelEn: "Gallery Card 4 — Mid-Trail Stone Ascent",
+    altId: "Jalur setapak berbatu alami menuju punggung bukit Gunung Bendera",
+    altEn: "Natural rocky footpath ascending toward the Mount Bendera ridge",
+  },
+  {
+    slot: "card-5",
+    filename: "card-5.webp",
+    width: 900,
+    height: 1200,
+    sizeBytes: 42306,
+    labelId: "Kartu Galeri 5 — Panorama Fajar Cirebon",
+    labelEn: "Gallery Card 5 — Cirebon Dawn Panorama",
+    altId: "Cakrawala fajar keemasan dilihat dari gardu pandang tebing Batu Lawang",
+    altEn: "Golden dawn horizon viewed from the Batu Lawang cliff lookout",
+  },
+  {
+    slot: "timeline-1a",
+    filename: "timeline-1a.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 182270,
+    labelId: "Foto Linimasa Jalur 1A — Pintu Pendakian & Pos 1",
+    labelEn: "Trail Timeline Photo 1A — Trailhead & Post 1",
+    altId: "Jalur tanah teduh dari pintu pendakian menuju Pos 1 Rimbun Pohon",
+    altEn: "Shaded earthen trail leading from the trailhead to Post 1 Shaded Canopy",
+  },
+  {
+    slot: "timeline-1b",
+    filename: "timeline-1b.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 127650,
+    labelId: "Foto Linimasa Jalur 1B — Dinding Batu Bawah",
+    labelEn: "Trail Timeline Photo 1B — Lower Rock Wall",
+    altId: "Formasi dinding batu kapur dan pepohonan hijau di sekitar Pos 1",
+    altEn: "Limestone wall formation and lush trees surrounding Post 1",
+  },
+  {
+    slot: "timeline-2a",
+    filename: "timeline-2a.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 148108,
+    labelId: "Foto Linimasa Jalur 2A — Tanjakan Batu Pos 2",
+    labelEn: "Trail Timeline Photo 2A — Post 2 Rocky Climb",
+    altId: "Tanjakan berbatu alami di segmen Pos 2 jalur Gunung Bendera",
+    altEn: "Natural rocky incline along the Post 2 segment of Mount Bendera",
+  },
+  {
+    slot: "timeline-2b",
+    filename: "timeline-2b.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 138108,
+    labelId: "Foto Linimasa Jalur 2B — Punggung Bukit Pos 3",
+    labelEn: "Trail Timeline Photo 2B — Post 3 Open Ridge",
+    altId: "Punggung bukit terbuka dengan angin sejuk dan pemandangan lembah di Pos 3",
+    altEn: "Open breezy ridge with valley views at Post 3",
+  },
+  {
+    slot: "timeline-3a",
+    filename: "timeline-3a.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 112612,
+    labelId: "Foto Linimasa Jalur 3A — Bahu Puncak Pos 4",
+    labelEn: "Trail Timeline Photo 3A — Post 4 Pre-Summit",
+    altId: "Bahu tebing terbuka menjelang puncak Gunung Bendera di Pos 4",
+    altEn: "Open cliff shoulder approaching Mount Bendera summit at Post 4",
+  },
+  {
+    slot: "timeline-3b",
+    filename: "timeline-3b.webp",
+    width: 1200,
+    height: 800,
+    sizeBytes: 98814,
+    labelId: "Foto Linimasa Jalur 3B — Puncak Gunung Bendera",
+    labelEn: "Trail Timeline Photo 3B — Mount Bendera Summit",
+    altId: "Titik puncak 520 mdpl Gunung Bendera dengan panorama 360 derajat",
+    altEn: "520 masl summit marker of Mount Bendera with 360-degree panorama",
+  },
+];
+
+async function autoSeedDefaultMediaSlots() {
+  for (const item of DEFAULT_MEDIA_SLOTS_DATA) {
+    const storageKey = `/media/defaults/${item.filename}`;
+    const asset = await db.mediaAsset.upsert({
+      where: { storageKey },
+      update: {
+        mimeType: "image/webp",
+        width: item.width,
+        height: item.height,
+        sizeBytes: item.sizeBytes,
+        altId: item.altId,
+        altEn: item.altEn,
+        isDefault: true,
+      },
+      create: {
+        storageKey,
+        mimeType: "image/webp",
+        width: item.width,
+        height: item.height,
+        sizeBytes: item.sizeBytes,
+        altId: item.altId,
+        altEn: item.altEn,
+        isDefault: true,
+      },
+    });
+
+    const existingSlot = await db.mediaSlot.findUnique({
+      where: { slot: item.slot },
+    });
+
+    if (!existingSlot) {
+      await db.mediaSlot.create({
+        data: {
+          slot: item.slot,
+          assetId: asset.id,
+          labelId: item.labelId,
+          labelEn: item.labelEn,
+        },
+      });
+    }
+  }
+}
+
 export async function getAllMediaSlots(): Promise<MediaSlotItemDto[]> {
-  const slots = await db.mediaSlot.findMany({
+  let slots = await db.mediaSlot.findMany({
     include: {
       asset: true,
     },
     orderBy: { slot: "asc" },
   });
+
+  if (slots.length === 0) {
+    try {
+      await autoSeedDefaultMediaSlots();
+      slots = await db.mediaSlot.findMany({
+        include: {
+          asset: true,
+        },
+        orderBy: { slot: "asc" },
+      });
+    } catch (e) {
+      console.error("Gagal auto-seed media slots:", e);
+    }
+  }
 
   const storage = getStorageProvider();
 

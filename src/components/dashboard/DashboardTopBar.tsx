@@ -66,11 +66,15 @@ export async function DashboardTopBar({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <Suspense fallback={null}>
             <LocaleSwitcher />
           </Suspense>
-          <Link href="/" className="btn-ui btn-glass">
+          <Link
+            href="/"
+            className="btn-ui btn-glass px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold hover:border-fajar/60 hover:text-fajar transition"
+            title={tDash("publicHomeLink")}
+          >
             <i className="bi bi-house" aria-hidden="true" />
             <span className="hidden sm:inline">{tDash("publicHomeLink")}</span>
           </Link>

@@ -21,8 +21,10 @@ export class LocalStorageAdapter implements StorageProvider {
       // Di Vercel, filesystem /var/task bersifat read-only sehingga wajib memakai os.tmpdir()
       const isServerless = Boolean(
         process.env.VERCEL ||
+        process.env.VERCEL_ENV ||
         process.env.AWS_LAMBDA_FUNCTION_NAME ||
-        process.env.LAMBDA_TASK_ROOT
+        process.env.LAMBDA_TASK_ROOT ||
+        (typeof process.cwd === "function" && process.cwd().startsWith("/var/task"))
       );
 
       if (isServerless) {
@@ -58,17 +60,12 @@ export class LocalStorageAdapter implements StorageProvider {
     try {
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, buffer);
-    } catch (err: unknown) {
-      const code = (err as NodeJS.ErrnoException).code;
-      // Jika filesystem read-only (misal Vercel Lambda /var/task) atau direktori tidak ditemukan
-      if (code === "EROFS" || code === "ENOENT" || code === "EACCES") {
-        this.baseDir = path.join(os.tmpdir(), "wisata-cirebon-uploads");
-        fullPath = this.resolvePath(cleanKey);
-        await fs.mkdir(path.dirname(fullPath), { recursive: true });
-        await fs.writeFile(fullPath, buffer);
-      } else {
-        throw err;
-      }
+    } catch {
+      // Fallback mutlak ke os.tmpdir() jika direktori /var/task read-only atau tidak ditemukan
+      this.baseDir = path.join(os.tmpdir(), "wisata-cirebon-uploads");
+      fullPath = this.resolvePath(cleanKey);
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, buffer);
     }
 
     return {

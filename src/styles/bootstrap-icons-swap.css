@@ -37,6 +37,7 @@
 .bi-calculator-fill::before { content: "\f1df"; }
 .bi-calendar-week::before { content: "\f1f3"; }
 .bi-calendar2-week::before { content: "\f209"; }
+.bi-calendar3::before { content: "\f214"; }
 .bi-camera-fill::before { content: "\f219"; }
 .bi-camera-reels-fill::before { content: "\f21a"; }
 .bi-camera-video-fill::before { content: "\f21c"; }

@@ -126,8 +126,10 @@ export async function testAllIntegrationsHealth(): Promise<IntegrationHealthItem
 
     const isServerless = Boolean(
       process.env.VERCEL ||
+      process.env.VERCEL_ENV ||
       process.env.AWS_LAMBDA_FUNCTION_NAME ||
-      process.env.LAMBDA_TASK_ROOT
+      process.env.LAMBDA_TASK_ROOT ||
+      (typeof process.cwd === "function" && process.cwd().startsWith("/var/task"))
     );
 
     const driverLabel =

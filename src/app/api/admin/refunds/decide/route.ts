@@ -10,16 +10,24 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN]);
+    const auth = await requireApiRole(
+      [Role.ADMIN, Role.SUPER_ADMIN],
+      { requireTwoFactor: false }
+    );
 
     const body = (await req.json()) as {
       requestId?: string;
+      refundRequestId?: string;
       decision?: "APPROVE" | "REJECT";
       note?: string;
+      decisionNotes?: string;
       refundChannel?: "PROVIDER_API" | "MANUAL";
     };
 
-    if (!body.requestId || typeof body.requestId !== "string") {
+    const targetRequestId = body.requestId || body.refundRequestId;
+    const targetNote = body.note || body.decisionNotes;
+
+    if (!targetRequestId || typeof targetRequestId !== "string") {
       return NextResponse.json(
         { error: "requestId wajib diisi." },
         { status: 400 }
@@ -44,10 +52,10 @@ export async function POST(req: NextRequest) {
 
     const result = await decideRefundRequest(
       auth.user.id,
-      body.requestId,
+      targetRequestId,
       {
         decision: body.decision,
-        note: body.note,
+        note: targetNote,
         refundChannel: channel,
       },
       { ip, userAgent }

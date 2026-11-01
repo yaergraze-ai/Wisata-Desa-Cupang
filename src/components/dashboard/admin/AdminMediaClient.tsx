@@ -166,16 +166,16 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
   }
 
   return (
-    <div className="space-y-8" data-testid="admin-media-client">
+    <div className="surface-solid-dark p-4 sm:p-6 rounded-2xl border border-telaga-700/60 space-y-6 sm:space-y-8" data-testid="admin-media-client">
       <div className="max-w-3xl">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-hutan border border-telaga-700 px-3 py-1 text-xs font-bold text-fajar">
           <i className="bi bi-images" aria-hidden="true" />
           <span>{t("badge13Slots")}</span>
         </span>
-        <h2 className="mt-2.5 font-heading text-2xl font-bold text-kabut sm:text-3xl">
+        <h2 className="mt-2.5 font-heading text-xl font-bold text-kabut sm:text-2xl md:text-3xl">
           {t("heading")}
         </h2>
-        <p className="mt-1.5 text-sm text-kabut/80 leading-relaxed">
+        <p className="mt-1.5 text-xs sm:text-sm text-kabut/80 leading-relaxed">
           {t("lead")}
         </p>
       </div>
@@ -195,11 +195,11 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
           <span>{t("loadingSlots")}</span>
         </div>
       ) : slots.length === 0 ? (
-        <div className="p-8 text-center text-sm text-kabut/60 surface-solid-dark rounded-xl">
+        <div className="p-8 text-center text-sm text-kabut/60 rounded-xl border border-telaga-700/30 bg-obsidian/40">
           {t("emptySlots")}
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {slots.map((item) => {
             const isDefault = item.asset.isDefault;
             const label = locale === "en" ? item.labelEn : item.labelId;
@@ -305,11 +305,11 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/85 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-obsidian/85 backdrop-blur-md overflow-y-auto"
         >
           <div
             data-testid="admin-media-modal-content"
-            className="w-full max-w-lg rounded-2xl bg-hutan border border-telaga-700/60 p-6 shadow-2xl text-kabut space-y-5"
+            className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl bg-hutan border border-telaga-700/60 p-4 sm:p-6 shadow-2xl text-kabut space-y-4"
           >
             <div className="flex items-start justify-between gap-4">
               <div>

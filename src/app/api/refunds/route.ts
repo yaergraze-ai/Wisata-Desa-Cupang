@@ -4,6 +4,7 @@ import { requireApiRole } from "@/server/auth/guards";
 import {
   checkRefundEligibility,
   requestOrderRefund,
+  listRefundRequestsForAdmin,
   RefundServiceError,
 } from "@/server/refund/refund-service";
 
@@ -11,17 +12,23 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireApiRole([
-      Role.MEMBER,
-      Role.STAFF,
-      Role.ADMIN,
-      Role.SUPER_ADMIN,
-    ]);
+    const auth = await requireApiRole(
+      [Role.MEMBER, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
+      { requireTwoFactor: false }
+    );
 
     const url = new URL(req.url);
     const orderId = url.searchParams.get("orderId");
 
     if (!orderId) {
+      if (
+        auth.user.role === Role.ADMIN ||
+        auth.user.role === Role.SUPER_ADMIN
+      ) {
+        const requests = await listRefundRequestsForAdmin();
+        return NextResponse.json({ requests });
+      }
+
       return NextResponse.json(
         { error: "Parameter orderId wajib disertakan." },
         { status: 400 }
@@ -39,12 +46,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireApiRole([
-      Role.MEMBER,
-      Role.STAFF,
-      Role.ADMIN,
-      Role.SUPER_ADMIN,
-    ]);
+    const auth = await requireApiRole(
+      [Role.MEMBER, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
+      { requireTwoFactor: false }
+    );
 
     const body = (await req.json()) as { orderId?: string; reason?: string };
     if (!body.orderId || typeof body.orderId !== "string") {

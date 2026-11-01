@@ -12,7 +12,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN]);
+    await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      requireTwoFactor: false,
+    });
     const slots = await getAllMediaSlots();
     return NextResponse.json({ slots });
   } catch (err: unknown) {
@@ -24,7 +26,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN]);
+    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      requireTwoFactor: false,
+    });
 
     const formData = await req.formData();
     const slot = formData.get("slot");
@@ -92,7 +96,9 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN]);
+    const auth = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
+      requireTwoFactor: false,
+    });
     const body = (await req.json()) as { slot?: string };
 
     if (!body.slot || typeof body.slot !== "string") {

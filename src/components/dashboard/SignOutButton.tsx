@@ -37,10 +37,11 @@ export function SignOutButton() {
       type="button"
       disabled={loading}
       onClick={handleSignOut}
-      className="btn-ui btn-glass"
+      className="btn-ui btn-glass px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold text-rose-300 hover:text-rose-200 hover:border-rose-500/60 transition"
+      title={t("signOutBtn")}
     >
       <i className="bi bi-box-arrow-right" aria-hidden="true" />
-      <span>{t("signOutBtn")}</span>
+      <span className="hidden sm:inline">{t("signOutBtn")}</span>
     </button>
   );
 }

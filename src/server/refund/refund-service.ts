@@ -422,3 +422,51 @@ export async function decideRefundRequest(
 
   return updated;
 }
+
+export interface AdminRefundItemDto {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  visitorName: string;
+  visitorWhatsapp: string;
+  visitDate: string;
+  totalAmount: number;
+  reason: string;
+  notes: string | null;
+  status: RefundStatus;
+  createdAt: string;
+}
+
+export async function listRefundRequestsForAdmin(): Promise<AdminRefundItemDto[]> {
+  const rows = await db.refundRequest.findMany({
+    include: {
+      order: {
+        select: {
+          id: true,
+          orderNumber: true,
+          visitorName: true,
+          visitorWhatsapp: true,
+          visitDate: true,
+          totalAmount: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    orderId: r.orderId,
+    orderNumber: r.order?.orderNumber ?? "-",
+    visitorName: r.order?.visitorName ?? "-",
+    visitorWhatsapp: r.order?.visitorWhatsapp ?? "-",
+    visitDate: r.order?.visitDate ? r.order.visitDate.toISOString().slice(0, 10) : "-",
+    totalAmount: r.amount ?? r.order?.totalAmount ?? 0,
+    reason: r.reason,
+    notes: r.note,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+  }));
+}
+
