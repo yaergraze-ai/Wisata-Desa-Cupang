@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 
 export function GoogleFirstTimeSetupModal() {
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -13,9 +15,16 @@ export function GoogleFirstTimeSetupModal() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     let ignore = false;
     async function checkStatus() {
       try {
+        if (
+          typeof window !== "undefined" &&
+          sessionStorage.getItem("dismissed_first_time_password_setup") === "1"
+        ) {
+          return;
+        }
         const res = await fetch("/api/auth/profile-status");
         if (!res.ok) return;
         const data = (await res.json()) as {
@@ -37,7 +46,14 @@ export function GoogleFirstTimeSetupModal() {
     };
   }, []);
 
-  if (!isOpen) return null;
+  function handleDismiss() {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("dismissed_first_time_password_setup", "1");
+    }
+    setIsOpen(false);
+  }
+
+  if (!isOpen || !mounted) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,11 +107,11 @@ export function GoogleFirstTimeSetupModal() {
     }
   }
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/85 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-obsidian/85 backdrop-blur-md overflow-y-auto"
     >
       <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl bg-gradient-to-b from-[#0d1527] to-[#05070e] border border-fajar/40 p-5 sm:p-7 shadow-2xl text-kabut space-y-5">
         {/* Header Modal */}
@@ -115,7 +131,7 @@ export function GoogleFirstTimeSetupModal() {
           </div>
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleDismiss}
             className="rounded-lg p-1.5 text-kabut/60 hover:text-white hover:bg-white/10"
             title="Tutup (atur nanti)"
           >
@@ -178,7 +194,7 @@ export function GoogleFirstTimeSetupModal() {
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={handleDismiss}
               className="btn-ui rounded-xl bg-obsidian border border-kabut/30 px-4 py-2.5 text-xs font-semibold text-kabut hover:text-white"
             >
               Nanti Saja
@@ -203,6 +219,7 @@ export function GoogleFirstTimeSetupModal() {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

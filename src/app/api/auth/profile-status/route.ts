@@ -33,6 +33,6 @@ export async function GET(request: Request) {
     },
     hasPassword: hasCredentialPassword,
     isOAuthUser,
-    needsInitialPasswordSetup: !hasCredentialPassword,
+    needsInitialPasswordSetup: isOAuthUser && !hasCredentialPassword,
   });
 }
