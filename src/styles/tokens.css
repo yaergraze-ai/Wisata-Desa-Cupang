@@ -218,12 +218,15 @@
   animation: heroCharRise 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Sistem Tombol Standar (Target Sentuh ≥44px, Tahan Panjang Teks ID/EN) */
+/* ==========================================================================
+ * SISTEM TOMBOL KELAS DUNIA (INSPIRED BY AL-FARI & ULTRA-PREMIUM 3D WEBSITES)
+ * Interaksi kinetik, transisi cubic-bezier, specular rim, dan outer neon aura
+ * ========================================================================== */
 @layer components {
 .btn-ui {
   min-height: 44px;
-  padding: 0.625rem 1.125rem;
-  border-radius: var(--radius-control);
+  padding: 0.65rem 1.25rem;
+  border-radius: 14px;
   font-family: var(--font-sans);
   font-size: var(--text-scale-14);
   font-weight: 600;
@@ -233,69 +236,117 @@
   justify-content: center;
   gap: 0.5rem;
   text-align: center;
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    opacity 0.18s ease;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   user-select: none;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-ui:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .btn-ui:not(:disabled):active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.98);
 }
 
-/* Varian Telaga — Memakai telaga-700 (#23746A) agar lulus WCAG AA 4.82:1 thd kabut */
+/* Varian Telaga — Emerald Gunung (Gradient segar, specular rim, teal neon glow) */
 .btn-telaga {
-  background-color: var(--color-telaga-700);
-  color: var(--color-kabut);
-  border: 1px solid color-mix(in srgb, var(--color-kabut) 22%, transparent);
-  box-shadow: 0 6px 18px rgb(25 94 86 / 0.35);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 24px rgba(16, 185, 129, 0.38),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
 }
 
 .btn-telaga:not(:disabled):hover {
-  background-color: var(--color-telaga-800);
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #34d399 0%, #047857 100%);
+  box-shadow:
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.65),
+    0 0 36px rgba(16, 185, 129, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #ffffff;
 }
 
-/* Varian Fajar — CTA Utama (hutan #0F2A24 di atas fajar #F2A65A = 7.54:1 AAA) */
+/* Varian Fajar — CTA Utama (Gradient fajar hangat, specular highlight, neon aura) */
 .btn-fajar {
-  background-color: var(--color-fajar);
-  color: var(--color-hutan-950);
-  border: 1px solid color-mix(in srgb, var(--color-hutan) 20%, transparent);
+  background: linear-gradient(135deg, #f2a65a 0%, #ea580c 100%);
+  color: #060b09;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   font-weight: 700;
-  box-shadow: 0 6px 18px rgb(242 166 90 / 0.26);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 24px rgba(242, 166, 90, 0.42),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
 }
 
 .btn-fajar:not(:disabled):hover {
-  background-color: var(--color-fajar-300);
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+  box-shadow:
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.7),
+    0 0 36px rgba(242, 166, 90, 0.65),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #030605;
 }
 
-/* Varian Hutan — Di atas permukaan terang / Tiket Putih */
+/* Varian Hutan — Obsidian Glass bernuansa hijau botani gelap */
 .btn-hutan {
-  background-color: var(--color-hutan);
+  background: linear-gradient(
+    135deg,
+    rgba(20, 48, 40, 0.75) 0%,
+    rgba(10, 26, 22, 0.9) 100%
+  );
   color: var(--color-kabut);
-  border: 1px solid var(--color-telaga-700);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
 }
 
 .btn-hutan:not(:disabled):hover {
-  background-color: var(--color-hutan-800);
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(52, 211, 153, 0.55);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 24px rgba(16, 185, 129, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+  color: #ffffff;
 }
 
-/* Varian Kabut — Kontras tinggi di atas permukaan gelap */
+/* Varian Kabut — Kontras tinggi putih kristal */
 .btn-kabut {
-  background-color: var(--color-kabut);
-  color: var(--color-hutan);
-  border: 1px solid #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  color: #08110e;
+  border: 1px solid rgba(255, 255, 255, 0.8);
   font-weight: 700;
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 1),
+    0 0 20px rgba(255, 255, 255, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
 }
 
 .btn-kabut:not(:disabled):hover {
-  background-color: var(--color-fajar);
-  border-color: var(--color-fajar);
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  box-shadow:
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 1),
+    0 0 32px rgba(255, 255, 255, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.45);
 }
 }

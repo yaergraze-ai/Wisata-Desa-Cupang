@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { AmbientBackground } from "@/components/public/AmbientBackground";
 import { DeferredToaster } from "@/components/shared/DeferredToaster";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
 import { routing } from "@/i18n/routing";
@@ -72,7 +73,8 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} data-scroll-behavior="smooth">
-      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950">
+      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative">
+        <AmbientBackground />
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
           <ServiceWorkerRegister />
