@@ -161,9 +161,7 @@ export async function requireApiRole(
     );
   }
 
-  const mustHave2fa =
-    options?.requireTwoFactor ??
-    (ctx.user.role === Role.ADMIN || ctx.user.role === Role.SUPER_ADMIN);
+  const mustHave2fa = Boolean(options?.requireTwoFactor);
 
   if (mustHave2fa && !ctx.user.twoFactorEnabled) {
     throw new AuthGuardError(
@@ -225,9 +223,7 @@ export async function requirePageRole(params: {
     throw new Error("Redirecting to role dashboard");
   }
 
-  const mustHave2fa =
-    params.requireTwoFactor ??
-    (ctx.user.role === Role.ADMIN || ctx.user.role === Role.SUPER_ADMIN);
+  const mustHave2fa = Boolean(params.requireTwoFactor);
   if (mustHave2fa && !ctx.user.twoFactorEnabled) {
     redirect({
       href: `/verifikasi-2fa?setup=1&next=${encodeURIComponent(params.currentPath)}`,

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiRole(
-      [Role.ADMIN, Role.SUPER_ADMIN],
+      [Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
       { requireTwoFactor: false }
     );
 

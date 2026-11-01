@@ -302,8 +302,8 @@ export async function getLeaveRequestsList(): Promise<LeaveRequestDto[]> {
 
   return list.map((l) => ({
     id: l.id,
-    staffName: l.staffProfile.user.name,
-    staffEmail: l.staffProfile.user.email,
+    staffName: l.staffProfile?.user?.name ?? "Petugas",
+    staffEmail: l.staffProfile?.user?.email ?? "-",
     date: l.createdAt.toISOString().slice(0, 10),
     reason: l.reason ?? "Izin mendadak",
     status: "PENDING",
