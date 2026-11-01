@@ -333,7 +333,7 @@
     "backupCodeHint": "Enter one of your backup codes",
     "errors": {
       "invalidEmail": "Invalid email address format.",
-      "passwordMin": "Password must be at least 10 characters.",
+      "passwordMin": "Password must be at least 8 characters (combination of letters & numbers).",
       "passwordMismatch": "Password confirmation does not match.",
       "nameMin": "Full name must be at least 2 characters.",
       "invalidWhatsapp": "Enter a valid Indonesian WhatsApp number (08... or +628...).",

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 export function RegisterForm({ nextPath }: { nextPath: string | null }) {
   const t = useTranslations("Auth");
@@ -27,8 +28,14 @@ export function RegisterForm({ nextPath }: { nextPath: string | null }) {
           (val) => Boolean(normalizeIndonesianWhatsapp(val)),
           t("errors.invalidWhatsapp")
         ),
-      password: z.string().min(10, t("errors.passwordMin")).max(128),
-      confirmPassword: z.string().min(10, t("errors.passwordMin")),
+      password: z
+        .string()
+        .min(8, t("errors.passwordMin"))
+        .max(128)
+        .refine((val) => /[a-zA-Z]/.test(val) && /[0-9]/.test(val), {
+          message: "Kata sandi wajib mengandung kombinasi huruf dan angka.",
+        }),
+      confirmPassword: z.string().min(8, t("errors.passwordMin")),
       consent: z.boolean().refine((v) => v === true, t("errors.consentRequired")),
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -180,50 +187,25 @@ export function RegisterForm({ nextPath }: { nextPath: string | null }) {
           ) : null}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="reg-password"
-              className="block text-sm font-semibold text-kabut"
-            >
-              {t("passwordLabel")}
-            </label>
-            <input
-              id="reg-password"
-              type="password"
-              autoComplete="new-password"
-              placeholder={t("passwordHint")}
-              {...register("password")}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-            />
-            {errors.password ? (
-              <p className="mt-1 text-xs font-medium text-fajar">
-                {errors.password.message}
-              </p>
-            ) : null}
-          </div>
+        <div className="space-y-4">
+          <PasswordInput
+            id="reg-password"
+            label={t("passwordLabel")}
+            autoComplete="new-password"
+            placeholder={t("passwordHint")}
+            showRequirements={true}
+            error={errors.password?.message}
+            {...register("password")}
+          />
 
-          <div>
-            <label
-              htmlFor="reg-confirm"
-              className="block text-sm font-semibold text-kabut"
-            >
-              {t("confirmPasswordLabel")}
-            </label>
-            <input
-              id="reg-confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder={t("passwordHint")}
-              {...register("confirmPassword")}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-            />
-            {errors.confirmPassword ? (
-              <p className="mt-1 text-xs font-medium text-fajar">
-                {errors.confirmPassword.message}
-              </p>
-            ) : null}
-          </div>
+          <PasswordInput
+            id="reg-confirm"
+            label={t("confirmPasswordLabel")}
+            autoComplete="new-password"
+            placeholder={t("passwordHint")}
+            error={errors.confirmPassword?.message}
+            {...register("confirmPassword")}
+          />
         </div>
 
         <div className="rounded-xl border border-kabut/15 bg-obsidian/70 p-3.5">

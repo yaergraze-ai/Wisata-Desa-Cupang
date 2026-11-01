@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { ChatOtpCard } from "@/components/auth/ChatOtpCard";
 
 export interface LoginFormProps {
   nextPath: string | null;
@@ -221,35 +223,22 @@ export function LoginForm({
             ) : null}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <label
-                htmlFor="login-password"
-                className="block text-sm font-semibold text-kabut"
-              >
-                {t("passwordLabel")}
-              </label>
+          <PasswordInput
+            id="login-password"
+            label={t("passwordLabel")}
+            autoComplete="current-password"
+            placeholder={t("passwordHint")}
+            error={errors.password?.message}
+            rightElement={
               <Link
                 href="/lupa-kata-sandi"
                 className="text-xs font-semibold text-fajar hover:underline"
               >
                 {t("forgotLink")}
               </Link>
-            </div>
-            <input
-              id="login-password"
-              type="password"
-              autoComplete="current-password"
-              placeholder={t("passwordHint")}
-              {...register("password")}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-            />
-            {errors.password ? (
-              <p className="mt-1 text-xs font-medium text-fajar">
-                {errors.password.message}
-              </p>
-            ) : null}
-          </div>
+            }
+            {...register("password")}
+          />
 
           <button
             type="submit"
@@ -261,66 +250,13 @@ export function LoginForm({
           </button>
         </form>
       ) : (
-        <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="login-wa-phone"
-              className="block text-sm font-semibold text-kabut"
-            >
-              {t("whatsappLabel")}
-            </label>
-            <input
-              id="login-wa-phone"
-              type="tel"
-              value={waPhone}
-              onChange={(e) => setWaPhone(e.target.value)}
-              placeholder={t("whatsappHint")}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-            />
-          </div>
-
-          {!waOtpSent ? (
-            <button
-              type="button"
-              disabled={waLoading}
-              onClick={handleSendWhatsappOtp}
-              className="btn-ui btn-fajar w-full"
-            >
-              <i className="bi bi-whatsapp" aria-hidden="true" />
-              <span>{waLoading ? t("processing") : t("sendWaOtp")}</span>
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label
-                  htmlFor="login-wa-otp"
-                  className="block text-sm font-semibold text-kabut"
-                >
-                  {t("otpCodeLabel")}
-                </label>
-                <input
-                  id="login-wa-otp"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={waOtpCode}
-                  onChange={(e) => setWaOtpCode(e.target.value)}
-                  placeholder={t("otpCodeHint")}
-                  className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-center font-mono text-lg tracking-widest text-kabut"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={waLoading}
-                onClick={handleVerifyWhatsappOtp}
-                className="btn-ui btn-fajar w-full"
-              >
-                <i className="bi bi-shield-check" aria-hidden="true" />
-                <span>{waLoading ? t("processing") : t("verifyWaOtp")}</span>
-              </button>
-            </div>
-          )}
-        </div>
+        <ChatOtpCard
+          initialPhone={waPhone}
+          onSuccess={redirectAfterLogin}
+          onError={(msg) => setServerError(msg || null)}
+          isLoading={waLoading}
+          setIsLoading={setWaLoading}
+        />
       )}
 
       {googleEnabled || facebookEnabled ? (

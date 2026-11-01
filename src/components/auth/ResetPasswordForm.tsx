@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 export function ResetPasswordForm({ token }: { token: string | null }) {
   const t = useTranslations("Auth");
@@ -16,8 +17,14 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
 
   const schema = z
     .object({
-      password: z.string().min(10, t("errors.passwordMin")).max(128),
-      confirmPassword: z.string().min(10, t("errors.passwordMin")),
+      password: z
+        .string()
+        .min(8, t("errors.passwordMin"))
+        .max(128)
+        .refine((val) => /[a-zA-Z]/.test(val) && /[0-9]/.test(val), {
+          message: "Kata sandi wajib mengandung kombinasi huruf dan angka.",
+        }),
+      confirmPassword: z.string().min(8, t("errors.passwordMin")),
     })
     .refine((d) => d.password === d.confirmPassword, {
       path: ["confirmPassword"],
@@ -76,49 +83,24 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
         </div>
       ) : null}
 
-      <div>
-        <label
-          htmlFor="reset-password"
-          className="block text-sm font-semibold text-kabut"
-        >
-          {t("passwordLabel")}
-        </label>
-        <input
-          id="reset-password"
-          type="password"
-          autoComplete="new-password"
-          placeholder={t("passwordHint")}
-          {...register("password")}
-          className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-        />
-        {errors.password ? (
-          <p className="mt-1 text-xs font-medium text-fajar">
-            {errors.password.message}
-          </p>
-        ) : null}
-      </div>
+      <PasswordInput
+        id="reset-password"
+        label={t("passwordLabel")}
+        autoComplete="new-password"
+        placeholder={t("passwordHint")}
+        showRequirements={true}
+        error={errors.password?.message}
+        {...register("password")}
+      />
 
-      <div>
-        <label
-          htmlFor="reset-confirm"
-          className="block text-sm font-semibold text-kabut"
-        >
-          {t("confirmPasswordLabel")}
-        </label>
-        <input
-          id="reset-confirm"
-          type="password"
-          autoComplete="new-password"
-          placeholder={t("passwordHint")}
-          {...register("confirmPassword")}
-          className="mt-1.5 w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/45"
-        />
-        {errors.confirmPassword ? (
-          <p className="mt-1 text-xs font-medium text-fajar">
-            {errors.confirmPassword.message}
-          </p>
-        ) : null}
-      </div>
+      <PasswordInput
+        id="reset-confirm"
+        label={t("confirmPasswordLabel")}
+        autoComplete="new-password"
+        placeholder={t("passwordHint")}
+        error={errors.confirmPassword?.message}
+        {...register("confirmPassword")}
+      />
 
       <button
         type="submit"

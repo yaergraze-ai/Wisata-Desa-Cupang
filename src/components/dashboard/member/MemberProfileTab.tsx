@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { AuthenticatedContext } from "@/server/auth/guards";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 export interface MemberProfileTabProps {
   authCtx: AuthenticatedContext;
@@ -270,42 +271,26 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
           ) : null}
 
           <form onSubmit={handleChangePassword} className="space-y-4">
-            <div>
-              <label
-                htmlFor="current-password"
-                className="block text-xs font-bold text-kabut/90"
-              >
-                {t("currentPasswordLabel")}
-              </label>
-              <input
-                id="current-password"
-                data-testid="current-password-input"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-3 text-sm text-kabut focus:border-fajar focus:outline-none"
-              />
-            </div>
+            <PasswordInput
+              id="current-password"
+              data-testid="current-password-input"
+              label={t("currentPasswordLabel")}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Masukkan kata sandi saat ini"
+              required
+            />
 
-            <div>
-              <label
-                htmlFor="new-password"
-                className="block text-xs font-bold text-kabut/90"
-              >
-                {t("newPasswordLabel")}
-              </label>
-              <input
-                id="new-password"
-                data-testid="new-password-input"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={8}
-                className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-3 text-sm text-kabut focus:border-fajar focus:outline-none"
-              />
-            </div>
+            <PasswordInput
+              id="new-password"
+              data-testid="new-password-input"
+              label={t("newPasswordLabel")}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Minimal 8 karakter (huruf & angka)"
+              showRequirements={true}
+              required
+            />
 
             <button
               type="submit"
@@ -432,23 +417,15 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
             ) : null}
 
             <form onSubmit={handleDeleteAccount} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="delete-confirm-password"
-                  className="block text-xs font-bold text-kabut/90"
-                >
-                  {t("currentPasswordLabel")}
-                </label>
-                <input
-                  id="delete-confirm-password"
-                  data-testid="delete-confirm-password-input"
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  required
-                  className="mt-1.5 w-full rounded-xl border border-red-500/50 bg-obsidian/80 p-3 text-sm text-kabut focus:border-red-400 focus:outline-none"
-                />
-              </div>
+              <PasswordInput
+                id="delete-confirm-password"
+                data-testid="delete-confirm-password-input"
+                label={t("currentPasswordLabel")}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Masukkan kata sandi untuk konfirmasi"
+                required
+              />
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button

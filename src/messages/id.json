@@ -333,7 +333,7 @@
     "backupCodeHint": "Masukkan salah satu kode cadangan",
     "errors": {
       "invalidEmail": "Format alamat email tidak valid.",
-      "passwordMin": "Kata sandi wajib minimal 10 karakter.",
+      "passwordMin": "Kata sandi wajib minimal 8 karakter (kombinasi huruf & angka).",
       "passwordMismatch": "Konfirmasi kata sandi tidak sama.",
       "nameMin": "Nama lengkap minimal 2 karakter.",
       "invalidWhatsapp": "Gunakan nomor WhatsApp Indonesia yang valid (08... atau +628...).",

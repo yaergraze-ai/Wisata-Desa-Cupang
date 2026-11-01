@@ -6,6 +6,7 @@ import type { AppLocale } from "@/i18n/routing";
 import type { AuthenticatedContext } from "@/server/auth/guards";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
 import { SignOutButton } from "@/components/dashboard/SignOutButton";
+import { GoogleFirstTimeSetupModal } from "@/components/auth/GoogleFirstTimeSetupModal";
 
 export async function DashboardTopBar({
   locale,
@@ -81,6 +82,7 @@ export async function DashboardTopBar({
           <SignOutButton />
         </div>
       </div>
+      <GoogleFirstTimeSetupModal />
     </header>
   );
 }
