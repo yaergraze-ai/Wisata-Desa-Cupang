@@ -115,7 +115,7 @@ export function MemberDashboardClient({
   const [visitDate, setVisitDate] = useState(initialQuote.visitDate);
   const [putihQty, setPutihQty] = useState(() => {
     const line = initialQuote.lines.find((l) => l.code === "TIKET_PUTIH");
-    return line?.qty ?? 2;
+    return line?.qty ?? 0;
   });
   const [regulerQty, setRegulerQty] = useState(() => {
     const line = initialQuote.lines.find((l) => l.code === "REGULER_BL");

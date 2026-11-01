@@ -214,6 +214,11 @@ export const auth = betterAuth({
       allowedAttempts: 5,
       phoneNumberValidator: (phone) =>
         Boolean(normalizeIndonesianWhatsapp(phone)),
+      signUpOnVerification: {
+        getTempEmail: (phone) =>
+          `wa_${phone.replace(/\D/g, "")}@user.wisatacirebon.id`,
+        getTempName: (phone) => `Pengunjung ${phone.slice(-4)}`,
+      },
       async sendOTP({ phoneNumber: rawPhone, code }) {
         if (!getIntegrationFlags().whatsapp) {
           throw new Error("Penyedia WhatsApp belum dikonfigurasi.");

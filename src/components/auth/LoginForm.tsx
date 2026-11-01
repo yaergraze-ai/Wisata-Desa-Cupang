@@ -50,14 +50,21 @@ export function LoginForm({
     defaultValues: { email: "", password: "" },
   });
 
-  async function redirectAfterLogin() {
+  async function redirectAfterLogin(info?: { homePath?: string }) {
     const prefix = locale === "en" ? "/en" : "";
-    const meRes = await fetch("/api/auth/me", { cache: "no-store" });
-    const meJson = (await meRes.json()) as {
-      authenticated: boolean;
-      homePath?: string;
-    };
-    const dest = nextPath || meJson.homePath || "/dashboard";
+    let dest = nextPath || info?.homePath;
+    if (!dest) {
+      try {
+        const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+        const meJson = (await meRes.json()) as {
+          authenticated: boolean;
+          homePath?: string;
+        };
+        dest = meJson.homePath || "/dashboard";
+      } catch {
+        dest = "/dashboard";
+      }
+    }
     const fullDest =
       dest.startsWith("/en/") || dest === "/en" ? dest : `${prefix}${dest}`;
     window.location.assign(fullDest);

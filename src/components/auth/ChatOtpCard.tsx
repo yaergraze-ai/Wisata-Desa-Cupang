@@ -8,7 +8,7 @@ export interface ChatOtpCardProps {
   initialPhone?: string;
   initialEmail?: string;
   lockChannel?: "whatsapp" | "email";
-  onSuccess: () => Promise<void>;
+  onSuccess: (info?: { homePath?: string }) => Promise<void> | void;
   onError: (msg: string) => void;
   isLoading: boolean;
   setIsLoading: (val: boolean) => void;
@@ -137,6 +137,7 @@ export function ChatOtpCard({
     setIsLoading(true);
     onError("");
     try {
+      let redirectTarget: { homePath?: string } | undefined;
       if (channel === "whatsapp") {
         const normalized = normalizeIndonesianWhatsapp(phone);
         const res = await fetch("/api/auth/whatsapp-otp/verify", {
@@ -144,8 +145,11 @@ export function ChatOtpCard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ whatsapp: normalized, code: fullCode }),
         });
-        const data = (await res.json()) as { ok?: boolean; error?: string };
+        const data = (await res.json()) as { ok?: boolean; error?: string; homePath?: string };
         if (!res.ok) throw new Error(data.error || "Kode OTP salah atau kedaluwarsa.");
+        if (data.homePath) {
+          redirectTarget = { homePath: data.homePath };
+        }
       } else {
         const res = await fetch("/api/user/verify-email", {
           method: "POST",
@@ -155,7 +159,7 @@ export function ChatOtpCard({
         const data = (await res.json()) as { ok?: boolean; error?: string };
         if (!res.ok) throw new Error(data.error || "Kode OTP email salah atau kedaluwarsa.");
       }
-      await onSuccess();
+      await onSuccess(redirectTarget);
     } catch (err: unknown) {
       onError(err instanceof Error ? err.message : "Verifikasi OTP gagal.");
     } finally {

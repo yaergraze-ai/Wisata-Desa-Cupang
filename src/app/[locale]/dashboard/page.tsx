@@ -69,14 +69,12 @@ export default async function MemberDashboardPage({
       ? rawQuery.date
       : todayWib;
 
-  const defaultPutih = rawPkg === "REGULER_BL" ? 0 : 2;
-  const defaultReguler = rawPkg === "REGULER_BL" ? 2 : 0;
+  const defaultPutih = rawPkg === "TIKET_PUTIH" ? 1 : 0;
+  const defaultReguler = rawPkg === "REGULER_BL" ? 1 : 0;
 
   const requestedPutih = parseNonNegativeInt(
     typeof rawQuery.putih === "string" ? rawQuery.putih : undefined,
-    typeof rawQuery.reguler === "string" && rawQuery.putih === undefined
-      ? 0
-      : defaultPutih
+    defaultPutih
   );
   const requestedReguler = parseNonNegativeInt(
     typeof rawQuery.reguler === "string" ? rawQuery.reguler : undefined,
