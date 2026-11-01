@@ -6,9 +6,9 @@ export function AmbientBackground() {
     >
       {/* Orb 1: Warm Radiant Sunrise Amber (kiri atas) */}
       <span className="ambient-orb ambient-orb-one" />
-      {/* Orb 2: Mountain Emerald Teal (kanan tengah) */}
+      {/* Orb 2: Electric Sapphire Blue (kanan tengah) */}
       <span className="ambient-orb ambient-orb-two" />
-      {/* Orb 3: Twilight Alpine Azure (bawah tengah) */}
+      {/* Orb 3: Cyan Alpine Azure (bawah tengah) */}
       <span className="ambient-orb ambient-orb-three" />
     </div>
   );

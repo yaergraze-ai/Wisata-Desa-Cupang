@@ -29,6 +29,7 @@
 .bi-bag-plus-fill::before { content: "\f175"; }
 .bi-bell-fill::before { content: "\f189"; }
 .bi-box-arrow-in-right::before { content: "\f1be"; }
+.bi-box-arrow-left::before { content: "\f1c2"; }
 .bi-box-arrow-right::before { content: "\f1c3"; }
 .bi-box-arrow-up-right::before { content: "\f1c5"; }
 .bi-brightness-high-fill::before { content: "\f1d1"; }
@@ -37,6 +38,7 @@
 .bi-calendar-week::before { content: "\f1f3"; }
 .bi-calendar2-week::before { content: "\f209"; }
 .bi-camera-fill::before { content: "\f219"; }
+.bi-camera-reels-fill::before { content: "\f21a"; }
 .bi-camera-video-fill::before { content: "\f21c"; }
 .bi-camera-video-off-fill::before { content: "\f21d"; }
 .bi-cash-stack::before { content: "\f246"; }
@@ -48,6 +50,7 @@
 .bi-clock-history::before { content: "\f292"; }
 .bi-clock::before { content: "\f293"; }
 .bi-cloud-arrow-down-fill::before { content: "\f294"; }
+.bi-cloud-arrow-up-fill::before { content: "\f296"; }
 .bi-cloud-sun-fill::before { content: "\f2bd"; }
 .bi-compass-fill::before { content: "\f2d0"; }
 .bi-compass::before { content: "\f2d1"; }
@@ -67,12 +70,14 @@
 .bi-globe::before { content: "\f3ee"; }
 .bi-google::before { content: "\f3f0"; }
 .bi-grid-1x2-fill::before { content: "\f3f3"; }
+.bi-grid-fill::before { content: "\f3fb"; }
 .bi-hand-index-thumb::before { content: "\f402"; }
 .bi-hdd-fill::before { content: "\f40b"; }
 .bi-hourglass-split::before { content: "\f41f"; }
 .bi-house-door-fill::before { content: "\f422"; }
 .bi-house-door::before { content: "\f423"; }
 .bi-house::before { content: "\f425"; }
+.bi-image-fill::before { content: "\f429"; }
 .bi-images::before { content: "\f42b"; }
 .bi-inbox-fill::before { content: "\f42c"; }
 .bi-info-circle-fill::before { content: "\f430"; }
@@ -137,6 +142,7 @@
 .bi-ticket-perforated-fill::before { content: "\f6c9"; }
 .bi-ticket-perforated::before { content: "\f6ca"; }
 .bi-house-heart-fill::before { content: "\f775"; }
+.bi-trash3-fill::before { content: "\f78a"; }
 .bi-p-circle-fill::before { content: "\f804"; }
 .bi-person-gear::before { content: "\f8a7"; }
 .bi-crosshair::before { content: "\f769"; }

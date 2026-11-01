@@ -206,6 +206,12 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
               {tNav("staff")}
             </a>
             <a
+              href="#galeri-wisata"
+              className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
+            >
+              Galeri Spot
+            </a>
+            <a
               href="#ulasan-pengunjung"
               className="min-h-[44px] inline-flex items-center rounded-xl px-3 text-sm font-medium text-kabut/80 hover:bg-white/10 hover:text-kabut transition-all"
             >

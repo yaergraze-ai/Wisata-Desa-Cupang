@@ -364,7 +364,53 @@ export function TrailTimelineAndMapSection({
           </dl>
         </div>
 
-        {/* Garis Vertikal SVG + 4 Tahap */}
+        {/* Navigasi Profil Elevasi Gunung (Altimeter Bar) */}
+        <div className="mt-8 surface-solid-dark p-4 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="h-9 w-9 rounded-xl bg-telaga/20 border border-telaga/40 flex items-center justify-center text-telaga shadow-sm">
+              <i className="bi bi-graph-up-arrow text-sm" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-wider">
+                Profil Ketinggian Jalur Pendakian
+              </p>
+              <p className="text-[11px] text-kabut/70">
+                Kenaikan bertahap dari 210 mdpl menuju puncak tertinggi 520 mdpl
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto py-1">
+            {stages.map((stg, i) => {
+              const elev = i === 0 ? "210 mdpl" : i === 1 ? "290 mdpl" : i === 2 ? "410 mdpl" : "520 mdpl";
+              const tag = i === 0 ? "Pintu" : i === 1 ? "Kanopi" : i === 2 ? "Punggung" : "Puncak 👑";
+              const isSelected = stg.points.some((p) => p.code === focusedCode);
+              return (
+                <button
+                  key={stg.id}
+                  type="button"
+                  onClick={() => focusPointAndScrollToMap(stg.focusCode)}
+                  className={cn(
+                    "rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5",
+                    isSelected
+                      ? "bg-fajar text-obsidian shadow-md shadow-fajar/30 scale-[1.03]"
+                      : "bg-white/5 border border-white/10 text-kabut hover:bg-white/10"
+                  )}
+                >
+                  <span className={isSelected ? "text-obsidian" : "text-fajar font-mono"}>
+                    {i + 1}.
+                  </span>
+                  <span>{elev}</span>
+                  <span className={isSelected ? "text-obsidian/70" : "text-kabut/60 hidden sm:inline"}>
+                    ({tag})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Garis Vertikal SVG + 4 Tahap Asimetris Mountain Journey */}
         <div ref={timelineWrapRef} className="relative mt-10 pl-8 sm:pl-12">
           <svg
             aria-hidden="true"
@@ -377,7 +423,7 @@ export function TrailTimelineAndMapSection({
               y1="0"
               x2="6"
               y2="1000"
-              stroke="rgba(232,241,236,0.18)"
+              stroke="rgba(255,255,255,0.12)"
               strokeWidth="3"
               strokeDasharray="6 6"
             />
@@ -395,43 +441,83 @@ export function TrailTimelineAndMapSection({
             />
           </svg>
 
-          <div className="space-y-8">
+          <div className="space-y-10">
             {stages.map((stage, stageIdx) => {
               const isStageFocused = stage.points.some((p) => p.code === focusedCode);
+              const isSummit = stageIdx === 3;
+              const isOdd = stageIdx % 2 === 1; // Stage 2 & 4 alternating layout
+              const altitudeTag =
+                stageIdx === 0
+                  ? "Elevasi Dasar 210 mdpl"
+                  : stageIdx === 1
+                  ? "↗ Tanjakan +80m (290 mdpl)"
+                  : stageIdx === 2
+                  ? "↗ Tanjakan +120m (410 mdpl)"
+                  : "👑 Puncak Tertinggi 520 mdpl (+110m)";
+
               return (
                 <article
                   key={stage.id}
                   data-timeline-stage=""
                   className={cn(
-                    "relative surface-solid-dark p-5 sm:p-6 transition-colors",
-                    isStageFocused ? "border-fajar" : ""
+                    "relative surface-solid-dark p-6 sm:p-8 transition-all duration-300 rounded-3xl",
+                    isSummit
+                      ? "border-fajar/60 ring-2 ring-fajar/25 bg-gradient-to-br from-white/10 via-obsidian/90 to-fajar/10 shadow-2xl shadow-fajar/15"
+                      : isStageFocused
+                      ? "border-fajar shadow-xl shadow-fajar/10"
+                      : "border-white/10 hover:border-white/20"
                   )}
                 >
-                  {/* Penanda Bulat di Garis SVG */}
+                  {/* Penanda Bulat Dinamis di Garis SVG */}
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute -left-[2.1rem] top-6 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 text-xs font-extrabold sm:-left-[2.85rem]",
-                      isStageFocused
-                        ? "border-fajar bg-fajar text-hutan-950"
+                      "absolute -left-[2.1rem] top-7 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-black shadow-lg transition-transform sm:-left-[2.9rem]",
+                      isSummit
+                        ? "border-fajar bg-fajar text-obsidian shadow-fajar/50 scale-110"
+                        : isStageFocused
+                        ? "border-fajar bg-fajar text-obsidian"
                         : "border-telaga bg-obsidian text-kabut"
                     )}
                   >
-                    {stageIdx + 1}
+                    {isSummit ? "👑" : stageIdx + 1}
                   </span>
 
-                  <div className="grid items-center gap-6 lg:grid-cols-12">
-                    <div className="lg:col-span-7">
+                  {/* KONTEN TAHAP DENGAN ASIMETRIS / ZIG-ZAG */}
+                  <div
+                    className={cn(
+                      "grid items-center gap-6 lg:grid-cols-12",
+                      isOdd && !isSummit ? "lg:grid-flow-dense" : ""
+                    )}
+                  >
+                    {/* Teks & Checkpoint Pos */}
+                    <div
+                      className={cn(
+                        "lg:col-span-7 space-y-4",
+                        isOdd && !isSummit ? "lg:col-start-6" : ""
+                      )}
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="font-heading text-xl font-bold text-kabut">
-                          {stage.title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase",
+                              isSummit
+                                ? "bg-fajar text-obsidian shadow-sm shadow-fajar/30"
+                                : "bg-white/10 border border-white/15 text-fajar"
+                            )}
+                          >
+                            <i className="bi bi-geo-alt-fill text-[10px]" aria-hidden="true" />
+                            <span>{altitudeTag}</span>
+                          </span>
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => focusPointAndScrollToMap(stage.focusCode)}
                           className={cn(
                             "btn-ui text-xs px-3 py-1.5",
-                            isStageFocused ? "btn-fajar" : "btn-telaga"
+                            isStageFocused ? "btn-fajar" : "btn-glass"
                           )}
                         >
                           <i className="bi bi-crosshair" aria-hidden="true" />
@@ -442,10 +528,23 @@ export function TrailTimelineAndMapSection({
                           </span>
                         </button>
                       </div>
-                      <p className="mt-1.5 text-sm text-kabut/85">{stage.subtitle}</p>
+
+                      <div>
+                        <h3
+                          className={cn(
+                            "font-heading text-xl font-bold text-white sm:text-2xl",
+                            isSummit ? "text-fajar drop-shadow-md" : ""
+                          )}
+                        >
+                          {stage.title}
+                        </h3>
+                        <p className="mt-1.5 text-sm text-kabut/80 leading-relaxed">
+                          {stage.subtitle}
+                        </p>
+                      </div>
 
                       {/* Kartu Pos di Dalam Tahap */}
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2 pt-2">
                         {stage.points.map((pt) => {
                           const isPtFocused = focusedCode === pt.code;
                           return (
@@ -454,25 +553,27 @@ export function TrailTimelineAndMapSection({
                               type="button"
                               onClick={() => focusPointAndScrollToMap(pt.code)}
                               className={cn(
-                                "rounded-xl border p-3.5 text-left transition-colors cursor-pointer",
+                                "rounded-2xl border p-4 text-left transition-all cursor-pointer backdrop-blur-sm",
                                 isPtFocused
-                                  ? "border-fajar bg-obsidian ring-1 ring-fajar/40"
-                                  : "border-kabut/15 bg-obsidian/70 hover:border-kabut/40"
+                                  ? "border-fajar bg-obsidian ring-1 ring-fajar/40 shadow-md shadow-fajar/10"
+                                  : "border-white/10 bg-obsidian/60 hover:border-white/25 hover:bg-obsidian/80"
                               )}
                             >
                               <div className="flex items-center justify-between gap-2 text-xs font-bold">
-                                <span className="rounded bg-hutan px-2 py-0.5 text-fajar">
+                                <span className="rounded-lg bg-white/10 px-2 py-0.5 text-fajar font-mono">
                                   {pt.code}
                                 </span>
-                                <span className="text-kabut/85">
+                                <span className="text-white font-mono">
                                   {tHero("elevationUnit", { value: pt.elevationM })}
                                 </span>
                               </div>
-                              <p className="mt-2 font-heading text-base font-bold text-kabut">
+                              <p className="mt-2 font-heading text-base font-bold text-white">
                                 {pt.name}
                               </p>
-                              <p className="mt-1 text-xs text-kabut/80">{pt.note}</p>
-                              <p className="mt-2 text-xs font-semibold text-telaga-200">
+                              <p className="mt-1 text-xs text-kabut/70 line-clamp-2">
+                                {pt.note}
+                              </p>
+                              <p className="mt-2 text-xs font-semibold text-telaga-300">
                                 {pt.order === 0
                                   ? tHome("startPoint")
                                   : tHome("distFromPrev", {
@@ -486,14 +587,23 @@ export function TrailTimelineAndMapSection({
                       </div>
                     </div>
 
-                    {/* Foto Linimasa dengan Paralaks ±8% (§7.2) */}
-                    <div className="grid grid-cols-2 gap-3 lg:col-span-5">
+                    {/* Foto Linimasa dengan Paralaks & Sudut Estetik */}
+                    <div
+                      className={cn(
+                        "grid grid-cols-2 gap-3 lg:col-span-5",
+                        isOdd && !isSummit ? "lg:col-start-1" : ""
+                      )}
+                    >
                       {[stage.photoA, stage.photoB]
                         .filter((m): m is PublicSlotMedia => Boolean(m))
                         .map((media, photoIdx) => (
                           <div
                             key={`${stage.id}-photo-${photoIdx}`}
-                            className="relative h-40 overflow-hidden rounded-xl border border-kabut/20 bg-obsidian sm:h-44"
+                            className={cn(
+                              "relative overflow-hidden rounded-2xl border border-white/15 bg-obsidian shadow-lg",
+                              isSummit ? "h-48 sm:h-56" : "h-40 sm:h-44",
+                              photoIdx === 1 && !isSummit ? "mt-3" : ""
+                            )}
                           >
                             <div
                               data-timeline-parallax=""
@@ -504,9 +614,10 @@ export function TrailTimelineAndMapSection({
                                 alt={media.alt}
                                 fill
                                 sizes="(max-width: 1024px) 45vw, 240px"
-                                className="object-cover"
+                                className="object-cover transition-transform duration-500 hover:scale-105"
                               />
                             </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-obsidian/70 via-transparent to-transparent pointer-events-none" />
                           </div>
                         ))}
                     </div>

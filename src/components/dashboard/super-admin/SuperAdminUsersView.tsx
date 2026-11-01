@@ -127,6 +127,37 @@ export function SuperAdminUsersView() {
     }
   }
 
+  async function handleDeleteUser(targetUserId: string, targetName: string, targetEmail: string) {
+    const confirmation = prompt(
+      `PERINGATAN: Apakah Anda yakin ingin menghapus akun '${targetName}' (${targetEmail})?\nKetik "HAPUS" untuk mengonfirmasi:`
+    );
+    if (confirmation !== "HAPUS") {
+      if (confirmation !== null) {
+        alert("Konfirmasi tidak sesuai. Penghapusan akun dibatalkan.");
+      }
+      return;
+    }
+
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const res = await fetch("/api/super-admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId }),
+      });
+      if (!res.ok) {
+        const errJson = (await res.json()) as { error?: string };
+        throw new Error(errJson.error || "Gagal menghapus pengguna.");
+      }
+      const data = (await res.json()) as { message?: string };
+      setActionSuccess(data.message || "Pengguna berhasil dihapus.");
+      await loadUsers(page, roleFilter, search);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Gagal menghapus akun pengguna.");
+    }
+  }
+
   return (
     <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 space-y-6" data-testid="super-admin-users-view">
       {/* HEADER & FILTER */}
@@ -246,14 +277,28 @@ export function SuperAdminUsersView() {
                   </td>
                   <td className="py-3 font-mono font-bold">{t("sessionsCountUnit", { count: u.activeSessionsCount })}</td>
                   <td className="py-3 text-right">
-                    <button
-                      type="button"
-                      disabled={u.activeSessionsCount === 0}
-                      onClick={() => handleRevokeSessions(u.id)}
-                      className="rounded bg-obsidian border border-telaga-700 px-2.5 py-1 text-[11px] text-red-300 hover:bg-red-950/40 hover:border-red-700 transition disabled:opacity-30"
-                    >
-                      {t("revokeSessionsBtn")}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        disabled={u.activeSessionsCount === 0}
+                        onClick={() => handleRevokeSessions(u.id)}
+                        className="rounded bg-obsidian border border-telaga-700/60 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-950/40 hover:border-amber-600 transition disabled:opacity-30"
+                        title={t("revokeSessionsBtn")}
+                      >
+                        <i className="bi bi-box-arrow-left mr-1" aria-hidden="true" />
+                        <span>{t("revokeSessionsBtn")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(u.id, u.name, u.email)}
+                        className="rounded bg-red-950/50 border border-red-700/70 px-2 py-1 text-[11px] font-bold text-red-200 hover:bg-red-900/60 hover:border-red-500 transition cursor-pointer"
+                        title="Hapus Akun Pengguna"
+                      >
+                        <i className="bi bi-trash3-fill mr-1 text-red-400" aria-hidden="true" />
+                        <span>Hapus</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

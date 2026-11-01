@@ -22,7 +22,7 @@
 /* Firefox */
 html {
   scrollbar-width: thin;
-  scrollbar-color: #295b50 #08110e;
+  scrollbar-color: #2563eb #05070e;
   scroll-behavior: smooth;
 }
 
@@ -33,28 +33,28 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #08110e;
+  background: #05070e;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #1b3830 0%, #295b50 100%);
+  background: linear-gradient(180deg, #1e293b 0%, #2563eb 100%);
   border-radius: 9999px;
-  border: 2px solid #08110e;
+  border: 2px solid #05070e;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2a685a 0%, #f2a65a 100%);
-  border-color: #0b1713;
+  background: linear-gradient(180deg, #3b82f6 0%, #f59e0b 100%);
+  border-color: #0b1020;
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background: #f2a65a;
-  box-shadow: 0 0 10px rgba(242, 166, 90, 0.4);
+  background: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
 }
 
 ::-webkit-scrollbar-corner {
-  background: #08110e;
+  background: #05070e;
 }
 
 /* Scrollbar khusus untuk kontainer scroll internal (modal, tabel, drawer) */
@@ -122,7 +122,7 @@ html {
 .ambient-orb-two {
   width: clamp(300px, 40vw, 600px);
   height: clamp(300px, 40vw, 600px);
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, rgba(37, 99, 235, 0) 70%);
   top: 36%;
   right: -12%;
   animation-duration: 20s;
@@ -132,7 +132,7 @@ html {
 .ambient-orb-three {
   width: clamp(240px, 30vw, 480px);
   height: clamp(240px, 30vw, 480px);
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.16) 0%, rgba(56, 189, 248, 0) 70%);
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.2) 0%, rgba(14, 165, 233, 0) 70%);
   bottom: 8%;
   left: 20%;
   animation-duration: 18s;

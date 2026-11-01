@@ -17,7 +17,9 @@ import { PriceQuotaCalculator } from "@/components/public/PriceQuotaCalculator";
 import { ProductSelectButton } from "@/components/public/ProductSelectButton";
 import { StaffOnDutySection } from "@/components/public/StaffOnDutySection";
 import { VerifiedReviewsSection } from "@/components/public/VerifiedReviewsSection";
+import { TouristSpotGallerySection } from "@/components/public/TouristSpotGallerySection";
 import { ContactAndFooterSection } from "@/components/public/ContactAndFooterSection";
+import { getGalleryItems } from "@/server/gallery/gallery-service";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,7 @@ export default async function HomePage({
   const { locale: rawLocale } = await params;
   const locale: AppLocale = rawLocale === "en" ? "en" : "id";
 
-  const [tHero, tHome, tFac, catalog, authCtx, staffStatus, reviewsData] =
+  const [tHero, tHome, tFac, catalog, authCtx, staffStatus, reviewsData, galleryItems] =
     await Promise.all([
       getTranslations({ locale, namespace: "Hero" }),
       getTranslations({ locale, namespace: "Home" }),
@@ -38,6 +40,7 @@ export default async function HomePage({
       getServerAuthContext(),
       getPublicStaffStatusData(locale),
       getPublicReviewsData({ filter: "all", locale, limit: 12 }),
+      getGalleryItems(),
     ]);
 
   const todayQuote = await calculateServerOrderQuote({
@@ -457,6 +460,15 @@ export default async function HomePage({
             </div>
           </div>
         </section>
+
+        {/* 3. Spot & Galeri Foto Pengunjung */}
+        <div className="section-cv-auto">
+          <TouristSpotGallerySection
+            initialItems={galleryItems}
+            userRole={authCtx?.user.role}
+            userName={authCtx?.user.name}
+          />
+        </div>
 
         {/* 4. Petugas Siaga WIB (§5.7) */}
         <div className="section-cv-auto">

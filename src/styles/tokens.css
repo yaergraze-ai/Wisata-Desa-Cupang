@@ -7,61 +7,61 @@
    * Kontras telah diverifikasi matematis sesuai standar WCAG 2.1 AA (≥4.5:1)
    * ======================================================================== */
 
-  /* OBSIDIAN — Kanvas gelap utama (#08110E pada 950 / DEFAULT) */
-  --color-obsidian: #08110e;
-  --color-obsidian-50: #e9efed;
-  --color-obsidian-100: #cedbd6;
-  --color-obsidian-200: #a1bab1;
-  --color-obsidian-300: #73968a;
-  --color-obsidian-400: #4c7366;
-  --color-obsidian-500: #2f5247;
-  --color-obsidian-600: #213e35;
-  --color-obsidian-700: #172d26;
-  --color-obsidian-800: #10201b;
-  --color-obsidian-900: #0b1713;
-  --color-obsidian-950: #08110e;
+  /* OBSIDIAN — Kanvas gelap utama (Midnight Pure Space #05070E) */
+  --color-obsidian: #05070e;
+  --color-obsidian-50: #f0f3fa;
+  --color-obsidian-100: #dce3f3;
+  --color-obsidian-200: #bac8e7;
+  --color-obsidian-300: #8aa3d6;
+  --color-obsidian-400: #5d7bc2;
+  --color-obsidian-500: #3c59a6;
+  --color-obsidian-600: #294186;
+  --color-obsidian-700: #1d2e63;
+  --color-obsidian-800: #121d40;
+  --color-obsidian-900: #0a1024;
+  --color-obsidian-950: #05070e;
 
-  /* HUTAN — Permukaan solid gelap (#0F2A24 pada 900 / DEFAULT) */
-  --color-hutan: #0f2a24;
-  --color-hutan-50: #eaf3f0;
-  --color-hutan-100: #cde3dc;
-  --color-hutan-200: #9ec8bc;
-  --color-hutan-300: #6daa99;
-  --color-hutan-400: #448a77;
-  --color-hutan-500: #286d5b;
-  --color-hutan-600: #1e5748;
-  --color-hutan-700: #18463a;
-  --color-hutan-800: #13382e;
-  --color-hutan-900: #0f2a24;
-  --color-hutan-950: #091a16;
+  /* HUTAN — Permukaan solid gelap (Midnight Slate Navy #0D1527) */
+  --color-hutan: #0d1527;
+  --color-hutan-50: #f1f5fd;
+  --color-hutan-100: #dee7fb;
+  --color-hutan-200: #bfd2f8;
+  --color-hutan-300: #93b3f3;
+  --color-hutan-400: #628eeb;
+  --color-hutan-500: #3b6be0;
+  --color-hutan-600: #254fc9;
+  --color-hutan-700: #1d3ea5;
+  --color-hutan-800: #183384;
+  --color-hutan-900: #132766;
+  --color-hutan-950: #0d1527;
 
-  /* KABUT — Teks di atas gelap & permukaan solid terang (#E8F1EC pada 100 / DEFAULT) */
-  --color-kabut: #e8f1ec;
-  --color-kabut-50: #f6faf8;
-  --color-kabut-100: #e8f1ec;
-  --color-kabut-200: #d1e3d9;
-  --color-kabut-300: #b0cfc0;
-  --color-kabut-400: #89b5a0;
-  --color-kabut-500: #659780;
-  --color-kabut-600: #4d7965;
-  --color-kabut-700: #3d6051;
-  --color-kabut-800: #324e42;
-  --color-kabut-900: #2a4037;
-  --color-kabut-950: #16241e;
+  /* KABUT — Teks di atas gelap & permukaan solid terang (#F1F5F9) */
+  --color-kabut: #f1f5f9;
+  --color-kabut-50: #f8fafc;
+  --color-kabut-100: #f1f5f9;
+  --color-kabut-200: #e2e8f0;
+  --color-kabut-300: #cbd5e1;
+  --color-kabut-400: #94a3b8;
+  --color-kabut-500: #64748b;
+  --color-kabut-600: #475569;
+  --color-kabut-700: #334155;
+  --color-kabut-800: #1e293b;
+  --color-kabut-900: #0f172a;
+  --color-kabut-950: #080c17;
 
-  /* TELAGA — Aksen utama (#2F8F83 pada 500; #23746A pada 700 = 4.82:1 thd kabut; #195E56 pada 800 = 6.56:1) */
-  --color-telaga: #2f8f83;
-  --color-telaga-50: #ecf8f6;
-  --color-telaga-100: #d0efe9;
-  --color-telaga-200: #a4dfd5;
-  --color-telaga-300: #6ec8bb;
-  --color-telaga-400: #45ab9e;
-  --color-telaga-500: #2f8f83;
-  --color-telaga-600: #287f74;
-  --color-telaga-700: #23746a;
-  --color-telaga-800: #195e56;
-  --color-telaga-900: #154b45;
-  --color-telaga-950: #0b2c28;
+  /* TELAGA — Aksen Sapphire Blue & Cyan (#2563EB & #38BDF8) */
+  --color-telaga: #2563eb;
+  --color-telaga-50: #eff6ff;
+  --color-telaga-100: #dbeafe;
+  --color-telaga-200: #bfdbfe;
+  --color-telaga-300: #93c5fd;
+  --color-telaga-400: #60a5fa;
+  --color-telaga-500: #3b82f6;
+  --color-telaga-600: #2563eb;
+  --color-telaga-700: #1d4ed8;
+  --color-telaga-800: #1e40af;
+  --color-telaga-900: #1e3a8a;
+  --color-telaga-950: #172554;
 
   /* FAJAR — Aksen hangat, CTA utama, & rating (#F2A65A pada 400 / DEFAULT = 7.54:1 thd hutan) */
   --color-fajar: #f2a65a;

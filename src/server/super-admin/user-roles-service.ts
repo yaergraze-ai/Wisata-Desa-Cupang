@@ -155,3 +155,77 @@ export async function forceRevokeUserSessions(
 
   return { revokedCount: deleteResult.count };
 }
+
+/**
+ * Menghapus akun pengguna oleh Super Admin dengan perlindungan Super Admin terakhir.
+ */
+export async function superAdminDeleteUser(
+  targetUserId: string,
+  actorId: string,
+  context?: { ip?: string; userAgent?: string }
+): Promise<{ success: boolean; message: string }> {
+  const targetUser = await db.user.findUnique({
+    where: { id: targetUserId },
+  });
+  if (!targetUser) {
+    throw new Error("Pengguna tidak ditemukan.");
+  }
+
+  // Perlindungan ketat: Super Admin terakhir tidak boleh dihapus
+  if (targetUser.role === Role.SUPER_ADMIN) {
+    const superAdminCount = await db.user.count({
+      where: { role: Role.SUPER_ADMIN, deletedAt: null },
+    });
+    if (superAdminCount <= 1) {
+      throw new Error(
+        "LAST_SUPER_ADMIN_CANNOT_BE_DELETED: Akun Super Admin terakhir tidak dapat dihapus demi kelangsungan tata kelola sistem."
+      );
+    }
+  }
+
+  const anonymousSuffix = targetUser.id.slice(-6);
+
+  await db.$transaction(async (tx) => {
+    // Hapus sesi aktif, kredensial auth, dan 2FA
+    await tx.account.deleteMany({ where: { userId: targetUserId } });
+    await tx.session.deleteMany({ where: { userId: targetUserId } });
+    await tx.twoFactor.deleteMany({ where: { userId: targetUserId } });
+
+    // Hapus atau anonimkan data pengguna sesuai standar keamanan PDP
+    await tx.user.update({
+      where: { id: targetUserId },
+      data: {
+        name: `Pengguna Dihapus #${anonymousSuffix}`,
+        email: `deleted_${targetUser.id}@anonymized.wisatacirebon.id`,
+        whatsapp: null,
+        phoneNumber: null,
+        image: null,
+        twoFactorEnabled: false,
+        banned: true,
+        banReason: "Akun dihapus oleh Super Admin",
+        deletedAt: new Date(),
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        actorRole: Role.SUPER_ADMIN,
+        action: "USER_DELETED_BY_SUPER_ADMIN",
+        entity: "User",
+        entityId: targetUserId,
+        ip: context?.ip,
+        userAgent: context?.userAgent,
+        metadata: {
+          targetEmail: targetUser.email,
+          targetRole: targetUser.role,
+        },
+      },
+    });
+  });
+
+  return {
+    success: true,
+    message: `Pengguna '${targetUser.name}' (${targetUser.email}) berhasil dihapus.`,
+  };
+}

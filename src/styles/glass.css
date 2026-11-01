@@ -27,15 +27,15 @@
 .glass-dark {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(15, 42, 36, 0.45) 45%,
-    rgba(8, 17, 14, 0.72) 100%
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(13, 21, 39, 0.5) 45%,
+    rgba(5, 7, 14, 0.8) 100%
   );
-  border: 1px solid rgba(232, 241, 236, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
     inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.35),
     inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25),
-    0 24px 56px -12px rgba(4, 10, 8, 0.65);
+    0 24px 56px -12px rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-radius: var(--radius-panel, 20px);
@@ -135,26 +135,26 @@
 .surface-solid-dark {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(15, 36, 30, 0.6) 45%,
-    rgba(8, 17, 14, 0.88) 100%
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(13, 21, 39, 0.65) 45%,
+    rgba(5, 7, 14, 0.92) 100%
   );
   color: var(--color-kabut);
-  border: 1px solid rgba(232, 241, 236, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-panel, 20px);
   box-shadow:
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
-    0 16px 36px -10px rgba(0, 0, 0, 0.65);
+    0 16px 36px -10px rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .surface-solid-dark:hover {
-  border-color: rgba(232, 241, 236, 0.28);
+  border-color: rgba(255, 255, 255, 0.22);
   box-shadow:
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.3),
-    0 20px 44px -10px rgba(0, 0, 0, 0.75);
+    0 22px 48px -10px rgba(0, 0, 0, 0.85);
 }
 
 .surface-solid-light {
@@ -180,11 +180,11 @@
 
 .ticket-card-reguler {
   position: relative;
-  background: linear-gradient(140deg, #13382e 0%, #0f2a24 100%);
+  background: linear-gradient(140deg, #131c31 0%, #0a0f1d 100%);
   color: var(--color-kabut);
   border: 2px solid var(--color-telaga);
   border-radius: var(--radius-panel);
-  box-shadow: 0 14px 32px rgb(4 10 8 / 0.52);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* Takik perforasi kiri & kanan untuk kesan kertas tiket sungguhan */

@@ -5,6 +5,7 @@ import {
   forceRevokeUserSessions,
   getSuperAdminUsersList,
   updateUserRoleWithLastAdminGuard,
+  superAdminDeleteUser,
 } from "@/server/super-admin/user-roles-service";
 
 export async function GET(req: NextRequest) {
@@ -81,6 +82,36 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const status = (err as { status?: number }).status ?? 500;
     const message = err instanceof Error ? err.message : "Gagal mencabut sesi pengguna.";
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const authCtx = await requireApiRole([Role.SUPER_ADMIN], {
+      requireTwoFactor: false,
+    });
+
+    const body = (await req.json()) as { targetUserId: string };
+    if (!body.targetUserId) {
+      return NextResponse.json(
+        { error: "targetUserId wajib disertakan." },
+        { status: 400 }
+      );
+    }
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined;
+    const userAgent = req.headers.get("user-agent") ?? undefined;
+
+    const res = await superAdminDeleteUser(body.targetUserId, authCtx.user.id, {
+      ip,
+      userAgent,
+    });
+
+    return NextResponse.json(res);
+  } catch (err: unknown) {
+    const status = (err as { status?: number }).status ?? 500;
+    const message = err instanceof Error ? err.message : "Gagal menghapus akun pengguna.";
     return NextResponse.json({ error: message }, { status });
   }
 }
