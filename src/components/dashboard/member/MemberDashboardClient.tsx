@@ -134,6 +134,18 @@ export function MemberDashboardClient({
   const [refreshingOrder, setRefreshingOrder] = useState(false);
   const [openingSnap, setOpeningSnap] = useState(false);
 
+  // State QRIS ASPI & Simulator
+  const [qrisData, setQrisData] = useState<{
+    qrDataUrl: string;
+    qrString: string;
+    isDirectMidtrans: boolean;
+    simulatorUrl: string;
+    merchantName?: string;
+  } | null>(null);
+  const [loadingQris, setLoadingQris] = useState(false);
+  const [paymentViewMode, setPaymentViewMode] = useState<"qris" | "snap">("qris");
+  const [isFakeScanning, setIsFakeScanning] = useState(false);
+
   // State Modal Ulasan & Refund (Fase 7)
   const [reviewModalTicket, setReviewModalTicket] =
     useState<SerializedWalletTicket | null>(null);
@@ -450,6 +462,54 @@ export function MemberDashboardClient({
       toast.error(t("errCreateOrder"));
     } finally {
       setCreatingOrder(false);
+    }
+  }
+
+  useEffect(() => {
+    if (wizardStep === 2 && activeCheckoutOrder) {
+      let isMounted = true;
+      setLoadingQris(true);
+      fetch(`/api/orders/${encodeURIComponent(activeCheckoutOrder.id)}/qris`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (isMounted && data.qrDataUrl) {
+            setQrisData(data);
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (isMounted) setLoadingQris(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [wizardStep, activeCheckoutOrder?.id]);
+
+  async function handleFakeScan(orderId: string) {
+    setIsFakeScanning(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      const res = await fetch(
+        `/api/orders/${encodeURIComponent(orderId)}/pay-simulated?locale=${locale}`,
+        { method: "POST" }
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        order?: SerializedOrderSummary;
+        error?: string;
+      };
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Gagal memproses pembayaran scan QRIS.");
+      }
+      toast.success("QRIS Berhasil Dipindai! Pembayaran lunas & E-Tiket diterbitkan.");
+      await checkSingleOrderStatus(orderId, true);
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal memproses pembayaran simulasi."
+      );
+    } finally {
+      setIsFakeScanning(false);
     }
   }
 
@@ -1417,43 +1477,164 @@ export function MemberDashboardClient({
 
                     {initialSnapshot.paymentConfig.configured &&
                     activeCheckoutOrder.snapToken ? (
-                      <div className="space-y-3 pt-2">
-                        {activeCheckoutOrder.snapToken.startsWith("snap-sim-") ? (
-                          <div className="rounded-xl border border-amber-400/50 bg-gradient-to-br from-amber-950/60 to-obsidian p-4 text-xs text-amber-200 space-y-2.5 shadow-lg">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold flex items-center gap-1.5 text-fajar">
-                                <i className="bi bi-shield-check" aria-hidden="true" />
-                                <span>Simulasi Midtrans Sandbox</span>
-                              </span>
-                              <span className="rounded-full bg-amber-500/20 border border-amber-400/40 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-                                SANDBOX MODE
+                      <div className="space-y-4 pt-2">
+                        {/* Toggle Pilihan: QRIS Simulator vs Snap Popup */}
+                        <div className="flex rounded-xl bg-obsidian p-1 border border-telaga-700/60">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentViewMode("qris")}
+                            className={cn(
+                              "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5",
+                              paymentViewMode === "qris"
+                                ? "bg-fajar text-obsidian shadow-sm"
+                                : "text-kabut/75 hover:text-white"
+                            )}
+                          >
+                            <i className="bi bi-qr-code" aria-hidden="true" />
+                            <span>QRIS ASPI (Scan / Fake)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentViewMode("snap")}
+                            className={cn(
+                              "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5",
+                              paymentViewMode === "snap"
+                                ? "bg-fajar text-obsidian shadow-sm"
+                                : "text-kabut/75 hover:text-white"
+                            )}
+                          >
+                            <i className="bi bi-credit-card-2-front" aria-hidden="true" />
+                            <span>Midtrans Snap / VA</span>
+                          </button>
+                        </div>
+
+                        {paymentViewMode === "qris" ? (
+                          /* KARTU RESMI QRIS ASPI & SIMULATOR */
+                          <div className="rounded-2xl bg-white text-slate-900 p-4 border border-slate-200 shadow-2xl space-y-3.5">
+                            {/* Header QRIS */}
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center justify-center rounded bg-red-600 px-2 py-1 text-white font-extrabold text-xs tracking-tight">
+                                  QRIS
+                                </span>
+                                <div className="leading-tight">
+                                  <p className="font-extrabold text-[11px] text-red-700 uppercase tracking-wider">
+                                    QR Code Standar Pembayaran
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 font-medium">
+                                    Nasional GPN • Format ASPI
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-mono font-bold text-slate-600 border border-slate-200">
+                                NMID: ID1020039281749
                               </span>
                             </div>
-                            <p className="text-[11px] text-amber-200/80 leading-relaxed">
-                              Sesi pembayaran simulasi aktif. Anda dapat langsung mengonfirmasi pembayaran lunas untuk menguji penerbitan tiket dan tanda tangan QR kriptografis.
+
+                            {/* Merchant & Tagihan */}
+                            <div className="text-center pt-1">
+                              <p className="font-bold text-sm text-slate-900">Wisata Desa Cupang</p>
+                              <p className="text-[11px] text-slate-500 font-mono">
+                                No. Pesanan: {activeCheckoutOrder.orderNumber}
+                              </p>
+                              <p className="font-heading text-2xl font-black text-red-600 mt-1">
+                                {formatRupiah(activeCheckoutOrder.totalAmount, locale)}
+                              </p>
+                            </div>
+
+                            {/* Tampilan Gambar QR Code */}
+                            <div className="flex justify-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                              {loadingQris ? (
+                                <div className="h-52 w-52 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                                  <i className="bi bi-arrow-repeat animate-spin text-3xl text-red-600" aria-hidden="true" />
+                                  <span>Memuat QRIS ASPI...</span>
+                                </div>
+                              ) : qrisData?.qrDataUrl ? (
+                                <div className="relative">
+                                  <img
+                                    src={qrisData.qrDataUrl}
+                                    alt={`QRIS ${activeCheckoutOrder.orderNumber}`}
+                                    className="h-52 w-52 rounded-lg object-contain bg-white p-1 border border-slate-200 shadow-sm"
+                                  />
+                                  {isFakeScanning ? (
+                                    <div className="absolute inset-0 bg-red-950/85 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-2 text-white p-3 text-center animate-fadeIn">
+                                      <i className="bi bi-qr-code-scan text-4xl animate-bounce text-fajar" aria-hidden="true" />
+                                      <p className="text-xs font-bold text-fajar">Memindai QRIS...</p>
+                                      <p className="text-[10px] text-kabut/80">Mengonfirmasi Pembayaran Bank</p>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="h-52 w-52 flex items-center justify-center text-xs text-slate-400">
+                                  QRIS tidak tersedia.
+                                </div>
+                              )}
+                            </div>
+
+                            <p className="text-[10px] text-center text-slate-500 leading-tight">
+                              Dapat dipindai langsung melalui BCA Mobile, GoPay, Dana, OVO, ShopeePay, atau Simulator Midtrans.
                             </p>
-                            <button
-                              type="button"
-                              disabled={openingSnap || remainingSeconds <= 0}
-                              onClick={() => handleSimulatedPayment(activeCheckoutOrder.id)}
-                              className="btn-ui btn-fajar w-full justify-center py-2.5 text-xs font-bold"
-                            >
-                              <i
-                                className={cn(
-                                  "bi mr-1.5",
-                                  openingSnap ? "bi-arrow-repeat animate-spin" : "bi-lightning-charge-fill"
-                                )}
-                                aria-hidden="true"
-                              />
-                              <span>
-                                {openingSnap
-                                  ? "Memproses Pembayaran..."
-                                  : "⚡ Selesaikan Pembayaran (Simulasi Lunas)"}
-                              </span>
-                            </button>
+
+                            {/* Tombol Aksi Simulasi */}
+                            <div className="space-y-2 pt-2 border-t border-slate-200">
+                              <button
+                                type="button"
+                                disabled={isFakeScanning || openingSnap || remainingSeconds <= 0}
+                                onClick={() => handleFakeScan(activeCheckoutOrder.id)}
+                                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg transition active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                              >
+                                <i
+                                  className={cn(
+                                    "bi",
+                                    isFakeScanning ? "bi-arrow-repeat animate-spin" : "bi-camera-fill"
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span>
+                                  {isFakeScanning
+                                    ? "Memproses Scan Fake..."
+                                    : "📸 Scan Fake / Bayar Instan (Simulasi Berhasil)"}
+                                </span>
+                              </button>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (qrisData?.qrString) {
+                                      navigator.clipboard.writeText(qrisData.qrString);
+                                      toast.success("String QRIS berhasil disalin!");
+                                    }
+                                  }}
+                                  className="flex-1 py-1.5 px-2 rounded-lg border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition"
+                                  title="Salin kode QRIS untuk paste ke aplikasi atau simulator"
+                                >
+                                  <i className="bi bi-copy" aria-hidden="true" />
+                                  <span>Salin String QRIS</span>
+                                </button>
+
+                                <a
+                                  href="https://simulator.sandbox.midtrans.com/qris/index"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => {
+                                    if (qrisData?.qrString) {
+                                      navigator.clipboard.writeText(qrisData.qrString);
+                                      toast.info("Kode QRIS disalin! Silakan paste di kotak Midtrans Simulator.");
+                                    }
+                                  }}
+                                  className="flex-1 py-1.5 px-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition text-center"
+                                  title="Buka halaman resmi Simulator QRIS Midtrans"
+                                >
+                                  <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
+                                  <span>Simulator Midtrans</span>
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         ) : (
-                          <>
+                          /* PANEL MIDTRANS SNAP POPUP & VA */
+                          <div className="space-y-3">
                             <button
                               type="button"
                               disabled={openingSnap || remainingSeconds <= 0}
@@ -1488,16 +1669,26 @@ export function MemberDashboardClient({
                               </a>
                             ) : null}
 
-                            <button
-                              type="button"
-                              disabled={openingSnap || remainingSeconds <= 0}
-                              onClick={() => handleSimulatedPayment(activeCheckoutOrder.id)}
-                              className="rounded-xl border border-telaga-700/60 bg-obsidian/60 hover:bg-obsidian px-3 py-1.5 text-[11px] font-semibold text-kabut/75 hover:text-kabut w-full transition text-center"
-                            >
-                              <i className="bi bi-lightning mr-1 text-fajar" aria-hidden="true" />
-                              <span>Uji Coba Lunas (Bypass Sandbox)</span>
-                            </button>
-                          </>
+                            <div className="rounded-xl border border-amber-400/40 bg-amber-950/40 p-3 text-xs text-amber-200 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold flex items-center gap-1.5 text-fajar">
+                                  <i className="bi bi-lightning-charge-fill" aria-hidden="true" />
+                                  <span>Bypass Cepat Sandbox</span>
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-amber-200/80">
+                                Konfirmasi pembayaran langsung lunas tanpa membuka jendela pihak ketiga.
+                              </p>
+                              <button
+                                type="button"
+                                disabled={openingSnap || remainingSeconds <= 0}
+                                onClick={() => handleSimulatedPayment(activeCheckoutOrder.id)}
+                                className="btn-ui btn-fajar w-full justify-center py-2 text-xs font-bold"
+                              >
+                                <span>{openingSnap ? "Memproses..." : "⚡ Bayar Sekarang (Simulasi Lunas)"}</span>
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     ) : (

@@ -58,6 +58,7 @@
 .bi-compass-fill::before { content: "\f2d0"; }
 .bi-compass::before { content: "\f2d1"; }
 .bi-credit-card-2-front-fill::before { content: "\f2d9"; }
+.bi-credit-card-2-front::before { content: "\f2da"; }
 .bi-dash-circle::before { content: "\f2e6"; }
 .bi-download::before { content: "\f30a"; }
 .bi-envelope-fill::before { content: "\f32c"; }
@@ -91,7 +92,6 @@
 .bi-journal-text::before { content: "\f444"; }
 .bi-key-fill::before { content: "\f44e"; }
 .bi-lightning-charge-fill::before { content: "\f46c"; }
-.bi-lightning::before { content: "\f46f"; }
 .bi-lock-fill::before { content: "\f47a"; }
 .bi-patch-check-fill::before { content: "\f4b5"; }
 .bi-pencil-square::before { content: "\f4ca"; }
@@ -156,4 +156,5 @@
 .bi-trash3-fill::before { content: "\f78a"; }
 .bi-p-circle-fill::before { content: "\f804"; }
 .bi-person-gear::before { content: "\f8a7"; }
+.bi-copy::before { content: "\f759"; }
 .bi-crosshair::before { content: "\f769"; }
