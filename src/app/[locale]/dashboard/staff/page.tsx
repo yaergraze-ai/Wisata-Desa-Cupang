@@ -75,7 +75,7 @@ export default async function StaffDashboardPage({
     return (
       <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
         <DashboardTopBar locale={locale} authCtx={authCtx} />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6">
+        <main className="w-full flex-1">
           <StaffDashboardClient
             locale={locale}
             initialStaff={staffState}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { GateType, ScanResult, StaffOverrideMode } from "@prisma/client";
+import { GateType, Role, ScanResult, StaffOverrideMode } from "@prisma/client";
 import jsQR from "jsqr";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -17,6 +17,10 @@ import type {
 import type { StaffSelfState } from "@/server/staff/staff-schedule-service";
 import type { AuthenticatedContext } from "@/server/auth/guards";
 import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
+import {
+  DashboardSidebar,
+  type DashboardSidebarTabItem,
+} from "@/components/dashboard/DashboardSidebar";
 
 export type StaffTab = "scanner" | "history" | "search" | "schedule" | "profile";
 
@@ -638,10 +642,37 @@ export function StaffDashboardClient({
     }
   }
 
+  const sidebarTabs: DashboardSidebarTabItem[] = useMemo(
+    () => [
+      { id: "scanner", label: t("tabScanner"), icon: "bi-qr-code-scan" },
+      {
+        id: "history",
+        label: t("tabHistory"),
+        icon: "bi-clock-history",
+        badge: history.length > 0 ? history.length : null,
+      },
+      { id: "search", label: t("tabSearch"), icon: "bi-search" },
+      { id: "schedule", label: t("tabSchedule"), icon: "bi-calendar2-week" },
+      { id: "profile", label: "Profil Petugas", icon: "bi-person-gear" },
+    ],
+    [t, history.length]
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Notice Kontras Tinggi Luar Ruangan */}
-      <div className="flex items-center gap-2 rounded-xl border-2 border-telaga-500 bg-obsidian px-4 py-2 text-xs font-bold text-telaga-200">
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      <DashboardSidebar
+        role={Role.STAFF}
+        userName={staff.name}
+        userEmail={staff.email || "petugas@desacupang.id"}
+        locale={locale}
+        tabs={sidebarTabs}
+        activeTab={activeTab}
+        onSelectTab={(tabId) => setActiveTab(tabId as StaffTab)}
+        title="Portal Petugas Lapangan"
+      />
+      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Notice Kontras Tinggi Luar Ruangan */}
+        <div className="flex items-center gap-2 rounded-xl border-2 border-telaga-500 bg-obsidian px-4 py-2 text-xs font-bold text-telaga-200">
         <i className="bi bi-brightness-high-fill text-base text-fajar" aria-hidden="true" />
         <span>{t("highContrastNotice")}</span>
       </div>
@@ -684,13 +715,13 @@ export function StaffDashboardClient({
           </div>
         </div>
 
-        {/* Pemilih Gerbang Jaga (Hanya Gerbang yang Ditugaskan) */}
+        {/* Pemilih Gerbang Jaga Terhubung */}
         <div className="mt-6 border-t border-telaga-800/80 pt-4">
-          <p className="text-xs font-extrabold tracking-wider text-fajar uppercase flex items-center gap-2">
+          <p className="text-xs font-extrabold tracking-wider text-fajar uppercase flex items-center gap-2 mb-3">
             <i className="bi bi-geo-alt-fill text-xs" aria-hidden="true" />
-            <span>{t("gateSelectLabel")}</span>
+            <span>{t("gateSelectLabel")} (Terhubung ke Sensor Pos)</span>
           </p>
-          <div className="mt-2.5 flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA].map((gate) => {
               const isAssigned =
                 Array.isArray(staff?.assignedGates) &&
@@ -709,25 +740,31 @@ export function StaffDashboardClient({
                   disabled={!isAssigned}
                   onClick={() => handleSelectGate(gate)}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-2xl border-2 px-5 py-3 text-sm font-extrabold transition-all cursor-pointer",
+                    "flex items-center justify-between rounded-2xl border-2 p-4 text-sm font-extrabold transition-all cursor-pointer",
                     isSelected
-                      ? "border-fajar bg-fajar text-obsidian shadow-lg shadow-fajar/20 scale-102"
+                      ? "border-fajar bg-fajar text-obsidian shadow-lg shadow-fajar/20"
                       : isAssigned
-                        ? "border-telaga-700/80 bg-obsidian/80 text-kabut hover:border-fajar hover:bg-obsidian"
+                        ? "border-telaga-700/80 bg-obsidian text-kabut hover:border-fajar hover:bg-obsidian/80"
                         : "border-kabut/10 bg-obsidian/30 text-kabut/40 cursor-not-allowed"
                   )}
                 >
-                  <i
-                    className={cn(
-                      "bi",
-                      gate === GateType.GERBANG_BATU_LAWANG
-                        ? "bi-geo-alt-fill"
-                        : "bi-signpost-2-fill"
-                    )}
-                    aria-hidden="true"
-                  />
-                  <span>{gateName}</span>
-                  {!isAssigned ? (
+                  <div className="flex items-center gap-3">
+                    <i
+                      className={cn(
+                        "bi text-lg",
+                        gate === GateType.GERBANG_BATU_LAWANG
+                          ? "bi-geo-alt-fill"
+                          : "bi-signpost-2-fill"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span>{gateName}</span>
+                  </div>
+                  {isSelected ? (
+                    <span className="rounded-full bg-obsidian px-2.5 py-0.5 text-[11px] font-black text-fajar">
+                      Pos Aktif
+                    </span>
+                  ) : !isAssigned ? (
                     <span className="text-[11px] font-normal text-red-400">
                       {t("notAssignedBadge")}
                     </span>
@@ -1764,6 +1801,7 @@ export function StaffDashboardClient({
       {activeTab === "profile" && authCtx ? (
         <MemberProfileTab authCtx={authCtx} />
       ) : null}
+      </div>
     </div>
   );
 }

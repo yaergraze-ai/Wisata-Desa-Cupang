@@ -97,7 +97,7 @@ export default async function MemberDashboardPage({
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
       <DashboardTopBar locale={locale} authCtx={authCtx} />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-6 lg:px-8">
+      <main className="w-full flex-1">
         <MemberDashboardClient
           locale={locale}
           userId={authCtx.user.id}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { OrderStatus, TicketStatus } from "@prisma/client";
+import { OrderStatus, TicketStatus, Role } from "@prisma/client";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -29,6 +29,10 @@ import { RefundModal } from "@/components/dashboard/member/RefundModal";
 import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
 import type { PublicReviewItemDto } from "@/server/reviews/public-reviews";
 import { ReviewReactionRow } from "@/components/public/ReviewReactionRow";
+import {
+  DashboardSidebar,
+  type DashboardSidebarTabItem,
+} from "@/components/dashboard/DashboardSidebar";
 
 const MotionReviewModal = dynamic(
   () =>
@@ -787,10 +791,32 @@ export function MemberDashboardClient({
     }
   }
 
+  const sidebarTabs: DashboardSidebarTabItem[] = useMemo(
+    () =>
+      tabs.map((tb) => ({
+        id: tb.id,
+        label: tb.label,
+        icon: tb.icon,
+        badge: tb.badge ?? null,
+      })),
+    [tabs]
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header Sambutan & Navigasi Tab dengan Garis Aktif Motion layoutId (§7.2) */}
-      <section className="surface-solid-dark p-5 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-r from-hutan/90 via-obsidian/95 to-obsidian">
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      <DashboardSidebar
+        role={Role.MEMBER}
+        userName={userName}
+        userEmail={userEmail}
+        locale={locale}
+        tabs={sidebarTabs}
+        activeTab={activeTab}
+        onSelectTab={(tabId) => selectTab(tabId as MemberDashboardTab)}
+        title="Dashboard Wisatawan"
+      />
+      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Header Sambutan & Navigasi Tab dengan Garis Aktif Motion layoutId (§7.2) */}
+        <section className="surface-solid-dark p-5 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-r from-hutan/90 via-obsidian/95 to-obsidian">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/30 to-obsidian border border-fajar/40 text-fajar font-heading font-extrabold text-lg sm:text-xl shadow-inner">
@@ -914,9 +940,9 @@ export function MemberDashboardClient({
       {/* TAB 1: RINGKASAN */}
       {activeTab === "overview" ? (
         <div className="space-y-6">
-          {/* 3 KARTU STATISTIK KONTEMPORER */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            {/* Kartu 1: Tiket Aktif */}
+          {/* CONNECTED BENTO STATS CLUSTER (§CONNECTED CARDS) */}
+          <div className="relative overflow-hidden surface-solid-dark rounded-3xl border border-telaga-700/70 shadow-2xl bg-gradient-to-br from-hutan/85 via-obsidian/95 to-obsidian grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-telaga-700/60">
+            {/* Segmen 1: Tiket Aktif */}
             <div
               role="button"
               tabIndex={0}
@@ -931,22 +957,22 @@ export function MemberDashboardClient({
                   selectTab("wallet");
                 }
               }}
-              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+              className="group relative p-6 transition-all duration-300 hover:bg-fajar/5 cursor-pointer flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                  <span className="text-[11px] font-mono font-bold tracking-wider text-kabut/75 uppercase block">
                     {t("activeTicketsStat")}
-                  </p>
-                  <p className="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-fajar">
+                  </span>
+                  <p className="mt-2 font-heading text-3xl sm:text-4xl font-extrabold text-fajar">
                     {activeTickets.length}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner group-hover:scale-110 transition-transform">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner group-hover:scale-110 group-hover:bg-fajar group-hover:text-obsidian transition-all">
                   <i className="bi bi-ticket-perforated-fill text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70 pt-2 border-t border-telaga-800/40">
                 <div className="flex items-center gap-1.5">
                   <i className="bi bi-check-circle-fill text-fajar text-[10px]" aria-hidden="true" />
                   <span>{activeTickets.length > 0 ? "Siap dipindai di gerbang" : "Belum ada tiket aktif"}</span>
@@ -957,7 +983,7 @@ export function MemberDashboardClient({
               </div>
             </div>
 
-            {/* Kartu 2: Kunjungan Terdekat */}
+            {/* Segmen 2: Kunjungan Terdekat */}
             <div
               role="button"
               tabIndex={0}
@@ -968,24 +994,24 @@ export function MemberDashboardClient({
                   selectTab("wallet");
                 }
               }}
-              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+              className="group relative p-6 transition-all duration-300 hover:bg-telaga-400/5 cursor-pointer flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                  <span className="text-[11px] font-mono font-bold tracking-wider text-kabut/75 uppercase block">
                     {t("nearestVisitStat")}
-                  </p>
-                  <p className="mt-3 font-heading text-xl sm:text-2xl font-bold text-kabut truncate">
+                  </span>
+                  <p className="mt-2 font-heading text-xl sm:text-2xl font-bold text-kabut truncate">
                     {nearestVisitYmd
                       ? formatVisitDateDisplay(nearestVisitYmd, locale)
                       : t("noUpcomingVisit")}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-300 shadow-inner group-hover:scale-110 transition-transform">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-300 shadow-inner group-hover:scale-110 group-hover:bg-telaga-400 group-hover:text-obsidian transition-all">
                   <i className="bi bi-calendar-event-fill text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70 pt-2 border-t border-telaga-800/40">
                 <div className="flex items-center gap-1.5">
                   <i className="bi bi-geo-alt-fill text-telaga-400 text-[10px]" aria-hidden="true" />
                   <span>Kawasan Desa Cupang</span>
@@ -996,7 +1022,7 @@ export function MemberDashboardClient({
               </div>
             </div>
 
-            {/* Kartu 3: Total Transaksi Pesanan */}
+            {/* Segmen 3: Total Transaksi Pesanan */}
             <div
               role="button"
               tabIndex={0}
@@ -1007,22 +1033,22 @@ export function MemberDashboardClient({
                   selectTab("orders");
                 }
               }}
-              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-cyan-500 hover:border-emerald-400/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+              className="group relative p-6 transition-all duration-300 hover:bg-emerald-400/5 cursor-pointer flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                  <span className="text-[11px] font-mono font-bold tracking-wider text-kabut/75 uppercase block">
                     {t("totalOrdersStat")}
-                  </p>
-                  <p className="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-telaga-200">
+                  </span>
+                  <p className="mt-2 font-heading text-3xl sm:text-4xl font-extrabold text-telaga-200">
                     {orders.length}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 shadow-inner group-hover:scale-110 transition-transform">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 shadow-inner group-hover:scale-110 group-hover:bg-emerald-400 group-hover:text-obsidian transition-all">
                   <i className="bi bi-receipt-cutoff text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70 pt-2 border-t border-telaga-800/40">
                 <div className="flex items-center gap-1.5">
                   <i className="bi bi-shield-check text-emerald-400 text-[10px]" aria-hidden="true" />
                   <span>Riwayat pembayaran resmi</span>
@@ -1034,16 +1060,24 @@ export function MemberDashboardClient({
             </div>
           </div>
 
-          {/* Tindakan Cepat (Tombol Elegan & Responsif) */}
+          {/* CONNECTED CUSTOMER JOURNEY PIPELINE (§CONNECTED CARDS) */}
           <section className="surface-solid-dark p-6 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/60 to-obsidian space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-heading text-lg font-bold text-kabut flex items-center gap-2">
-                <i className="bi bi-lightning-charge-fill text-fajar" aria-hidden="true" />
-                <span>{t("quickActionsHeading")}</span>
-              </h2>
-              <span className="text-xs text-kabut/60 hidden sm:inline">Pintasan Layanan Mandiri</span>
+              <div>
+                <h2 className="font-heading text-lg font-bold text-kabut flex items-center gap-2">
+                  <i className="bi bi-bezier2 text-fajar" aria-hidden="true" />
+                  <span>Alur Layanan Mandiri Wisatawan</span>
+                </h2>
+                <p className="text-xs text-kabut/70 mt-0.5">
+                  Tiga tahapan resmi kunjungan terintegrasi dari pemesanan hingga penjelajahan alam
+                </p>
+              </div>
+              <span className="text-xs font-mono text-fajar hidden sm:inline">Langkah Terhubung</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+
+            {/* Pipeline Terhubung (3 Segmen Saling Menyambung) */}
+            <div className="relative rounded-2xl border border-telaga-700/70 bg-obsidian/90 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-telaga-700/60 overflow-hidden shadow-lg">
+              {/* Langkah 01 */}
               <button
                 type="button"
                 onClick={() => {
@@ -1051,62 +1085,81 @@ export function MemberDashboardClient({
                   setActiveCheckoutOrder(null);
                   selectTab("buy");
                 }}
-                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-fajar hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
+                className="group relative p-5 text-left transition-all duration-300 hover:bg-fajar/10 cursor-pointer flex flex-col justify-between space-y-4"
               >
                 <div>
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner group-hover:scale-110 transition-transform">
-                    <i className="bi bi-bag-plus-fill text-xl" aria-hidden="true" />
-                  </span>
-                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-fajar transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar font-mono font-black text-sm group-hover:scale-110 transition-transform">
+                      01
+                    </span>
+                    <span className="rounded-full bg-fajar/15 text-fajar px-2.5 py-0.5 text-[10px] font-bold">
+                      Mulai
+                    </span>
+                  </div>
+                  <p className="mt-3 font-heading text-base font-bold text-kabut group-hover:text-fajar transition-colors">
                     {t("quickBuyTitle")}
                   </p>
-                  <p className="mt-1 text-xs text-kabut/75 leading-relaxed">{t("quickBuyDesc")}</p>
+                  <p className="mt-1 text-xs text-kabut/75 leading-relaxed">
+                    {t("quickBuyDesc")}
+                  </p>
                 </div>
-                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-fajar">
-                  <span>Mulai Pembelian</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-fajar pt-2 border-t border-telaga-800/40">
+                  <span>Pesan Sekarang</span>
                   <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
 
+              {/* Langkah 02 */}
               <button
                 type="button"
                 onClick={() => selectTab("wallet")}
-                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-telaga-300 hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
+                className="group relative p-5 text-left transition-all duration-300 hover:bg-telaga-400/10 cursor-pointer flex flex-col justify-between space-y-4"
               >
                 <div>
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-200 shadow-inner group-hover:scale-110 transition-transform">
-                    <i className="bi bi-qr-code-scan text-xl" aria-hidden="true" />
-                  </span>
-                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-telaga-300 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-200 font-mono font-black text-sm group-hover:scale-110 transition-transform">
+                      02
+                    </span>
+                    <span className="rounded-full bg-telaga-950 text-telaga-300 px-2.5 py-0.5 text-[10px] font-bold">
+                      Validasi
+                    </span>
+                  </div>
+                  <p className="mt-3 font-heading text-base font-bold text-kabut group-hover:text-telaga-300 transition-colors">
                     {t("quickWalletTitle")}
                   </p>
                   <p className="mt-1 text-xs text-kabut/75 leading-relaxed">
                     {t("quickWalletDesc")}
                   </p>
                 </div>
-                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-telaga-300">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-telaga-300 pt-2 border-t border-telaga-800/40">
                   <span>Buka E-Ticket</span>
                   <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
 
+              {/* Langkah 03 */}
               <Link
-                href="/jalur"
-                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-emerald-400 hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
+                href={`/${locale}/jalur`}
+                className="group relative p-5 text-left transition-all duration-300 hover:bg-emerald-400/10 cursor-pointer flex flex-col justify-between space-y-4"
               >
                 <div>
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-hutan border border-emerald-600/40 text-emerald-400 shadow-inner group-hover:scale-110 transition-transform">
-                    <i className="bi bi-signpost-split-fill text-xl" aria-hidden="true" />
-                  </span>
-                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-emerald-300 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 font-mono font-black text-sm group-hover:scale-110 transition-transform">
+                      03
+                    </span>
+                    <span className="rounded-full bg-emerald-950 text-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
+                      Eksplorasi
+                    </span>
+                  </div>
+                  <p className="mt-3 font-heading text-base font-bold text-kabut group-hover:text-emerald-400 transition-colors">
                     {t("quickTrailTitle")}
                   </p>
                   <p className="mt-1 text-xs text-kabut/75 leading-relaxed">
                     {t("quickTrailDesc")}
                   </p>
                 </div>
-                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-400">
-                  <span>Lihat Peta Jalur</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 pt-2 border-t border-telaga-800/40">
+                  <span>Peta Jalur & Elevasi</span>
                   <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
@@ -2396,6 +2449,7 @@ export function MemberDashboardClient({
           onClose={() => setSelectedReviewModal(null)}
         />
       ) : null}
+      </div>
     </div>
   );
 }

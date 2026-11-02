@@ -34,6 +34,7 @@
 .bi-bag-plus-fill::before { content: "\f175"; }
 .bi-bar-chart-fill::before { content: "\f17a"; }
 .bi-bell-fill::before { content: "\f189"; }
+.bi-bezier2::before { content: "\f18c"; }
 .bi-box-arrow-in-right::before { content: "\f1be"; }
 .bi-box-arrow-left::before { content: "\f1c2"; }
 .bi-box-arrow-right::before { content: "\f1c3"; }
@@ -64,6 +65,7 @@
 .bi-chevron-right::before { content: "\f285"; }
 .bi-chevron-up::before { content: "\f286"; }
 .bi-circle::before { content: "\f28a"; }
+.bi-clock-fill::before { content: "\f291"; }
 .bi-clock-history::before { content: "\f292"; }
 .bi-clock::before { content: "\f293"; }
 .bi-cloud-arrow-down-fill::before { content: "\f294"; }
@@ -111,7 +113,9 @@
 .bi-lightning-charge-fill::before { content: "\f46c"; }
 .bi-lightning-fill::before { content: "\f46e"; }
 .bi-lightning::before { content: "\f46f"; }
+.bi-list::before { content: "\f479"; }
 .bi-lock-fill::before { content: "\f47a"; }
+.bi-map-fill::before { content: "\f47e"; }
 .bi-patch-check-fill::before { content: "\f4b5"; }
 .bi-pencil-square::before { content: "\f4ca"; }
 .bi-people-fill::before { content: "\f4cf"; }

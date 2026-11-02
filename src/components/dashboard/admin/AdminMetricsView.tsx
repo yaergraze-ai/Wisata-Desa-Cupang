@@ -165,10 +165,10 @@ export function AdminMetricsView() {
         </button>
       </div>
 
-      {/* 4 KARTU METRIK UTAMA (DESAIN KONTEMPORER LUXURY) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Kartu 1: Total Pendapatan */}
-        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-fajar/10 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+      {/* 4 KARTU METRIK UTAMA — CONNECTED SLAB */}
+      <div className="rounded-3xl border border-telaga-700/70 surface-solid-dark shadow-2xl overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-telaga-700/60 bg-gradient-to-br from-hutan/90 via-obsidian/95 to-obsidian">
+        {/* Segmen 1: Total Pendapatan */}
+        <div className="relative p-6 bg-gradient-to-br from-fajar/10 via-transparent to-transparent hover:bg-obsidian/70 transition-colors">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
@@ -188,8 +188,8 @@ export function AdminMetricsView() {
           </div>
         </div>
 
-        {/* Kartu 2: Pesanan Terbayar */}
-        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-telaga-950/60 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+        {/* Segmen 2: Pesanan Terbayar */}
+        <div className="relative p-6 bg-gradient-to-br from-telaga-950/40 via-transparent to-transparent hover:bg-obsidian/70 transition-colors">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
@@ -209,8 +209,8 @@ export function AdminMetricsView() {
           </div>
         </div>
 
-        {/* Kartu 3: Tiket Valid */}
-        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-cyan-950/40 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-cyan-400 before:to-blue-500 hover:border-cyan-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+        {/* Segmen 3: Tiket Valid */}
+        <div className="relative p-6 bg-gradient-to-br from-cyan-950/30 via-transparent to-transparent hover:bg-obsidian/70 transition-colors">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
@@ -230,8 +230,8 @@ export function AdminMetricsView() {
           </div>
         </div>
 
-        {/* Kartu 4: Pemindaian Hari Ini */}
-        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-emerald-950/50 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-telaga-300 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+        {/* Segmen 4: Pemindaian Hari Ini */}
+        <div className="relative p-6 bg-gradient-to-br from-emerald-950/30 via-transparent to-transparent hover:bg-obsidian/70 transition-colors">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">

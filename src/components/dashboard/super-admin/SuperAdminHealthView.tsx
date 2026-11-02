@@ -88,7 +88,7 @@ export function SuperAdminHealthView() {
           <span>{t("testingHealthBtn")}</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="rounded-3xl border border-telaga-700/70 surface-solid-dark shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-telaga-700/60 bg-gradient-to-br from-hutan/90 via-obsidian/95 to-obsidian">
           {integrations.map((item) => {
             const isConnected = item.status === "CONNECTED";
             const isDegraded = item.status === "DEGRADED";
@@ -96,13 +96,7 @@ export function SuperAdminHealthView() {
             return (
               <div
                 key={item.id}
-                className={`relative overflow-hidden p-5 rounded-2xl border bg-gradient-to-br from-obsidian/95 to-hutan/40 space-y-3.5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 before:absolute before:inset-x-0 before:top-0 before:h-1 ${
-                  isConnected
-                    ? "border-emerald-700/60 before:bg-emerald-400 hover:border-emerald-500"
-                    : isDegraded
-                    ? "border-amber-700/60 before:bg-amber-400 hover:border-amber-500"
-                    : "border-red-700/60 before:bg-red-500 hover:border-red-500"
-                }`}
+                className="relative p-5 space-y-3.5 flex flex-col justify-between transition-colors hover:bg-obsidian/70"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
