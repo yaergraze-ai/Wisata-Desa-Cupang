@@ -20,7 +20,7 @@ export default async function StaffDashboardPage({
 
   const authCtx = await requirePageRole({
     locale,
-    allowedRoles: [Role.STAFF],
+    allowedRoles: [Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
     currentPath: "/dashboard/staff",
   });
 

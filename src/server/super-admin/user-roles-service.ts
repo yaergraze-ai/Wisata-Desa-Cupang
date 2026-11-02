@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { GateType, Role } from "@prisma/client";
 import { db } from "@/server/db";
 import { writeAuditLog } from "@/server/audit/audit";
 import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
@@ -109,6 +109,44 @@ export async function updateUserRoleWithLastAdminGuard(
     where: { id: targetUserId },
     data: { role: newRole },
   });
+
+  if (newRole === Role.STAFF) {
+    const existingProfile = await db.staffProfile.findUnique({
+      where: { userId: targetUserId },
+    });
+    if (!existingProfile) {
+      const defaultDest = await db.destination.findFirst({ orderBy: { id: "asc" } });
+      if (defaultDest) {
+        const nameParts = targetUser.name.trim().split(/\s+/);
+        const initials =
+          nameParts.length >= 2
+            ? `${nameParts[0]![0]}${nameParts[1]![0]}`.toUpperCase()
+            : targetUser.name.slice(0, 2).toUpperCase();
+        await db.staffProfile.create({
+          data: {
+            userId: targetUserId,
+            destinationId: defaultDest.id,
+            jobTitleId: "Petugas Gerbang & Tiket",
+            jobTitleEn: "Gate & Ticketing Staff",
+            publicName: targetUser.name,
+            initials: initials || "ST",
+            whatsapp: targetUser.whatsapp || "+6281200000000",
+            assignedGates: [GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA],
+            weeklySchedule: {
+              SENIN: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              SELASA: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              RABU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              KAMIS: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              JUMAT: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              SABTU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              MINGGU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+            },
+            isActive: true,
+          },
+        });
+      }
+    }
+  }
 
   await writeAuditLog({
     actorId,
@@ -329,6 +367,44 @@ export async function superAdminUpdateUserProfile(
       },
     },
   });
+
+  if (data.role === Role.STAFF) {
+    const existingProfile = await db.staffProfile.findUnique({
+      where: { userId: targetUserId },
+    });
+    if (!existingProfile) {
+      const defaultDest = await db.destination.findFirst({ orderBy: { id: "asc" } });
+      if (defaultDest) {
+        const nameParts = updatedUser.name.trim().split(/\s+/);
+        const initials =
+          nameParts.length >= 2
+            ? `${nameParts[0]![0]}${nameParts[1]![0]}`.toUpperCase()
+            : updatedUser.name.slice(0, 2).toUpperCase();
+        await db.staffProfile.create({
+          data: {
+            userId: targetUserId,
+            destinationId: defaultDest.id,
+            jobTitleId: "Petugas Gerbang & Tiket",
+            jobTitleEn: "Gate & Ticketing Staff",
+            publicName: updatedUser.name,
+            initials: initials || "ST",
+            whatsapp: updatedUser.whatsapp || "+6281200000000",
+            assignedGates: [GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA],
+            weeklySchedule: {
+              SENIN: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              SELASA: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              RABU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              KAMIS: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              JUMAT: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              SABTU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+              MINGGU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+            },
+            isActive: true,
+          },
+        });
+      }
+    }
+  }
 
   await writeAuditLog({
     actorId,

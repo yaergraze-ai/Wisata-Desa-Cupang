@@ -1,5 +1,5 @@
 import "server-only";
-import { Role, StaffOverrideMode } from "@prisma/client";
+import { GateType, Role, StaffOverrideMode } from "@prisma/client";
 import { db } from "@/server/db";
 import { getEnv, getIntegrationFlags } from "@/server/env";
 import type { SupportedLocale } from "@/lib/currency";
@@ -59,7 +59,7 @@ export async function getStaffSelfState(params: {
   now?: Date;
 }): Promise<StaffSelfState> {
   const now = params.now ?? new Date();
-  const profile = await db.staffProfile.findUnique({
+  let profile = await db.staffProfile.findUnique({
     where: { userId: params.userId },
     include: {
       user: { select: { name: true, email: true, role: true } },
@@ -72,13 +72,62 @@ export async function getStaffSelfState(params: {
   });
 
   if (!profile) {
-    throw new StaffDomainError(
-      "STAFF_NOT_FOUND",
-      404,
-      params.locale === "en"
-        ? "Staff profile not found for this account."
-        : "Profil petugas tidak ditemukan untuk akun ini."
-    );
+    const user = await db.user.findUnique({ where: { id: params.userId } });
+    if (!user) {
+      throw new StaffDomainError(
+        "STAFF_NOT_FOUND",
+        404,
+        params.locale === "en"
+          ? "Staff profile not found for this account."
+          : "Profil petugas tidak ditemukan untuk akun ini."
+      );
+    }
+
+    const defaultDestination = await db.destination.findFirst({ orderBy: { id: "asc" } });
+    if (!defaultDestination) {
+      throw new StaffDomainError(
+        "DESTINATION_NOT_FOUND",
+        404,
+        "Destinasi belum dikonfigurasi di sistem."
+      );
+    }
+
+    const nameParts = user.name.trim().split(/\s+/);
+    const initials =
+      nameParts.length >= 2
+        ? `${nameParts[0]![0]}${nameParts[1]![0]}`.toUpperCase()
+        : user.name.slice(0, 2).toUpperCase();
+
+    profile = await db.staffProfile.create({
+      data: {
+        userId: user.id,
+        destinationId: defaultDestination.id,
+        jobTitleId: "Petugas Gerbang & Tiket",
+        jobTitleEn: "Gate & Ticketing Staff",
+        publicName: user.name,
+        initials: initials || "ST",
+        whatsapp: user.whatsapp || "+6281200000000",
+        assignedGates: [GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA],
+        weeklySchedule: {
+          SENIN: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          SELASA: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          RABU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          KAMIS: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          JUMAT: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          SABTU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+          MINGGU: { shift: "MORNING", startWib: "07:00", endWib: "15:00" },
+        },
+        isActive: true,
+      },
+      include: {
+        user: { select: { name: true, email: true, role: true } },
+        destination: true,
+        leaveRequests: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
   }
 
   const [cooldownSetting] = await Promise.all([
