@@ -47,7 +47,27 @@ if (
 
 export const auth = betterAuth({
   appName: "Wisata Cirebon",
-  baseURL: env.APP_URL,
+  baseURL: env.APP_URL.replace(/\/+$/, ""),
+  trustedOrigins: (request) => {
+    const list = [
+      "http://localhost:*",
+      "http://127.0.0.1:*",
+      "https://*.vercel.app",
+      "https://wisata-desa-cupang.vercel.app",
+      env.APP_URL.replace(/\/+$/, ""),
+    ];
+    const origin = request?.headers?.get("origin");
+    if (origin && !list.includes(origin)) {
+      list.push(origin);
+    }
+    return list;
+  },
+  advanced: {
+    useSecureCookies:
+      process.env.NODE_ENV === "production" &&
+      !env.APP_URL.includes("localhost") &&
+      !env.APP_URL.includes("127.0.0.1"),
+  },
   secret: env.BETTER_AUTH_SECRET,
   rateLimit: {
     window: 60,

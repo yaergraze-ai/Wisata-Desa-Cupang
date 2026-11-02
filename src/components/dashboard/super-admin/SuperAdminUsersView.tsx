@@ -127,7 +127,15 @@ export function SuperAdminUsersView() {
         const errJson = (await res.json()) as { error?: string };
         throw new Error(errJson.error || "Gagal mencabut sesi login.");
       }
-      const data = (await res.json()) as { revokedCount: number };
+      const data = (await res.json()) as { revokedCount: number; isSelfRevoke?: boolean };
+
+      if (data.isSelfRevoke) {
+        alert("Sesi akun Anda telah berhasil dicabut. Anda akan dialihkan ke halaman masuk.");
+        await fetch("/api/auth/sign-out", { method: "POST" }).catch(() => null);
+        window.location.assign("/masuk");
+        return;
+      }
+
       setActionSuccess(`Berhasil mencabut ${data.revokedCount} sesi aktif.`);
       await loadUsers(page, roleFilter, search);
     } catch (err: unknown) {

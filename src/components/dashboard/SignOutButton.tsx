@@ -14,8 +14,17 @@ export function SignOutButton() {
   async function handleSignOut() {
     setLoading(true);
     try {
-      await authClient.signOut();
-      // Bersihkan cache dompet tiket milik user saat logout (§6.I)
+      // 1. Panggil signOut via client SDK Better Auth
+      await authClient.signOut().catch(() => null);
+
+      // 2. Jaminan pembersihan sesi di server via direct fetch
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).catch(() => null);
+
+      // 3. Bersihkan cache dompet tiket milik user saat logout (§6.I)
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("wisata_cirebon_wallet_cache");
         if ("caches" in window) {
@@ -26,9 +35,12 @@ export function SignOutButton() {
             type: "CLEAR_USER_CACHE",
           });
         }
+        // Hapus cookie non-httpOnly jika tertinggal di browser
+        document.cookie = "better-auth.session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "__Secure-better-auth.session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     } finally {
-      window.location.assign(locale === "en" ? "/en" : "/");
+      window.location.assign(locale === "en" ? "/en/masuk" : "/masuk");
     }
   }
 

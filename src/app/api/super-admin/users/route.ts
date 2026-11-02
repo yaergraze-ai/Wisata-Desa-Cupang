@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const authCtx = await requireApiRole([Role.SUPER_ADMIN], {
+    const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
 
@@ -66,7 +66,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const authCtx = await requireApiRole([Role.SUPER_ADMIN], {
+    const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
 
@@ -114,7 +114,7 @@ export async function PUT(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const authCtx = await requireApiRole([Role.SUPER_ADMIN], {
+    const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
 
@@ -126,8 +126,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isSelfRevoke = body.targetUserId === authCtx.user.id;
     const res = await forceRevokeUserSessions(body.targetUserId, authCtx.user.id);
-    return NextResponse.json({ success: true, ...res });
+    const response = NextResponse.json({ success: true, isSelfRevoke, ...res });
+
+    if (isSelfRevoke) {
+      const cookieNames = [
+        "better-auth.session_token",
+        "__Secure-better-auth.session_token",
+        "better-auth.session_data",
+        "__Secure-better-auth.session_data",
+      ];
+      for (const name of cookieNames) {
+        response.cookies.set({
+          name,
+          value: "",
+          path: "/",
+          maxAge: 0,
+          expires: new Date(0),
+          httpOnly: true,
+          sameSite: "lax",
+        });
+      }
+    }
+
+    return response;
   } catch (err: unknown) {
     const status = (err as { status?: number }).status ?? 500;
     const message = err instanceof Error ? err.message : "Gagal mencabut sesi pengguna.";
@@ -137,7 +160,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const authCtx = await requireApiRole([Role.SUPER_ADMIN], {
+    const authCtx = await requireApiRole([Role.ADMIN, Role.SUPER_ADMIN], {
       requireTwoFactor: false,
     });
 
