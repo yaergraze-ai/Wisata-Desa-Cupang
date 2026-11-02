@@ -50,10 +50,10 @@ export function AdminDashboardClient({
       { key: "orders", label: t("tabOrders"), icon: "bi-receipt" },
       { key: "quotas", label: t("tabQuotas"), icon: "bi-calendar-week" },
       { key: "refunds", label: t("tabRefunds"), icon: "bi-arrow-counterclockwise" },
-      { key: "reviews", label: t("tabReviews"), icon: "bi-star-fill" },
-      { key: "staff", label: t("tabStaff"), icon: "bi-people-fill" },
+      { key: "reviews", label: t("tabReviews"), icon: "bi-star" },
+      { key: "staff", label: t("tabStaff"), icon: "bi-people" },
       { key: "media", label: t("tabMedia"), icon: "bi-images" },
-      { key: "inbox", label: t("tabInbox"), icon: "bi-inbox-fill" },
+      { key: "inbox", label: t("tabInbox"), icon: "bi-inbox" },
       { key: "profile", label: "Profil Admin", icon: "bi-person-gear" },
     ],
     [t]

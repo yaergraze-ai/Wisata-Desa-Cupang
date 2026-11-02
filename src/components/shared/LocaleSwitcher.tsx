@@ -5,7 +5,13 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 
-export function LocaleSwitcher({ className }: { className?: string }) {
+export function LocaleSwitcher({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   const t = useTranslations("Nav");
   const locale = useLocale() as AppLocale;
   const router = useRouter();
@@ -17,6 +23,46 @@ export function LocaleSwitcher({ className }: { className?: string }) {
       typeof window !== "undefined" ? window.location.search : "";
     const target = rawSearch ? `${pathname}${rawSearch}` : pathname;
     router.replace(target, { locale: nextLocale, scroll: false });
+  }
+
+  if (compact) {
+    return (
+      <div
+        role="group"
+        aria-label={t("langLabel")}
+        className={cn(
+          "inline-flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5 text-[10px] font-semibold",
+          className
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => switchLocale("id")}
+          aria-pressed={locale === "id"}
+          className={cn(
+            "rounded px-2 py-0.5 transition-colors cursor-pointer",
+            locale === "id"
+              ? "bg-white/15 text-kabut font-bold shadow-xs"
+              : "text-kabut/50 hover:text-kabut"
+          )}
+        >
+          ID
+        </button>
+        <button
+          type="button"
+          onClick={() => switchLocale("en")}
+          aria-pressed={locale === "en"}
+          className={cn(
+            "rounded px-2 py-0.5 transition-colors cursor-pointer",
+            locale === "en"
+              ? "bg-white/15 text-kabut font-bold shadow-xs"
+              : "text-kabut/50 hover:text-kabut"
+          )}
+        >
+          EN
+        </button>
+      </div>
+    );
   }
 
   return (

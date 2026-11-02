@@ -731,8 +731,8 @@ export function MemberDashboardClient({
   const blockingMessage = renderBlockingMessage();
 
   const tabs: Array<{ id: MemberDashboardTab; label: string; icon: string; badge?: number }> = [
-    { id: "overview", label: t("tabOverview"), icon: "bi-grid-1x2-fill" },
-    { id: "buy", label: t("tabBuy"), icon: "bi-bag-plus-fill" },
+    { id: "overview", label: t("tabOverview"), icon: "bi-grid-1x2" },
+    { id: "buy", label: t("tabBuy"), icon: "bi-ticket-perforated" },
     {
       id: "wallet",
       label: t("tabWallet"),
@@ -742,7 +742,7 @@ export function MemberDashboardClient({
     {
       id: "orders",
       label: t("tabOrders"),
-      icon: "bi-receipt-cutoff",
+      icon: "bi-receipt",
       badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
     },
     {

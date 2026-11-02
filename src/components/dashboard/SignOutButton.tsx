@@ -6,7 +6,11 @@ import { authClient } from "@/lib/auth-client";
 
 export const USER_WALLET_CACHE_NAME = "wisata-cirebon-user-wallet-v1";
 
-export function SignOutButton() {
+export function SignOutButton({
+  variant = "default",
+}: {
+  variant?: "default" | "sidebar";
+}) {
   const t = useTranslations("DashboardShell");
   const locale = useLocale();
   const [loading, setLoading] = useState(false);
@@ -42,6 +46,24 @@ export function SignOutButton() {
     } finally {
       window.location.assign(locale === "en" ? "/en/masuk" : "/masuk");
     }
+  }
+
+  if (variant === "sidebar") {
+    return (
+      <button
+        type="button"
+        disabled={loading}
+        onClick={handleSignOut}
+        className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-kabut/65 hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 cursor-pointer"
+        title={t("signOutBtn")}
+      >
+        <i
+          className={`bi ${loading ? "bi-arrow-repeat animate-spin" : "bi-box-arrow-right"} text-sm text-kabut/45 group-hover:text-rose-400 transition-colors`}
+          aria-hidden="true"
+        />
+        <span>{t("signOutBtn")}</span>
+      </button>
+    );
   }
 
   return (

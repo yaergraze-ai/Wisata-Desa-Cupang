@@ -33,7 +33,7 @@ export function SuperAdminDashboardClient({
 
   const tabs: { key: SuperAdminTab; label: string; icon: string }[] = useMemo(
     () => [
-      { key: "users", label: t("tabUsers"), icon: "bi-people-fill" },
+      { key: "users", label: t("tabUsers"), icon: "bi-people" },
       { key: "health", label: t("tabHealth"), icon: "bi-activity" },
       { key: "audit", label: t("tabAudit"), icon: "bi-journal-text" },
       { key: "settings", label: t("tabSettings"), icon: "bi-sliders" },
