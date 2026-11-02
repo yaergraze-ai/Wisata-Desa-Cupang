@@ -42,7 +42,6 @@
 .bi-calendar3::before { content: "\f214"; }
 .bi-camera-fill::before { content: "\f219"; }
 .bi-camera-reels-fill::before { content: "\f21a"; }
-.bi-camera-video-fill::before { content: "\f21c"; }
 .bi-camera-video-off-fill::before { content: "\f21d"; }
 .bi-caret-left-fill::before { content: "\f22d"; }
 .bi-caret-right-fill::before { content: "\f231"; }
@@ -53,6 +52,7 @@
 .bi-check2-all::before { content: "\f26f"; }
 .bi-check2-circle::before { content: "\f270"; }
 .bi-chevron-double-right::before { content: "\f280"; }
+.bi-chevron-left::before { content: "\f284"; }
 .bi-circle::before { content: "\f28a"; }
 .bi-clock-history::before { content: "\f292"; }
 .bi-clock::before { content: "\f293"; }
@@ -95,7 +95,10 @@
 .bi-info-circle::before { content: "\f431"; }
 .bi-journal-text::before { content: "\f444"; }
 .bi-key-fill::before { content: "\f44e"; }
+.bi-keyboard-fill::before { content: "\f450"; }
 .bi-lightning-charge-fill::before { content: "\f46c"; }
+.bi-lightning-fill::before { content: "\f46e"; }
+.bi-lightning::before { content: "\f46f"; }
 .bi-lock-fill::before { content: "\f47a"; }
 .bi-patch-check-fill::before { content: "\f4b5"; }
 .bi-pencil-square::before { content: "\f4ca"; }

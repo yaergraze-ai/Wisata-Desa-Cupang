@@ -1,6 +1,9 @@
 import { GateType, OrderStatus, TicketStatus } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { evaluateScanRules } from "@/server/scan/scan-service";
+import {
+  evaluateScanRules,
+  extractTicketLookupCriteria,
+} from "@/server/scan/scan-service";
 
 describe("Gate Scan Rules Pure Evaluation Engine (§5.4)", () => {
   // Waktu uji: 2026-11-15 pukul 09:30 WIB (UTC 02:30)
@@ -117,5 +120,56 @@ describe("Gate Scan Rules Pure Evaluation Engine (§5.4)", () => {
       acceptedGates: [GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA],
     });
     expect(scan3.reason).toBe("ALREADY_SCANNED_AT_GATE");
+  });
+});
+
+describe("Ticket Lookup Identifier & Payload Resolution", () => {
+  it("mendeteksi kode tiket publik standar (PUTIH-CBN-... dan REG-BL-...)", () => {
+    const res1 = extractTicketLookupCriteria("PUTIH-CBN-8K4M2P");
+    expect(res1).toEqual({ publicCode: "PUTIH-CBN-8K4M2P" });
+
+    const res2 = extractTicketLookupCriteria("reg-bl-7n3q9x");
+    expect(res2).toEqual({ publicCode: "REG-BL-7N3Q9X" });
+  });
+
+  it("mendeteksi kode tiket publik tanpa strip / dengan spasi ekstra", () => {
+    const res1 = extractTicketLookupCriteria("  putihcbn8k4m2p  ");
+    expect(res1).toEqual({ publicCode: "PUTIH-CBN-8K4M2P" });
+
+    const res2 = extractTicketLookupCriteria("REGBL7N3Q9X");
+    expect(res2).toEqual({ publicCode: "REG-BL-7N3Q9X" });
+  });
+
+  it("mengekstrak kode tiket publik dari tautan URL", () => {
+    const res = extractTicketLookupCriteria(
+      "https://wisata-desa-cupang.vercel.app/id/tickets?code=PUTIH-CBN-8K4M2P"
+    );
+    expect(res).toEqual({ publicCode: "PUTIH-CBN-8K4M2P" });
+  });
+
+  it("mengekstrak ID tiket dari segmen path URL", () => {
+    const res = extractTicketLookupCriteria(
+      "https://wisata-desa-cupang.vercel.app/api/tickets/clx1234567890abcdefghijkl/qr"
+    );
+    expect(res).toEqual({ id: "clx1234567890abcdefghijkl" });
+  });
+
+  it("mengekstrak token QR bertanda tangan WC1", () => {
+    const res = extractTicketLookupCriteria(
+      "WC1.dGVzdG5vbmNlMTIzNDU2Nzg5MDE.c2lnbmF0dXJl"
+    );
+    expect(res).toHaveProperty("qrTokenHash");
+    expect(typeof (res as { qrTokenHash: string }).qrTokenHash).toBe("string");
+  });
+
+  it("mengekstrak dari objek JSON", () => {
+    const res = extractTicketLookupCriteria('{"code":"REG-BL-7N3Q9X"}');
+    expect(res).toEqual({ publicCode: "REG-BL-7N3Q9X" });
+  });
+
+  it("mengembalikan null untuk input kosong atau tidak valid", () => {
+    expect(extractTicketLookupCriteria("")).toBeNull();
+    expect(extractTicketLookupCriteria("   ")).toBeNull();
+    expect(extractTicketLookupCriteria("halo dunia")).toBeNull();
   });
 });

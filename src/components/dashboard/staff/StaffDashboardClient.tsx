@@ -97,8 +97,13 @@ export function StaffDashboardClient({
     useState<StaffScanHistoryRow[]>(initialHistory);
 
   // Scanner state
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [torchAvailable, setTorchAvailable] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
+  const [isManualInputVisible, setIsManualInputVisible] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [isSubmittingScan, setIsSubmittingScan] = useState(false);
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
@@ -132,6 +137,19 @@ export function StaffDashboardClient({
   const scanLoopRef = useRef<number | null>(null);
   const scanFrameRef = useRef<() => void>(() => {});
   const lastScannedTimeRef = useRef<number>(0);
+
+  // Callback ref untuk elemen video agar stream langsung terhubung seketika saat elemen dimount
+  const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    videoRef.current = el;
+    if (el && streamRef.current) {
+      if (el.srcObject !== streamRef.current) {
+        el.srcObject = streamRef.current;
+      }
+      el.play().catch((err) => {
+        console.warn("Video auto-play callback error:", err);
+      });
+    }
+  }, []);
 
   // Countdown timer untuk leave cooldown
   useEffect(() => {
@@ -193,7 +211,7 @@ export function StaffDashboardClient({
     [isSubmittingScan, locale, selectedGate]
   );
 
-  // Kamera scanner loop
+  // Kamera scanner loop: Mendukung BarcodeDetector bawaan & jsQR fallback
   const stopCamera = useCallback(() => {
     if (scanLoopRef.current) {
       cancelAnimationFrame(scanLoopRef.current);
@@ -204,59 +222,188 @@ export function StaffDashboardClient({
       streamRef.current = null;
     }
     setCameraActive(false);
+    setIsScannerOpen(false);
+    setIsTorchOn(false);
+    setTorchAvailable(false);
   }, []);
 
-  const scanFrame = useCallback(() => {
+  const scanFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+    if (
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+      video.videoWidth > 0 &&
+      video.videoHeight > 0
+    ) {
+      let detectedCode: string | null = null;
 
-        if (qrCode && qrCode.data) {
-          const now = Date.now();
-          if (now - lastScannedTimeRef.current > 3000) {
-            lastScannedTimeRef.current = now;
-            void executeScan(qrCode.data);
+      // 1. Hardware accelerated BarcodeDetector jika didukung browser mobile
+      if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+        try {
+          const detector = new (window as unknown as {
+            BarcodeDetector: new (opts: { formats: string[] }) => {
+              detect: (img: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
+            };
+          }).BarcodeDetector({ formats: ["qr_code"] });
+          const barcodes = await detector.detect(video);
+          if (barcodes && barcodes.length > 0 && barcodes[0]?.rawValue) {
+            detectedCode = barcodes[0].rawValue;
+          }
+        } catch {
+          // Fallback ke jsQR canvas bila BarcodeDetector gagal
+        }
+      }
+
+      // 2. jsQR canvas fallback
+      if (!detectedCode) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+
+          if (qrCode && qrCode.data) {
+            detectedCode = qrCode.data;
           }
         }
       }
-    }
 
-    scanLoopRef.current = requestAnimationFrame(() => scanFrameRef.current());
-  }, [executeScan]);
+      // 3. Jika kode terdeteksi, lakukan scan dengan jeda debounce 2.5 detik
+      if (detectedCode) {
+        const now = Date.now();
+        if (now - lastScannedTimeRef.current > 2500 && !isSubmittingScan) {
+          lastScannedTimeRef.current = now;
+          void executeScan(detectedCode);
+        }
+      }
+    }
+  }, [executeScan, isSubmittingScan]);
 
   useEffect(() => {
     scanFrameRef.current = scanFrame;
   }, [scanFrame]);
 
-  const startCamera = useCallback(async () => {
-    setCameraError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+  // RequestAnimationFrame loop saat kamera aktif & scanner terbuka
+  useEffect(() => {
+    if (!cameraActive || !isScannerOpen) {
+      if (scanLoopRef.current) {
+        cancelAnimationFrame(scanLoopRef.current);
+        scanLoopRef.current = null;
       }
-      setCameraActive(true);
-      scanLoopRef.current = requestAnimationFrame(() => scanFrameRef.current());
-    } catch {
-      setCameraError(t("cameraError"));
-      setCameraActive(false);
+      return;
     }
-  }, [t]);
+
+    let isLooping = true;
+    const loop = () => {
+      if (!isLooping) return;
+      void scanFrameRef.current();
+      scanLoopRef.current = requestAnimationFrame(loop);
+    };
+
+    scanLoopRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      isLooping = false;
+      if (scanLoopRef.current) {
+        cancelAnimationFrame(scanLoopRef.current);
+        scanLoopRef.current = null;
+      }
+    };
+  }, [cameraActive, isScannerOpen]);
+
+  // Pastikan stream terhubung dan memutar video saat kamera aktif
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive, isScannerOpen]);
+
+  const startCamera = useCallback(
+    async (targetFacing: "environment" | "user" = facingMode) => {
+      setCameraError(null);
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+        setIsTorchOn(false);
+
+        if (
+          typeof navigator === "undefined" ||
+          !navigator.mediaDevices ||
+          !navigator.mediaDevices.getUserMedia
+        ) {
+          throw new Error(
+            "Peramban tidak mendukung akses kamera secara langsung (MediaDevices API tidak tersedia)."
+          );
+        }
+
+        const constraints: MediaStreamConstraints = {
+          video: {
+            facingMode: { ideal: targetFacing },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef.current = stream;
+
+        // Cek dukungan senter / flashlight
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          const caps = (track.getCapabilities?.() || {}) as { torch?: boolean };
+          setTorchAvailable(Boolean(caps.torch));
+        }
+
+        setCameraActive(true);
+        setIsScannerOpen(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+      } catch (err: unknown) {
+        console.error("Camera startup error:", err);
+        const msg = err instanceof Error ? err.message : t("cameraError");
+        setCameraError(msg.includes("Peramban") ? msg : t("cameraError"));
+        setCameraActive(false);
+        setIsScannerOpen(false);
+      }
+    },
+    [facingMode, t]
+  );
+
+  const toggleTorch = useCallback(async () => {
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      const nextTorch = !isTorchOn;
+      await track.applyConstraints({
+        advanced: [{ torch: nextTorch } as MediaTrackConstraintSet],
+      });
+      setIsTorchOn(nextTorch);
+    } catch (err) {
+      console.warn("Gagal mengubah status senter:", err);
+    }
+  }, [isTorchOn]);
+
+  const flipCamera = useCallback(async () => {
+    const nextFacing = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(nextFacing);
+    await startCamera(nextFacing);
+  }, [facingMode, startCamera]);
 
   useEffect(() => {
     return () => {
@@ -540,7 +687,7 @@ export function StaffDashboardClient({
         </div>
       </section>
 
-      {/* TAB 1: PEMINDAI KAMERA & INPUT MANUAL KONTROL PENUH */}
+      {/* TAB 1: PEMINDAI KAMERA (FORMAT DANA) & INPUT MANUAL KONTROL PENUH */}
       {activeTab === "scanner" ? (
         <section className="space-y-6">
           <div className="rounded-3xl border-2 border-kabut/25 bg-obsidian p-5 sm:p-7">
@@ -562,41 +709,52 @@ export function StaffDashboardClient({
               <button
                 type="button"
                 data-testid="toggle-camera-btn"
-                onClick={cameraActive ? stopCamera : startCamera}
+                onClick={cameraActive ? stopCamera : () => void startCamera()}
                 className={cn(
-                  "btn-ui py-3 text-sm font-black",
+                  "btn-ui py-3.5 px-6 text-sm font-black shadow-lg",
                   cameraActive ? "btn-kabut" : "btn-fajar"
                 )}
               >
                 <i
                   className={cn(
                     "bi",
-                    cameraActive ? "bi-camera-video-off-fill" : "bi-camera-video-fill"
+                    cameraActive ? "bi-camera-video-off-fill" : "bi-qr-code-scan"
                   )}
                   aria-hidden="true"
                 />
-                <span>{cameraActive ? t("cameraStop") : t("cameraStart")}</span>
+                <span>
+                  {cameraActive
+                    ? t("cameraStop")
+                    : t("scannerOpenBtn") || "Buka Pemindai QR (Mode Kamera DANA)"}
+                </span>
               </button>
             </div>
 
-            {/* Jendela Video Kamera */}
-            {cameraActive ? (
-              <div className="relative mt-5 overflow-hidden rounded-2xl border-4 border-fajar bg-black">
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  className="mx-auto max-h-96 w-full object-cover"
-                />
-                <canvas ref={canvasRef} className="hidden" />
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-60 w-60 rounded-3xl border-4 border-dashed border-fajar/80 shadow-2xl" />
+            {/* Banner Panduan Singkat Mode Kamera DANA */}
+            <div className="mt-6 rounded-2xl border-2 border-fajar/30 bg-hutan/90 p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-fajar">
+                    <i className="bi bi-shield-check" aria-hidden="true" />
+                    <span>Mode Validasi Cepat Gerbang</span>
+                  </span>
+                  <p className="text-sm font-bold text-kabut">
+                    Arahkan kamera ke tiket QR pengunjung. Sistem otomatis mendeteksi tanda tangan HMAC, URL tiket, maupun kode publik.
+                  </p>
+                  <p className="text-xs text-kabut/70">
+                    Mendukung lampu senter & pergantian kamera depan/belakang untuk situasi malam atau pencahayaan minim.
+                  </p>
                 </div>
-                <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-obsidian/90 px-3 py-1.5 text-center text-xs font-bold text-fajar backdrop-blur-sm">
-                  {t("cameraActive")}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => void startCamera()}
+                  className="btn-ui btn-fajar py-3 px-5 text-xs font-black self-start sm:self-auto shrink-0 shadow-md"
+                >
+                  <i className="bi bi-camera-fill mr-2" aria-hidden="true" />
+                  <span>Pindai Sekarang</span>
+                </button>
               </div>
-            ) : null}
+            </div>
 
             {cameraError ? (
               <div
@@ -656,13 +814,212 @@ export function StaffDashboardClient({
         </section>
       ) : null}
 
+      {/* JENDELA PEMINDAI FULLSCREEN GAYA DANA / E-WALLET */}
+      {isScannerOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex flex-col bg-black text-white select-none overflow-hidden"
+        >
+          {/* Header Bar Pemindai */}
+          <div className="relative z-20 flex items-center justify-between px-4 py-3.5 bg-gradient-to-b from-black/95 via-black/80 to-transparent">
+            <button
+              type="button"
+              onClick={stopCamera}
+              data-testid="close-scanner-modal-btn"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-xs font-black text-kabut backdrop-blur-md hover:bg-white/10 transition-colors"
+            >
+              <i className="bi bi-chevron-left" aria-hidden="true" />
+              <span>{t("cancelBtn") || "Tutup"}</span>
+            </button>
+
+            <div className="text-center">
+              <h2 className="font-heading text-sm font-extrabold sm:text-base text-white">
+                {t("scannerModalTitle") || "Pemindai Tiket Masuk"}
+              </h2>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-fajar">
+                <i className="bi bi-geo-alt-fill" aria-hidden="true" />
+                <span>
+                  {selectedGate === GateType.GERBANG_BATU_LAWANG
+                    ? t("gateBatuLawang")
+                    : t("gateGunungBendera")}
+                </span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Tombol Senter (Torch) */}
+              {torchAvailable ? (
+                <button
+                  type="button"
+                  onClick={toggleTorch}
+                  data-testid="toggle-torch-btn"
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-full border transition-all backdrop-blur-md",
+                    isTorchOn
+                      ? "border-fajar bg-fajar text-obsidian shadow-[0_0_15px_#F59E0B]"
+                      : "border-white/20 bg-black/60 text-white hover:border-fajar"
+                  )}
+                  title={isTorchOn ? t("scannerTorchOff") : t("scannerTorchOn")}
+                >
+                  <i
+                    className={cn(
+                      "bi",
+                      isTorchOn ? "bi-lightning-fill text-base" : "bi-lightning text-base"
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : null}
+
+              {/* Tombol Balik Kamera (Depan / Belakang) */}
+              <button
+                type="button"
+                onClick={flipCamera}
+                data-testid="switch-camera-btn"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md hover:border-fajar transition-colors"
+                title={t("scannerSwitchCamera") || "Ganti Kamera"}
+              >
+                <i className="bi bi-camera-reverse-fill text-base" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          {/* Area Kamera Viewfinder */}
+          <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden">
+            <video
+              ref={setVideoRef}
+              playsInline
+              autoPlay
+              muted
+              onCanPlay={() => {
+                if (videoRef.current && videoRef.current.paused) {
+                  videoRef.current.play().catch(() => {});
+                }
+              }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <canvas ref={canvasRef} className="hidden" />
+
+            {/* Cutout Mask Vignette Gelap di Sekitar Kotak Fokus (Khas DANA) */}
+            <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
+              {/* Bagian Atas Mask Gelap */}
+              <div className="flex-1 bg-black/65 w-full backdrop-blur-[1px]" />
+
+              {/* Baris Tengah: Samping Kiri + Kotak Bidik + Samping Kanan */}
+              <div className="flex items-center justify-center w-full">
+                <div className="flex-1 bg-black/65 h-64 sm:h-72 backdrop-blur-[1px]" />
+
+                {/* Kotak Bidik QR (Targeting Box) */}
+                <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden border border-fajar/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] pointer-events-auto">
+                  {/* 4 Sudut Reticle Khas E-Wallet DANA */}
+                  <span className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-fajar rounded-tl-2xl shadow-[0_0_12px_#F59E0B]" />
+                  <span className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-fajar rounded-tr-2xl shadow-[0_0_12px_#F59E0B]" />
+                  <span className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-fajar rounded-bl-2xl shadow-[0_0_12px_#F59E0B]" />
+                  <span className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-fajar rounded-br-2xl shadow-[0_0_12px_#F59E0B]" />
+
+                  {/* Garis Laser Animasi Bergerak Naik-Turun */}
+                  <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-fajar to-transparent shadow-[0_0_15px_#F59E0B] animate-scan-laser pointer-events-none" />
+
+                  {/* Titik Target Tengah */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+                    <i className="bi bi-plus-lg text-4xl text-fajar" aria-hidden="true" />
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-black/65 h-64 sm:h-72 backdrop-blur-[1px]" />
+              </div>
+
+              {/* Bagian Bawah Mask Gelap: Petunjuk Visual */}
+              <div className="flex-1 bg-black/65 w-full flex flex-col items-center justify-start pt-5 px-6 backdrop-blur-[1px] space-y-3">
+                <div className="text-center space-y-1">
+                  <p className="font-heading text-sm sm:text-base font-black text-white tracking-wide">
+                    {t("scannerViewfinderPrompt")}
+                  </p>
+                  <p className="text-xs text-kabut/80 font-medium">
+                    {t("scannerViewfinderSubtitle")}
+                  </p>
+                </div>
+
+                {/* Status Indikator Deteksi */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-fajar/40 bg-black/75 px-4 py-1.5 text-xs font-bold backdrop-blur-md">
+                  {isSubmittingScan ? (
+                    <>
+                      <i className="bi bi-arrow-repeat animate-spin text-fajar text-sm" aria-hidden="true" />
+                      <span className="text-fajar font-bold">{t("scannerValidating")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-emerald-300 font-bold">{t("scannerDetecting")}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar: Input Manual Cepat & Ringkasan Hari Ini */}
+          <div className="relative z-20 bg-obsidian border-t-2 border-kabut/20 p-4 space-y-3">
+            {isManualInputVisible ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void executeScan(manualCode);
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  data-testid="scanner-modal-manual-input"
+                  type="text"
+                  required
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                  placeholder={t("manualInputHint")}
+                  className="flex-1 rounded-xl border-2 border-kabut/30 bg-hutan px-4 py-2.5 font-mono text-sm font-bold text-kabut placeholder:text-kabut/40 focus:border-fajar focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmittingScan || !manualCode.trim()}
+                  className="btn-ui btn-fajar py-2.5 px-4 text-xs font-black disabled:opacity-40"
+                >
+                  {isSubmittingScan ? "Memproses..." : "Validasi"}
+                </button>
+              </form>
+            ) : null}
+
+            <div className="flex items-center justify-between text-xs font-bold text-kabut/80">
+              <button
+                type="button"
+                onClick={() => setIsManualInputVisible((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 text-fajar hover:underline"
+              >
+                <i className="bi bi-keyboard-fill" aria-hidden="true" />
+                <span>
+                  {isManualInputVisible
+                    ? "Tutup Input Manual"
+                    : t("scannerManualInputToggle")}
+                </span>
+              </button>
+
+              <span className="text-kabut/70">
+                Masuk hari ini:{" "}
+                <strong className="text-fajar font-extrabold">
+                  {todayAdmittedCount} {t("todayAdmittedUnit")}
+                </strong>
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* OVERLAY HASIL PINDAI LAYAR PENUH HIJAU/MERAH DENGAN ADMIT COUNT KONFIRMASI (§6.D.1) */}
       {scanOutcome ? (
         <div
           data-testid="scan-overlay-result"
           onClick={() => setScanOutcome(null)}
           className={cn(
-            "fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md",
+            "fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md",
             scanOutcome.result === ScanResult.ACCEPTED
               ? "bg-[#062419]/95 text-[#E8F1EC] border-8 border-[#2F8F83]"
               : "bg-[#2E0808]/95 text-[#FEE2E2] border-8 border-red-600"
@@ -671,10 +1028,10 @@ export function StaffDashboardClient({
           <div className="max-w-xl space-y-4">
             <span
               className={cn(
-                "inline-flex h-24 w-24 items-center justify-center rounded-full text-5xl",
+                "inline-flex h-24 w-24 items-center justify-center rounded-full text-5xl shadow-2xl",
                 scanOutcome.result === ScanResult.ACCEPTED
-                  ? "bg-[#2F8F83] text-obsidian shadow-2xl"
-                  : "bg-red-600 text-white shadow-2xl"
+                  ? "bg-[#2F8F83] text-obsidian"
+                  : "bg-red-600 text-white"
               )}
             >
               <i
@@ -746,7 +1103,22 @@ export function StaffDashboardClient({
               </div>
             ) : null}
 
-            <p className="pt-4 text-xs font-bold text-kabut/80 uppercase">
+            <div className="pt-4">
+              <button
+                type="button"
+                data-testid="next-scan-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setScanOutcome(null);
+                }}
+                className="btn-ui btn-fajar py-3 px-8 text-sm font-black shadow-xl"
+              >
+                <i className="bi bi-qr-code-scan mr-2" aria-hidden="true" />
+                <span>{t("scannerNextScanBtn") || "Lanjut Pindai Berikutnya"}</span>
+              </button>
+            </div>
+
+            <p className="pt-2 text-xs font-bold text-kabut/80 uppercase">
               {t("dismissOverlayBtn")}
             </p>
           </div>

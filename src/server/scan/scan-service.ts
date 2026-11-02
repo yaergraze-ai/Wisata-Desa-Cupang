@@ -16,6 +16,7 @@ import {
   parseVisitDateToUtcDate,
 } from "@/lib/datetime-wib";
 import { verifyServerQrPayload } from "@/server/tickets/qr-crypto";
+import { hashQrPayload } from "@/lib/qr-crypto";
 import { writeAuditLog } from "@/server/audit/audit";
 
 export type ScanReasonCode =
@@ -70,6 +71,129 @@ export interface ScanInput {
 }
 
 const PUBLIC_CODE_RE = /^(PUTIH-CBN|REG-BL)-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
+
+/**
+ * Resolusi string input dari pemindai QR atau input manual menjadi kriteria pencarian tiket Prisma.
+ * Mendukung:
+ * 1. Payload QR bertanda tangan: WC1.<nonce>.<hmac>
+ * 2. URL lengkap tiket (mis. https://.../id/tickets?code=... atau /api/tickets/[ticketId]/qr)
+ * 3. JSON terenkode (mis. {"token":"..."} atau {"code":"..."})
+ * 4. Kode publik tiket (PUTIH-CBN-XXXXXX atau REG-BL-XXXXXX)
+ * 5. Kode publik tanpa tanda strip (PUTIHCBNXXXXXX atau REGBLXXXXXX)
+ * 6. ID tiket langsung (CUID / UUID)
+ */
+export function extractTicketLookupCriteria(
+  rawInput: string
+): Prisma.TicketWhereUniqueInput | null {
+  if (!rawInput) return null;
+  let raw = rawInput.trim();
+
+  // Bersihkan kutip pembungkus
+  if (
+    (raw.startsWith('"') && raw.endsWith('"')) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    raw = raw.slice(1, -1).trim();
+  }
+
+  // 1. Cek URL (misal scan tautan tiket pengunjung)
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const parsedUrl = new URL(raw);
+      const urlToken =
+        parsedUrl.searchParams.get("token") ||
+        parsedUrl.searchParams.get("qr");
+      if (urlToken) {
+        const sub = extractTicketLookupCriteria(urlToken);
+        if (sub) return sub;
+      }
+
+      const urlCode =
+        parsedUrl.searchParams.get("code") ||
+        parsedUrl.searchParams.get("publicCode");
+      if (urlCode) {
+        const sub = extractTicketLookupCriteria(urlCode);
+        if (sub) return sub;
+      }
+
+      const urlTicketId =
+        parsedUrl.searchParams.get("ticketId") ||
+        parsedUrl.searchParams.get("id");
+      if (urlTicketId) {
+        const sub = extractTicketLookupCriteria(urlTicketId);
+        if (sub) return sub;
+      }
+
+      // Cek segmen path URL: e.g. /tickets/[ticketId] atau /qr/[ticketId]
+      const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+      for (const segment of pathSegments.reverse()) {
+        const sub = extractTicketLookupCriteria(segment);
+        if (sub) return sub;
+      }
+    } catch {
+      // Abaikan bila bukan URL yang valid
+    }
+  }
+
+  // 2. Cek JSON
+  if (raw.startsWith("{") && raw.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const cand = String(
+        parsed.token ||
+          parsed.qr ||
+          parsed.code ||
+          parsed.publicCode ||
+          parsed.ticketId ||
+          parsed.id ||
+          ""
+      );
+      if (cand) {
+        const sub = extractTicketLookupCriteria(cand);
+        if (sub) return sub;
+      }
+    } catch {
+      // Abaikan
+    }
+  }
+
+  // 3. Cek payload QR bertanda tangan WC1.<nonce>.<hmac>
+  const wc1Match = raw.match(/WC1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
+  if (wc1Match) {
+    const token = wc1Match[0];
+    const verified = verifyServerQrPayload(token);
+    if (verified.validSignature && verified.qrTokenHash) {
+      return { qrTokenHash: verified.qrTokenHash };
+    }
+    // Fallback hash langsung
+    return { qrTokenHash: hashQrPayload(token) };
+  }
+
+  // 4. Cek kode publik tiket (PUTIH-CBN-... atau REG-BL-...)
+  const cleanCode = raw.toUpperCase().replace(/\s+/g, "");
+  const publicCodeMatch = cleanCode.match(
+    /(PUTIH-CBN|REG-BL)-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}/
+  );
+  if (publicCodeMatch) {
+    return { publicCode: publicCodeMatch[0] };
+  }
+
+  // 4b. Toleransi kode publik tanpa tanda strip: PUTIHCBNXXXXXX -> PUTIH-CBN-XXXXXX
+  const noDashMatch = cleanCode.match(
+    /^(PUTIHCBN|REGBL)([23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6})$/
+  );
+  if (noDashMatch) {
+    const prefix = noDashMatch[1] === "PUTIHCBN" ? "PUTIH-CBN" : "REG-BL";
+    return { publicCode: `${prefix}-${noDashMatch[2]}` };
+  }
+
+  // 5. Cek ID tiket langsung (CUID / UUID / CMID)
+  if (/^[a-z0-9_-]{20,36}$/i.test(raw)) {
+    return { id: raw };
+  }
+
+  return null;
+}
 
 /**
  * Evaluasi aturan murni (tanpa I/O) untuk tiket yang sudah ditemukan. Urutan pemeriksaan
@@ -182,19 +306,8 @@ export async function scanTicketAtGate(input: ScanInput): Promise<ScanOutcome> {
     });
   }
 
-  // 2. Resolusi tiket: payload QR bertanda tangan HMAC atau kode publik yang diketik manual
-  let ticketWhere: Prisma.TicketWhereUniqueInput | null = null;
-  if (raw.startsWith("WC1.")) {
-    const verified = verifyServerQrPayload(raw);
-    if (verified.validSignature && verified.qrTokenHash) {
-      ticketWhere = { qrTokenHash: verified.qrTokenHash };
-    }
-  } else {
-    const code = raw.toUpperCase().replace(/\s+/g, "");
-    if (PUBLIC_CODE_RE.test(code)) {
-      ticketWhere = { publicCode: code };
-    }
-  }
+  // 2. Resolusi tiket: payload QR bertanda tangan HMAC, kode publik tiket, atau ID tiket
+  const ticketWhere = extractTicketLookupCriteria(raw);
 
   const ticket = ticketWhere
     ? await db.ticket.findUnique({

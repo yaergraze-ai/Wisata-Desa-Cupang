@@ -151,6 +151,25 @@ html {
   }
 }
 
+@keyframes qrScanLaser {
+  0% {
+    top: 6%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scan-laser {
+  animation: qrScanLaser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ambient-orb {
     animation: none;
