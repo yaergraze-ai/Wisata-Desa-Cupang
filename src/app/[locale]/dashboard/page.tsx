@@ -94,7 +94,7 @@ export default async function MemberDashboardPage({
   ]);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
+    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour dashboard-font font-sans">
       <main className="w-full flex-1">
         <MemberDashboardClient
           locale={locale}

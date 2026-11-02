@@ -43,7 +43,7 @@ export default async function SuperAdminDashboardPage({
       : "users";
 
   return (
-    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
+    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour dashboard-font font-sans">
       <main className="w-full flex-1">
         {/* Client Tabs Controller with Left Sidebar */}
         <SuperAdminDashboardClient

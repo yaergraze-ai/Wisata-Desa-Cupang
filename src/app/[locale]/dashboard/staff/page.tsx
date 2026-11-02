@@ -72,7 +72,7 @@ export default async function StaffDashboardPage({
     );
 
     return (
-      <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
+      <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour dashboard-font font-sans">
         <main className="w-full flex-1">
           <StaffDashboardClient
             locale={locale}
