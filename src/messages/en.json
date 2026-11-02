@@ -871,7 +871,19 @@
     "replyBodyLabel": "Reply Message Body",
     "replyBodyPlaceholder": "Type official management response...",
     "sendReplyBtn": "Send Reply",
-    "sendingReplyBtn": "Sending..."
+    "sendingReplyBtn": "Sending...",
+    "chartPeriodDaily": "Daily (14 Days)",
+    "chartPeriodWeekly": "Weekly (8 Weeks)",
+    "chartPeriodMonthly": "Monthly (12 Months)",
+    "chartPeriodYearly": "Yearly (4 Years)",
+    "metricRevenueToggle": "Revenue (Rp)",
+    "metricTicketsToggle": "Ticket Volume",
+    "totalSelectedPeriod": "Total in Selected Period",
+    "avgPerPeriod": "Average per Period",
+    "peakPeriod": "Highest Peak",
+    "gateScansCount": "Gate Scans",
+    "analyticsChartTitle": "Revenue & Visitation Analytics",
+    "analyticsChartSubtitle": "Performance trend visualization of sales and visitor arrivals"
   },
   "SuperAdminDashboard": {
     "tabUsers": "User Roles & Sessions",

@@ -904,14 +904,48 @@ export async function cancelPendingOrder(params: {
  * Merapikan status pesanan PENDING yang sudah lewat expiresAt menjadi EXPIRED
  * serta tiket ACTIVE yang lewat tanggal kunjungan WIB tanpa scan menjadi EXPIRED (§5.2 & §5.4).
  */
+/**
+ * Membersihkan arsip tiket terpakai/kedaluwarsa yang sudah berumur lebih dari 30 hari dari database (§5.4).
+ * Tiket yang dihapus mencakup yang telah digunakan di gerbang atau berstatus EXPIRED / CANCELLED / REFUNDED.
+ */
+export async function cleanupArchivedTickets(
+  retentionDays = 30,
+  now: Date = new Date()
+): Promise<number> {
+  const cutoffTime = new Date(now.getTime() - retentionDays * 24 * 60 * 60 * 1000);
+  const cutoffYmd = getTodayWibDateString(cutoffTime);
+  const cutoffDate = parseVisitDateToUtcDate(cutoffYmd);
+
+  const deleted = await db.ticket.deleteMany({
+    where: {
+      visitDate: { lt: cutoffDate },
+      OR: [
+        { gateScans: { some: { result: ScanResult.ACCEPTED } } },
+        {
+          status: {
+            in: [
+              TicketStatus.EXPIRED,
+              TicketStatus.CANCELLED,
+              TicketStatus.REFUNDED,
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  return deleted.count;
+}
+
 export async function expireStaleOrders(now: Date = new Date()): Promise<{
   expiredOrdersCount: number;
   expiredTicketsCount: number;
+  cleanedArchivedTicketsCount: number;
 }> {
   const todayWib = getTodayWibDateString(now);
   const todayUtcDate = parseVisitDateToUtcDate(todayWib);
 
-  const [ordersRes, ticketsRes] = await Promise.all([
+  const [ordersRes, ticketsRes, cleanedTicketsCount] = await Promise.all([
     db.order.updateMany({
       where: {
         status: OrderStatus.PENDING,
@@ -935,11 +969,13 @@ export async function expireStaleOrders(now: Date = new Date()): Promise<{
         status: TicketStatus.EXPIRED,
       },
     }),
+    cleanupArchivedTickets(30, now).catch(() => 0),
   ]);
 
   return {
     expiredOrdersCount: ordersRes.count,
     expiredTicketsCount: ticketsRes.count,
+    cleanedArchivedTicketsCount: cleanedTicketsCount,
   };
 }
 
@@ -1369,6 +1405,9 @@ export async function getMemberDashboardSnapshot(params: {
   userId: string;
   locale: SupportedLocale;
 }): Promise<MemberDashboardSnapshot> {
+  // Membersihkan arsip tiket terpakai/kedaluwarsa > 30 hari secara otomatis di latar belakang
+  void cleanupArchivedTickets(30).catch(() => 0);
+
   const [ordersRaw, refundSetting] = await Promise.all([
     db.order.findMany({
       where: { userId: params.userId },

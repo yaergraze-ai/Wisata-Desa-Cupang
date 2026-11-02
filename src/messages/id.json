@@ -871,7 +871,19 @@
     "replyBodyLabel": "Isi Balasan",
     "replyBodyPlaceholder": "Ketik isi respon resmi pengelola wisata...",
     "sendReplyBtn": "Kirim Balasan",
-    "sendingReplyBtn": "Mengirim..."
+    "sendingReplyBtn": "Mengirim...",
+    "chartPeriodDaily": "Harian (14 Hari)",
+    "chartPeriodWeekly": "Mingguan (8 Minggu)",
+    "chartPeriodMonthly": "Bulanan (12 Bulan)",
+    "chartPeriodYearly": "Tahunan (4 Tahun)",
+    "metricRevenueToggle": "Pendapatan (Rp)",
+    "metricTicketsToggle": "Volume Tiket",
+    "totalSelectedPeriod": "Total Periode Terpilih",
+    "avgPerPeriod": "Rata-rata per Periode",
+    "peakPeriod": "Puncak Tertinggi (Peak)",
+    "gateScansCount": "Pemindaian Gerbang",
+    "analyticsChartTitle": "Grafik Analitik Pendapatan & Kunjungan",
+    "analyticsChartSubtitle": "Visualisasi tren performa penjualan dan kedatangan pengunjung"
   },
   "SuperAdminDashboard": {
     "tabUsers": "Manajemen Peran & Sesi",

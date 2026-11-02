@@ -658,7 +658,9 @@ export function StaffDashboardClient({
           </p>
           <div className="mt-2.5 flex flex-wrap gap-3">
             {[GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA].map((gate) => {
-              const isAssigned = staff.assignedGates.includes(gate);
+              const isAssigned =
+                Array.isArray(staff?.assignedGates) &&
+                staff.assignedGates.includes(gate);
               const isSelected = selectedGate === gate;
               const gateName =
                 gate === GateType.GERBANG_BATU_LAWANG

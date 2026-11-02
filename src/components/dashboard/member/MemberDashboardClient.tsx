@@ -89,8 +89,37 @@ export function MemberDashboardClient({
   const [walletTickets, setWalletTickets] = useState<SerializedWalletTicket[]>(
     initialSnapshot.walletTickets
   );
+  const [ticketFilter, setTicketFilter] = useState<"all" | "active" | "used">("all");
   const [isOffline, setIsOffline] = useState(false);
   const [cachedSavedAtIso, setCachedSavedAtIso] = useState<string | null>(null);
+
+  const activeTicketsCount = useMemo(
+    () =>
+      walletTickets.filter(
+        (tk) => !tk.displayUsed && tk.status === TicketStatus.ACTIVE
+      ).length,
+    [walletTickets]
+  );
+  const usedTicketsCount = useMemo(
+    () =>
+      walletTickets.filter(
+        (tk) => tk.displayUsed || tk.status !== TicketStatus.ACTIVE
+      ).length,
+    [walletTickets]
+  );
+  const filteredWalletTickets = useMemo(() => {
+    if (ticketFilter === "active") {
+      return walletTickets.filter(
+        (tk) => !tk.displayUsed && tk.status === TicketStatus.ACTIVE
+      );
+    }
+    if (ticketFilter === "used") {
+      return walletTickets.filter(
+        (tk) => tk.displayUsed || tk.status !== TicketStatus.ACTIVE
+      );
+    }
+    return walletTickets;
+  }, [ticketFilter, walletTickets]);
 
   // State Wizard 3 Langkah (Pos 1 -> Pos 2 -> Pos 3)
   const initialFocusOrder = useMemo(() => {
@@ -1820,13 +1849,92 @@ export function MemberDashboardClient({
       {/* TAB 3: DOMPET TIKET (DENGAN DUKUNGAN CACHE LURING) */}
       {activeTab === "wallet" ? (
         <section className="space-y-5">
-          <div className="surface-solid-dark p-5 sm:p-6">
-            <h2 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
-              {t("walletHeading")}
-            </h2>
-            <p className="mt-1 text-xs text-kabut/80 sm:text-sm">
-              {t("walletSubheading")}
-            </p>
+          <div className="surface-solid-dark p-5 sm:p-6 space-y-4">
+            <div>
+              <h2 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
+                {t("walletHeading")}
+              </h2>
+              <p className="mt-1 text-xs text-kabut/80 sm:text-sm">
+                {t("walletSubheading")}
+              </p>
+            </div>
+
+            {/* Filter Tabs Tiket */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-kabut/10">
+              <button
+                type="button"
+                data-testid="filter-ticket-all"
+                onClick={() => setTicketFilter("all")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  ticketFilter === "all"
+                    ? "border-fajar bg-fajar text-obsidian shadow-sm"
+                    : "border-kabut/20 bg-obsidian text-kabut hover:border-kabut/40"
+                )}
+              >
+                <span>Semua Tiket</span>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-black",
+                    ticketFilter === "all"
+                      ? "bg-obsidian/25 text-obsidian"
+                      : "bg-white/10 text-kabut"
+                  )}
+                >
+                  {walletTickets.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="filter-ticket-active"
+                onClick={() => setTicketFilter("active")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  ticketFilter === "active"
+                    ? "border-emerald-500 bg-emerald-500 text-obsidian shadow-sm"
+                    : "border-kabut/20 bg-obsidian text-kabut hover:border-emerald-500/50"
+                )}
+              >
+                <i className="bi bi-qr-code text-[11px]" aria-hidden="true" />
+                <span>Tiket Aktif (Siap Pakai)</span>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-black",
+                    ticketFilter === "active"
+                      ? "bg-obsidian/25 text-obsidian"
+                      : "bg-emerald-500/20 text-emerald-300"
+                  )}
+                >
+                  {activeTicketsCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="filter-ticket-used"
+                onClick={() => setTicketFilter("used")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  ticketFilter === "used"
+                    ? "border-zinc-500 bg-zinc-800 text-zinc-100 shadow-sm"
+                    : "border-kabut/20 bg-obsidian text-kabut hover:border-zinc-500/50"
+                )}
+              >
+                <i className="bi bi-archive-fill text-[11px]" aria-hidden="true" />
+                <span>Arsip / Telah Terpakai</span>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-black",
+                    ticketFilter === "used"
+                      ? "bg-zinc-700 text-zinc-200"
+                      : "bg-white/10 text-zinc-400"
+                  )}
+                >
+                  {usedTicketsCount}
+                </span>
+              </button>
+            </div>
 
             {isOffline ? (
               <div className="mt-4 rounded-xl border border-fajar/50 bg-obsidian/90 p-3.5 text-xs text-kabut">
@@ -1848,36 +1956,49 @@ export function MemberDashboardClient({
             ) : null}
           </div>
 
-          {walletTickets.length === 0 ? (
+          {filteredWalletTickets.length === 0 ? (
             <div className="surface-solid-dark flex flex-col items-center justify-center p-10 text-center">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-obsidian text-fajar">
                 <i
-                  className="bi bi-ticket-perforated text-2xl"
+                  className={cn(
+                    "bi text-2xl",
+                    ticketFilter === "used" ? "bi-archive" : "bi-ticket-perforated"
+                  )}
                   aria-hidden="true"
                 />
               </span>
               <h3 className="mt-4 font-heading text-lg font-bold text-kabut">
-                {t("emptyWalletTitle")}
+                {ticketFilter === "active"
+                  ? "Tidak Ada Tiket Aktif"
+                  : ticketFilter === "used"
+                    ? "Tidak Ada Arsip Tiket Terpakai"
+                    : t("emptyWalletTitle")}
               </h3>
               <p className="mt-1 max-w-md text-xs text-kabut/75 sm:text-sm">
-                {t("emptyWalletDesc")}
+                {ticketFilter === "active"
+                  ? "Seluruh tiket Anda telah terpakai atau belum ada pembelian tiket aktif."
+                  : ticketFilter === "used"
+                    ? "Belum ada tiket yang telah dipindai di gerbang atau diarsipkan."
+                    : t("emptyWalletDesc")}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setWizardStep(1);
-                  setActiveCheckoutOrder(null);
-                  selectTab("buy");
-                }}
-                className="btn-ui btn-fajar mt-5"
-              >
-                <i className="bi bi-bag-plus-fill" aria-hidden="true" />
-                <span>{t("tabBuy")}</span>
-              </button>
+              {ticketFilter !== "used" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWizardStep(1);
+                    setActiveCheckoutOrder(null);
+                    selectTab("buy");
+                  }}
+                  className="btn-ui btn-fajar mt-5"
+                >
+                  <i className="bi bi-bag-plus-fill" aria-hidden="true" />
+                  <span>{t("tabBuy")}</span>
+                </button>
+              ) : null}
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-2">
-              {walletTickets.map((tk) => (
+              {filteredWalletTickets.map((tk) => (
                 <PerforatedTicketCard
                   key={tk.id}
                   ticket={tk}

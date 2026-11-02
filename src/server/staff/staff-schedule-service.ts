@@ -169,19 +169,26 @@ export async function getStaffSelfState(params: {
   return {
     profileId: profile.id,
     userId: profile.userId,
-    name: profile.user.name,
-    email: profile.user.email,
-    role: profile.user.role,
-    whatsapp: profile.whatsapp,
-    destinationId: profile.destinationId,
-    destinationSlug: profile.destination.slug,
+    name: profile.user?.name || profile.publicName || "Petugas Lapangan",
+    email: profile.user?.email || "",
+    role: profile.user?.role || Role.STAFF,
+    whatsapp: profile.whatsapp || "+6281200000000",
+    destinationId: profile.destinationId || "",
+    destinationSlug: profile.destination?.slug || "batu-lawang",
     destinationName:
-      params.locale === "en" ? profile.destination.nameEn : profile.destination.nameId,
+      params.locale === "en"
+        ? (profile.destination?.nameEn ?? profile.destination?.nameId ?? "Batu Lawang")
+        : (profile.destination?.nameId ?? "Batu Lawang"),
     jobTitle:
-      params.locale === "en" ? profile.jobTitleEn : profile.jobTitleId,
-    initials: profile.initials,
-    isMinor: profile.isMinor,
-    assignedGates: profile.assignedGates,
+      params.locale === "en"
+        ? (profile.jobTitleEn || "Gate & Ticketing Staff")
+        : (profile.jobTitleId || "Petugas Gerbang & Tiket"),
+    initials: profile.initials || "ST",
+    isMinor: Boolean(profile.isMinor),
+    assignedGates:
+      Array.isArray(profile.assignedGates) && profile.assignedGates.length > 0
+        ? profile.assignedGates
+        : [GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA],
     weeklySchedule: parseWeeklySchedule(profile.weeklySchedule),
     overrideMode: profile.overrideMode,
     overrideUntilIso: profile.overrideUntil ? profile.overrideUntil.toISOString() : null,

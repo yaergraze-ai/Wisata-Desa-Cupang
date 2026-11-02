@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Area,
@@ -12,13 +12,20 @@ import {
   YAxis,
 } from "recharts";
 import { formatRupiah } from "@/lib/currency";
-import type { AdminMetricsSnapshot } from "@/server/admin/admin-metrics-service";
+import type { AdminMetricsSnapshot, SalesPeriodMetric } from "@/server/admin/admin-metrics-service";
+
+type AnalyticsPeriod = "daily" | "weekly" | "monthly" | "yearly";
+type AnalyticsMetricType = "revenue" | "tickets";
 
 export function AdminMetricsView() {
   const t = useTranslations("AdminDashboard");
   const [metrics, setMetrics] = useState<AdminMetricsSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filter Grafik Interaktif Multi-Periode & Jenis Metrik
+  const [period, setPeriod] = useState<AnalyticsPeriod>("daily");
+  const [metricType, setMetricType] = useState<AnalyticsMetricType>("revenue");
 
   useEffect(() => {
     let ignore = false;
@@ -41,6 +48,53 @@ export function AdminMetricsView() {
       ignore = true;
     };
   }, []);
+
+  // Normalisasi data grafik untuk periode aktif
+  const currentChartData = useMemo<SalesPeriodMetric[]>(() => {
+    if (!metrics) return [];
+    if (metrics.analytics && metrics.analytics[period]) {
+      return metrics.analytics[period];
+    }
+    // Fallback kompatibel ke sales7Days jika analytics belum tersedia
+    return metrics.sales7Days.map((s) => ({
+      periodKey: s.date,
+      label: s.date.slice(5),
+      revenue: s.revenue,
+      ticketsCount: s.ticketsCount,
+      scansCount: 0,
+    }));
+  }, [metrics, period]);
+
+  // Kalkulasi ringkasan KPI untuk periode dan metrik yang dipilih
+  const summaryKpi = useMemo(() => {
+    if (currentChartData.length === 0) {
+      return { total: 0, average: 0, peakLabel: "-", peakValue: 0, totalScans: 0 };
+    }
+
+    let total = 0;
+    let totalScans = 0;
+    let peakValue = -1;
+    let peakLabel = "-";
+
+    for (const item of currentChartData) {
+      const val = metricType === "revenue" ? item.revenue : item.ticketsCount;
+      total += val;
+      totalScans += item.scansCount;
+      if (val > peakValue) {
+        peakValue = val;
+        peakLabel = item.label;
+      }
+    }
+
+    const average = Math.round(total / currentChartData.length);
+    return {
+      total,
+      average,
+      peakLabel,
+      peakValue: Math.max(0, peakValue),
+      totalScans,
+    };
+  }, [currentChartData, metricType]);
 
   if (isLoading) {
     return (
@@ -119,39 +173,152 @@ export function AdminMetricsView() {
         </div>
       </div>
 
-      {/* GRAFIK PENJUALAN & OKUPANSI GERBANG */}
+      {/* GRAFIK MULTI-PERIODE & OKUPANSI GERBANG */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Grafik Tren Penjualan 7 Hari */}
-        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
+        {/* Kolom Grafik Multi-Periode Interaktif */}
+        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 lg:col-span-2 space-y-5">
+          {/* Header Grafik & Kontrol Filter */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-telaga-800/60 pb-4">
             <div>
-              <h2 className="font-heading text-lg font-bold text-kabut">
-                {t("salesTrendTitle")}
+              <h2 className="font-heading text-lg font-bold text-kabut flex items-center gap-2">
+                <i className="bi bi-graph-up-arrow text-fajar" aria-hidden="true" />
+                <span>{t("analyticsChartTitle")}</span>
               </h2>
-              <p className="text-xs text-kabut/70">{t("salesTrendSubtitle")}</p>
+              <p className="text-xs text-kabut/70 mt-0.5">{t("analyticsChartSubtitle")}</p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-obsidian border border-telaga-700 text-kabut/80">
-              {t("badgeLast7Days")}
-            </span>
+
+            {/* Toggle Jenis Metrik: Pendapatan vs Tiket */}
+            <div className="flex items-center rounded-xl bg-obsidian p-1 border border-telaga-700/50 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setMetricType("revenue")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  metricType === "revenue"
+                    ? "bg-fajar text-obsidian shadow-sm font-bold"
+                    : "text-kabut/70 hover:text-kabut"
+                }`}
+              >
+                <i className="bi bi-cash-stack" aria-hidden="true" />
+                <span>{t("metricRevenueToggle")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetricType("tickets")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  metricType === "tickets"
+                    ? "bg-emerald-500 text-obsidian shadow-sm font-bold"
+                    : "text-kabut/70 hover:text-kabut"
+                }`}
+              >
+                <i className="bi bi-ticket-perforated" aria-hidden="true" />
+                <span>{t("metricTicketsToggle")}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="h-64 w-full pt-4">
+          {/* Tab Pilihan Periode: Harian, Mingguan, Bulanan, Tahunan */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                { key: "daily", label: t("chartPeriodDaily") },
+                { key: "weekly", label: t("chartPeriodWeekly") },
+                { key: "monthly", label: t("chartPeriodMonthly") },
+                { key: "yearly", label: t("chartPeriodYearly") },
+              ] as const
+            ).map((p) => {
+              const isActive = period === p.key;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPeriod(p.key)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition border ${
+                    isActive
+                      ? "bg-telaga-700/80 border-telaga-500 text-kabut shadow"
+                      : "bg-obsidian/60 border-telaga-800 text-kabut/60 hover:text-kabut hover:border-telaga-700"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Ringkasan Indikator KPI Periode Terpilih */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="rounded-xl bg-obsidian/70 border border-telaga-800/60 p-3">
+              <span className="text-[11px] font-semibold text-kabut/60 uppercase block">
+                {t("totalSelectedPeriod")}
+              </span>
+              <p className="mt-1 text-base sm:text-lg font-heading font-bold text-kabut">
+                {metricType === "revenue"
+                  ? formatRupiah(summaryKpi.total)
+                  : `${summaryKpi.total.toLocaleString("id-ID")} Tiket`}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-obsidian/70 border border-telaga-800/60 p-3">
+              <span className="text-[11px] font-semibold text-kabut/60 uppercase block">
+                {t("avgPerPeriod")}
+              </span>
+              <p className="mt-1 text-base sm:text-lg font-heading font-bold text-telaga-300">
+                {metricType === "revenue"
+                  ? formatRupiah(summaryKpi.average)
+                  : `${summaryKpi.average.toLocaleString("id-ID")} / titik`}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-obsidian/70 border border-telaga-800/60 p-3">
+              <span className="text-[11px] font-semibold text-kabut/60 uppercase block">
+                {t("peakPeriod")}
+              </span>
+              <p className="mt-1 text-base sm:text-lg font-heading font-bold text-fajar truncate">
+                {summaryKpi.peakLabel}:{" "}
+                <span className="text-sm">
+                  {metricType === "revenue"
+                    ? formatRupiah(summaryKpi.peakValue)
+                    : `${summaryKpi.peakValue.toLocaleString("id-ID")} Tiket`}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Kanvas Grafik Area */}
+          <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={metrics.sales7Days} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart
+                data={currentChartData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
                 <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                  <linearGradient id="metricRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="metricTicketsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#134e4a" opacity={0.3} />
                 <XAxis
-                  dataKey="date"
-                  tickFormatter={(d: string) => d.slice(5)}
+                  dataKey="label"
                   stroke="#94a3b8"
                   fontSize={11}
+                  tickMargin={8}
                 />
-                <YAxis stroke="#94a3b8" fontSize={11} />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickFormatter={(val: number) => {
+                    if (metricType === "revenue") {
+                      if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}Jt`;
+                      if (val >= 1_000) return `${(val / 1_000).toFixed(0)}Rb`;
+                      return String(val);
+                    }
+                    return String(val);
+                  }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#081c15",
@@ -159,20 +326,35 @@ export function AdminMetricsView() {
                     borderRadius: "0.75rem",
                     color: "#f8fafc",
                     fontSize: "0.75rem",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
                   }}
                   formatter={(val: unknown) => [
-                    formatRupiah(Number(val ?? 0)),
-                    t("metricTotalRevenue"),
+                    metricType === "revenue"
+                      ? formatRupiah(Number(val ?? 0))
+                      : `${Number(val ?? 0).toLocaleString("id-ID")} Tiket`,
+                    metricType === "revenue"
+                      ? t("metricTotalRevenue")
+                      : t("metricValidTickets"),
                   ]}
-                  labelFormatter={(lbl: unknown) => `${t("datePrefix")}: ${String(lbl ?? "")}`}
+                  labelFormatter={(lbl: unknown) => `Periode: ${String(lbl ?? "")}`}
                 />
                 <Area
                   type="monotone"
-                  dataKey="revenue"
-                  stroke="#d97706"
-                  strokeWidth={2}
+                  dataKey={metricType === "revenue" ? "revenue" : "ticketsCount"}
+                  stroke={metricType === "revenue" ? "#d97706" : "#10b981"}
+                  strokeWidth={2.5}
                   fillOpacity={1}
-                  fill="url(#revenueGrad)"
+                  fill={
+                    metricType === "revenue"
+                      ? "url(#metricRevenueGrad)"
+                      : "url(#metricTicketsGrad)"
+                  }
+                  activeDot={{
+                    r: 6,
+                    fill: metricType === "revenue" ? "#f59e0b" : "#34d399",
+                    stroke: "#081c15",
+                    strokeWidth: 2,
+                  }}
                 />
               </AreaChart>
             </ResponsiveContainer>

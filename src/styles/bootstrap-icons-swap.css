@@ -19,6 +19,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bi-archive-fill::before { content: "\f10c"; }
+.bi-archive::before { content: "\f10d"; }
 .bi-arrow-clockwise::before { content: "\f116"; }
 .bi-arrow-counterclockwise::before { content: "\f117"; }
 .bi-arrow-left::before { content: "\f12f"; }
@@ -120,6 +122,7 @@
 .bi-reply-fill::before { content: "\f51f"; }
 .bi-search::before { content: "\f52a"; }
 .bi-shield-check::before { content: "\f52f"; }
+.bi-shield-exclamation::before { content: "\f530"; }
 .bi-shield-fill-check::before { content: "\f531"; }
 .bi-shield-lock-fill::before { content: "\f537"; }
 .bi-shield-lock::before { content: "\f538"; }

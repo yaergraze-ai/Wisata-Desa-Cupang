@@ -542,10 +542,10 @@ export async function getTodayScanHistory(params: {
     result: r.result,
     reason: r.reason,
     scannedAtIso: r.scannedAt.toISOString(),
-    publicCode: r.ticket.publicCode,
-    productCode: r.ticket.product.code,
-    visitorName: r.ticket.visitorName,
-    admitCount: r.ticket.admitCount,
+    publicCode: r.ticket?.publicCode ?? "-",
+    productCode: r.ticket?.product?.code ?? "-",
+    visitorName: r.ticket?.visitorName ?? "-",
+    admitCount: r.ticket?.admitCount ?? 1,
   }));
 }
 
