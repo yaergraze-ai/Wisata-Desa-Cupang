@@ -156,57 +156,109 @@ export function SuperAdminAuditView() {
       ) : logs.length === 0 ? (
         <div className="p-8 text-center text-kabut/60">{t("noAuditLogs")}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
-              <tr>
-                <th className="pb-3 font-semibold">{t("thAuditTime")}</th>
-                <th className="pb-3 font-semibold">{t("thAuditActor")}</th>
-                <th className="pb-3 font-semibold">{t("thAuditAction")}</th>
-                <th className="pb-3 font-semibold">{t("thAuditTarget")}</th>
-                <th className="pb-3 font-semibold">{t("thSecIp")}</th>
-                <th className="pb-3 text-right font-semibold">{t("thAuditDetails")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-telaga-700/30 text-kabut font-mono text-[11px]">
-              {logs.map((l) => (
-                <tr key={l.id} className="hover:bg-obsidian/40 transition">
-                  <td className="py-2.5 text-kabut/70 whitespace-nowrap">
+        <>
+          {/* TAMPILAN KARTU UNTUK PONSEL (md:hidden) - SUSUN KE BAWAH */}
+          <div className="md:hidden space-y-3">
+            {logs.map((l) => (
+              <div
+                key={`mobile-audit-${l.id}`}
+                className="p-4 rounded-xl border border-telaga-700/60 bg-obsidian/80 space-y-2.5 shadow-md text-xs"
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-telaga-700/40 pb-2">
+                  <span className="font-bold text-amber-300 font-mono text-[11px] truncate">
+                    {l.action}
+                  </span>
+                  <span className="text-[10px] text-kabut/60 font-mono shrink-0">
                     {l.createdAt.slice(0, 19).replace("T", " ")}
-                  </td>
-                  <td className="py-2.5">
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-kabut/50 uppercase block">Aktor</span>
                     <span className="font-semibold text-kabut">{l.actorName}</span>{" "}
-                    <span className="text-[10px] text-fajar font-bold">[{l.actorRole ?? "SYS"}]</span>
-                  </td>
-                  <td className="py-2.5 font-bold text-amber-300">{l.action}</td>
-                  <td className="py-2.5 text-kabut/80">
+                    <span className="text-[10px] text-fajar font-bold font-mono">
+                      [{l.actorRole ?? "SYS"}]
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-kabut/50 uppercase block">IP Address</span>
+                    <span className="font-mono text-[11px] text-kabut/70">{l.ipAddress ?? "-"}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-telaga-700/30 text-[11px]">
+                  <span className="text-kabut/70 truncate max-w-[200px]">
                     {l.entity} {l.entityId ? `(${l.entityId.slice(0, 8)}...)` : ""}
-                  </td>
-                  <td className="py-2.5 text-kabut/50">{l.ipAddress ?? "-"}</td>
-                  <td className="py-2.5 text-right font-sans">
-                    {l.metadata && Object.keys(l.metadata).length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => setInspectMetadata(l.metadata)}
-                        className="rounded bg-obsidian border border-telaga-700 px-2 py-0.5 text-[10px] text-kabut hover:text-white"
-                      >
-                        {t("viewJsonBtn")}
-                      </button>
-                    ) : (
-                      <span className="text-kabut/40 text-[10px]">-</span>
-                    )}
-                  </td>
+                  </span>
+                  {l.metadata && Object.keys(l.metadata).length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setInspectMetadata(l.metadata)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-obsidian border border-telaga-700 px-2.5 py-1 text-[11px] font-semibold text-fajar hover:text-white transition"
+                    >
+                      <i className="bi bi-braces text-xs" aria-hidden="true" />
+                      <span>{t("viewJsonBtn")}</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* TAMPILAN TABEL UNTUK DESKTOP (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
+                <tr>
+                  <th className="pb-3 font-semibold">{t("thAuditTime")}</th>
+                  <th className="pb-3 font-semibold">{t("thAuditActor")}</th>
+                  <th className="pb-3 font-semibold">{t("thAuditAction")}</th>
+                  <th className="pb-3 font-semibold">{t("thAuditTarget")}</th>
+                  <th className="pb-3 font-semibold">{t("thSecIp")}</th>
+                  <th className="pb-3 text-right font-semibold">{t("thAuditDetails")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-telaga-700/30 text-kabut font-mono text-[11px]">
+                {logs.map((l) => (
+                  <tr key={l.id} className="hover:bg-obsidian/40 transition">
+                    <td className="py-2.5 text-kabut/70 whitespace-nowrap">
+                      {l.createdAt.slice(0, 19).replace("T", " ")}
+                    </td>
+                    <td className="py-2.5">
+                      <span className="font-semibold text-kabut">{l.actorName}</span>{" "}
+                      <span className="text-[10px] text-fajar font-bold">[{l.actorRole ?? "SYS"}]</span>
+                    </td>
+                    <td className="py-2.5 font-bold text-amber-300">{l.action}</td>
+                    <td className="py-2.5 text-kabut/80">
+                      {l.entity} {l.entityId ? `(${l.entityId.slice(0, 8)}...)` : ""}
+                    </td>
+                    <td className="py-2.5 text-kabut/50">{l.ipAddress ?? "-"}</td>
+                    <td className="py-2.5 text-right font-sans">
+                      {l.metadata && Object.keys(l.metadata).length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setInspectMetadata(l.metadata)}
+                          className="rounded bg-obsidian border border-telaga-700 px-2 py-0.5 text-[10px] text-kabut hover:text-white"
+                        >
+                          {t("viewJsonBtn")}
+                        </button>
+                      ) : (
+                        <span className="text-kabut/40 text-[10px]">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* PAGINASI */}
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between pt-4 border-t border-telaga-700/40 text-xs">
-          <span className="text-kabut/60">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-telaga-700/40 text-xs">
+          <span className="text-kabut/60 text-center sm:text-left">
             {t("userPageCounter", { page, totalPages })}
           </span>
           <div className="flex items-center gap-2">
@@ -214,17 +266,19 @@ export function SuperAdminAuditView() {
               type="button"
               disabled={page <= 1}
               onClick={() => loadLogs(page - 1, actionFilter)}
-              className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
             >
-              {t("userPrevBtn")}
+              <i className="bi bi-caret-left-fill text-fajar" aria-hidden="true" />
+              <span>{t("userPrevBtn")}</span>
             </button>
             <button
               type="button"
               disabled={page >= totalPages}
               onClick={() => loadLogs(page + 1, actionFilter)}
-              className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
             >
-              {t("userNextBtn")}
+              <span>{t("userNextBtn")}</span>
+              <i className="bi bi-caret-right-fill text-fajar" aria-hidden="true" />
             </button>
           </div>
         </div>

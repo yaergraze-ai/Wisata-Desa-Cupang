@@ -213,65 +213,127 @@ export function AdminOrdersView() {
         ) : orders.length === 0 ? (
           <div className="p-8 text-center text-kabut/60">{t("noOrdersFound")}</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
-                <tr>
-                  <th className="pb-3 font-semibold">{t("thOrderNumber")}</th>
-                  <th className="pb-3 font-semibold">{t("thVisitor")}</th>
-                  <th className="pb-3 font-semibold">{t("thVisitDate")}</th>
-                  <th className="pb-3 font-semibold">{t("thTotal")}</th>
-                  <th className="pb-3 font-semibold">{t("thStatus")}</th>
-                  <th className="pb-3 font-semibold">{t("thTickets")}</th>
-                  <th className="pb-3 text-right font-semibold">{t("thAction")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-telaga-700/30 text-kabut">
-                {orders.map((o) => (
-                  <tr key={o.id} className="hover:bg-obsidian/40 transition">
-                    <td className="py-3 font-mono font-bold text-fajar">{o.orderNumber}</td>
-                    <td className="py-3">
-                      <div className="font-semibold">{o.visitorName}</div>
-                      <div className="text-[11px] text-kabut/60">{o.visitorWhatsapp}</div>
-                    </td>
-                    <td className="py-3">{o.visitDate}</td>
-                    <td className="py-3 font-semibold">{formatRupiah(o.totalAmount)}</td>
-                    <td className="py-3">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          o.status === "PAID"
-                            ? "bg-green-950/80 text-green-300 border border-green-700/50"
-                            : o.status === "PENDING"
-                            ? "bg-amber-950/80 text-amber-300 border border-amber-700/50"
-                            : o.status === "REFUND_REQUESTED"
-                            ? "bg-purple-950/80 text-purple-300 border border-purple-700/50"
-                            : "bg-red-950/80 text-red-300 border border-red-700/50"
-                        }`}
-                      >
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="py-3 font-mono">{o.ticketsCount} {t("ticketsUnit")}</td>
-                    <td className="py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setInspectOrder(o)}
-                        className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-[11px] font-semibold text-kabut hover:bg-obsidian/70 transition"
-                      >
-                        {t("detailBtn")}
-                      </button>
-                    </td>
+          <>
+            {/* TAMPILAN KARTU UNTUK PONSEL (md:hidden) - SUSUN KE BAWAH */}
+            <div className="md:hidden space-y-3">
+              {orders.map((o) => (
+                <div
+                  key={`mobile-${o.id}`}
+                  className="p-4 rounded-xl border border-telaga-700/60 bg-obsidian/80 space-y-3 shadow-md"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-telaga-700/40 pb-2">
+                    <span className="font-mono text-xs font-bold text-fajar">
+                      {o.orderNumber}
+                    </span>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        o.status === "PAID"
+                          ? "bg-green-950/80 text-green-300 border border-green-700/50"
+                          : o.status === "PENDING"
+                          ? "bg-amber-950/80 text-amber-300 border border-amber-700/50"
+                          : o.status === "REFUND_REQUESTED"
+                          ? "bg-purple-950/80 text-purple-300 border border-purple-700/50"
+                          : "bg-red-950/80 text-red-300 border border-red-700/50"
+                      }`}
+                    >
+                      {o.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-kabut/60 uppercase block">Pengunjung</span>
+                      <p className="font-semibold text-kabut truncate">{o.visitorName}</p>
+                      <p className="text-[11px] text-kabut/60 truncate">{o.visitorWhatsapp}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-kabut/60 uppercase block">Kunjungan</span>
+                      <p className="font-semibold text-kabut">{o.visitDate}</p>
+                      <p className="text-[11px] text-fajar font-mono font-bold">
+                        {o.ticketsCount} {t("ticketsUnit")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-telaga-700/40 text-xs">
+                    <div>
+                      <span className="text-[10px] text-kabut/60 uppercase block">{t("thTotal")}</span>
+                      <p className="font-bold text-fajar text-sm">{formatRupiah(o.totalAmount)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInspectOrder(o)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-telaga-900/60 border border-telaga-600/70 px-3.5 py-1.5 text-xs font-bold text-fajar hover:bg-telaga-800 transition"
+                    >
+                      <span>{t("detailBtn")}</span>
+                      <i className="bi bi-caret-right-fill text-[10px]" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* TAMPILAN TABEL UNTUK DESKTOP (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
+                  <tr>
+                    <th className="pb-3 font-semibold">{t("thOrderNumber")}</th>
+                    <th className="pb-3 font-semibold">{t("thVisitor")}</th>
+                    <th className="pb-3 font-semibold">{t("thVisitDate")}</th>
+                    <th className="pb-3 font-semibold">{t("thTotal")}</th>
+                    <th className="pb-3 font-semibold">{t("thStatus")}</th>
+                    <th className="pb-3 font-semibold">{t("thTickets")}</th>
+                    <th className="pb-3 text-right font-semibold">{t("thAction")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-telaga-700/30 text-kabut">
+                  {orders.map((o) => (
+                    <tr key={o.id} className="hover:bg-obsidian/40 transition">
+                      <td className="py-3 font-mono font-bold text-fajar">{o.orderNumber}</td>
+                      <td className="py-3">
+                        <div className="font-semibold">{o.visitorName}</div>
+                        <div className="text-[11px] text-kabut/60">{o.visitorWhatsapp}</div>
+                      </td>
+                      <td className="py-3">{o.visitDate}</td>
+                      <td className="py-3 font-semibold">{formatRupiah(o.totalAmount)}</td>
+                      <td className="py-3">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            o.status === "PAID"
+                              ? "bg-green-950/80 text-green-300 border border-green-700/50"
+                              : o.status === "PENDING"
+                              ? "bg-amber-950/80 text-amber-300 border border-amber-700/50"
+                              : o.status === "REFUND_REQUESTED"
+                              ? "bg-purple-950/80 text-purple-300 border border-purple-700/50"
+                              : "bg-red-950/80 text-red-300 border border-red-700/50"
+                          }`}
+                        >
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="py-3 font-mono">{o.ticketsCount} {t("ticketsUnit")}</td>
+                      <td className="py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setInspectOrder(o)}
+                          className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-[11px] font-semibold text-kabut hover:bg-obsidian/70 transition"
+                        >
+                          {t("detailBtn")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* PAGINASI */}
         {totalPages > 1 ? (
-          <div className="flex items-center justify-between pt-4 border-t border-telaga-700/40 text-xs">
-            <span className="text-kabut/60">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-telaga-700/40 text-xs">
+            <span className="text-kabut/60 text-center sm:text-left">
               {t("pageCounter", { page, totalPages })}
             </span>
             <div className="flex items-center gap-2">
@@ -279,17 +341,19 @@ export function AdminOrdersView() {
                 type="button"
                 disabled={page <= 1}
                 onClick={() => fetchOrders(page - 1, statusFilter, search)}
-                className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
               >
-                {t("prevPageBtn")}
+                <i className="bi bi-caret-left-fill text-fajar" aria-hidden="true" />
+                <span>{t("prevPageBtn")}</span>
               </button>
               <button
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => fetchOrders(page + 1, statusFilter, search)}
-                className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
               >
-                {t("nextPageBtn")}
+                <span>{t("nextPageBtn")}</span>
+                <i className="bi bi-caret-right-fill text-fajar" aria-hidden="true" />
               </button>
             </div>
           </div>

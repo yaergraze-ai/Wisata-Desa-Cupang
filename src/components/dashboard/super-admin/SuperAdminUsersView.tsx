@@ -278,107 +278,201 @@ export function SuperAdminUsersView() {
       ) : users.length === 0 ? (
         <div className="p-8 text-center text-kabut/60">{t("noUsersFound")}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
-              <tr>
-                <th className="pb-3 font-semibold">{t("thUserName")}</th>
-                <th className="pb-3 font-semibold">{t("thUserContact")}</th>
-                <th className="pb-3 font-semibold">{t("thUserRole")}</th>
-                <th className="pb-3 font-semibold">{t("thUser2FA")}</th>
-                <th className="pb-3 font-semibold">{t("thUserSessions")}</th>
-                <th className="pb-3 text-right font-semibold">{t("thUserAction")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-telaga-700/30 text-kabut">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-obsidian/40 transition">
-                  <td className="py-3">
-                    <div className="font-semibold">{u.name}</div>
-                    <div className="text-[11px] text-kabut/50">{u.createdAt.slice(0, 10)}</div>
-                  </td>
-                  <td className="py-3">
-                    <div>{u.email}</div>
-                    <div className="text-[11px] text-kabut/60">{u.whatsapp ?? "-"}</div>
-                  </td>
-                  <td className="py-3">
-                    <select
-                      value={u.role}
-                      data-user-role={u.role}
-                      onChange={(e) => handleChangeRole(u.id, e.target.value as Role)}
-                      className={`rounded-lg px-2 py-1 text-xs font-bold border transition ${
-                        u.role === "SUPER_ADMIN"
-                          ? "bg-purple-950 text-purple-300 border-purple-700"
-                          : u.role === "ADMIN"
-                          ? "bg-fajar/20 text-fajar border-fajar/50"
-                          : u.role === "STAFF"
-                          ? "bg-telaga-900 text-telaga-200 border-telaga-700"
-                          : "bg-obsidian text-kabut border-telaga-700"
-                      }`}
-                    >
-                      <option value="MEMBER">MEMBER</option>
-                      <option value="STAFF">STAFF</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                    </select>
-                  </td>
-                  <td className="py-3">
+        <>
+          {/* TAMPILAN KARTU UNTUK PONSEL (md:hidden) - SUSUN KE BAWAH */}
+          <div className="md:hidden space-y-3">
+            {users.map((u) => (
+              <div
+                key={`mobile-user-${u.id}`}
+                className="p-4 rounded-xl border border-telaga-700/60 bg-obsidian/80 space-y-3 shadow-md"
+              >
+                <div className="flex items-start justify-between gap-2 border-b border-telaga-700/40 pb-2">
+                  <div>
+                    <h3 className="font-bold text-kabut text-sm">{u.name}</h3>
+                    <p className="text-[11px] text-kabut/60">{u.email}</p>
+                    {u.whatsapp ? (
+                      <p className="text-[11px] text-kabut/60">{u.whatsapp}</p>
+                    ) : null}
+                  </div>
+                  <select
+                    value={u.role}
+                    data-user-role={u.role}
+                    onChange={(e) => handleChangeRole(u.id, e.target.value as Role)}
+                    className={`rounded-lg px-2 py-1 text-[11px] font-bold border transition ${
+                      u.role === "SUPER_ADMIN"
+                        ? "bg-purple-950 text-purple-300 border-purple-700"
+                        : u.role === "ADMIN"
+                        ? "bg-fajar/20 text-fajar border-fajar/50"
+                        : u.role === "STAFF"
+                        ? "bg-telaga-900 text-telaga-200 border-telaga-700"
+                        : "bg-obsidian text-kabut border-telaga-700"
+                    }`}
+                  >
+                    <option value="MEMBER">MEMBER</option>
+                    <option value="STAFF">STAFF</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-kabut/70">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-kabut/50">2FA:</span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                         u.twoFactorEnabled
                           ? "bg-green-950 text-green-300"
                           : "bg-obsidian text-kabut/50"
                       }`}
                     >
-                      {u.twoFactorEnabled ? "ACTIVE" : "INACTIVE"}
+                      {u.twoFactorEnabled ? "AKTIF" : "NONAKTIF"}
                     </span>
-                  </td>
-                  <td className="py-3 font-mono font-bold">{t("sessionsCountUnit", { count: u.activeSessionsCount })}</td>
-                  <td className="py-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditModal(u)}
-                        className="rounded bg-telaga-900/80 border border-telaga-600 px-2 py-1 text-[11px] font-bold text-telaga-200 hover:bg-telaga-700 transition cursor-pointer"
-                        title="Edit Profil Pengguna"
-                      >
-                        <i className="bi bi-pencil-square mr-1" aria-hidden="true" />
-                        <span>Edit</span>
-                      </button>
+                  </div>
+                  <div className="font-mono text-[11px]">
+                    <span className="text-kabut/50">Sesi: </span>
+                    <strong className="text-fajar">{u.activeSessionsCount}</strong>
+                  </div>
+                  <div className="text-[10px] text-kabut/50">
+                    {u.createdAt.slice(0, 10)}
+                  </div>
+                </div>
 
-                      <button
-                        type="button"
-                        disabled={u.activeSessionsCount === 0}
-                        onClick={() => handleRevokeSessions(u.id)}
-                        className="rounded bg-obsidian border border-telaga-700/60 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-950/40 hover:border-amber-600 transition disabled:opacity-30"
-                        title={t("revokeSessionsBtn")}
-                      >
-                        <i className="bi bi-box-arrow-left mr-1" aria-hidden="true" />
-                        <span>{t("revokeSessionsBtn")}</span>
-                      </button>
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-telaga-700/40">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(u)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-telaga-900/80 border border-telaga-600 px-2.5 py-1 text-xs font-bold text-telaga-200 hover:bg-telaga-700 transition"
+                  >
+                    <i className="bi bi-pencil-square" aria-hidden="true" />
+                    <span>Edit</span>
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteUser(u.id, u.name, u.email)}
-                        className="rounded bg-red-950/50 border border-red-700/70 px-2 py-1 text-[11px] font-bold text-red-200 hover:bg-red-900/60 hover:border-red-500 transition cursor-pointer"
-                        title="Hapus Akun Pengguna"
-                      >
-                        <i className="bi bi-trash3-fill mr-1 text-red-400" aria-hidden="true" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </td>
+                  <button
+                    type="button"
+                    disabled={u.activeSessionsCount === 0}
+                    onClick={() => handleRevokeSessions(u.id)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-obsidian border border-telaga-700/60 px-2.5 py-1 text-xs text-amber-300 hover:bg-amber-950/40 hover:border-amber-600 transition disabled:opacity-30"
+                  >
+                    <i className="bi bi-box-arrow-left" aria-hidden="true" />
+                    <span>Cabut Sesi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteUser(u.id, u.name, u.email)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-red-950/50 border border-red-700/70 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-900/60 hover:border-red-500 transition"
+                  >
+                    <i className="bi bi-trash3-fill text-red-400" aria-hidden="true" />
+                    <span>Hapus</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* TAMPILAN TABEL UNTUK DESKTOP (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-telaga-700/60 text-kabut/70 uppercase">
+                <tr>
+                  <th className="pb-3 font-semibold">{t("thUserName")}</th>
+                  <th className="pb-3 font-semibold">{t("thUserContact")}</th>
+                  <th className="pb-3 font-semibold">{t("thUserRole")}</th>
+                  <th className="pb-3 font-semibold">{t("thUser2FA")}</th>
+                  <th className="pb-3 font-semibold">{t("thUserSessions")}</th>
+                  <th className="pb-3 text-right font-semibold">{t("thUserAction")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-telaga-700/30 text-kabut">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-obsidian/40 transition">
+                    <td className="py-3">
+                      <div className="font-semibold">{u.name}</div>
+                      <div className="text-[11px] text-kabut/50">{u.createdAt.slice(0, 10)}</div>
+                    </td>
+                    <td className="py-3">
+                      <div>{u.email}</div>
+                      <div className="text-[11px] text-kabut/60">{u.whatsapp ?? "-"}</div>
+                    </td>
+                    <td className="py-3">
+                      <select
+                        value={u.role}
+                        data-user-role={u.role}
+                        onChange={(e) => handleChangeRole(u.id, e.target.value as Role)}
+                        className={`rounded-lg px-2 py-1 text-xs font-bold border transition ${
+                          u.role === "SUPER_ADMIN"
+                            ? "bg-purple-950 text-purple-300 border-purple-700"
+                            : u.role === "ADMIN"
+                            ? "bg-fajar/20 text-fajar border-fajar/50"
+                            : u.role === "STAFF"
+                            ? "bg-telaga-900 text-telaga-200 border-telaga-700"
+                            : "bg-obsidian text-kabut border-telaga-700"
+                        }`}
+                      >
+                        <option value="MEMBER">MEMBER</option>
+                        <option value="STAFF">STAFF</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                      </select>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          u.twoFactorEnabled
+                            ? "bg-green-950 text-green-300"
+                            : "bg-obsidian text-kabut/50"
+                        }`}
+                      >
+                        {u.twoFactorEnabled ? "ACTIVE" : "INACTIVE"}
+                      </span>
+                    </td>
+                    <td className="py-3 font-mono font-bold">{t("sessionsCountUnit", { count: u.activeSessionsCount })}</td>
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(u)}
+                          className="rounded bg-telaga-900/80 border border-telaga-600 px-2 py-1 text-[11px] font-bold text-telaga-200 hover:bg-telaga-700 transition cursor-pointer"
+                          title="Edit Profil Pengguna"
+                        >
+                          <i className="bi bi-pencil-square mr-1" aria-hidden="true" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={u.activeSessionsCount === 0}
+                          onClick={() => handleRevokeSessions(u.id)}
+                          className="rounded bg-obsidian border border-telaga-700/60 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-950/40 hover:border-amber-600 transition disabled:opacity-30"
+                          title={t("revokeSessionsBtn")}
+                        >
+                          <i className="bi bi-box-arrow-left mr-1" aria-hidden="true" />
+                          <span>{t("revokeSessionsBtn")}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(u.id, u.name, u.email)}
+                          className="rounded bg-red-950/50 border border-red-700/70 px-2 py-1 text-[11px] font-bold text-red-200 hover:bg-red-900/60 hover:border-red-500 transition cursor-pointer"
+                          title="Hapus Akun Pengguna"
+                        >
+                          <i className="bi bi-trash3-fill mr-1 text-red-400" aria-hidden="true" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* PAGINASI */}
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between pt-4 border-t border-telaga-700/40 text-xs">
-          <span className="text-kabut/60">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-telaga-700/40 text-xs">
+          <span className="text-kabut/60 text-center sm:text-left">
             {t("userPageCounter", { page, totalPages })}
           </span>
           <div className="flex items-center gap-2">
@@ -386,17 +480,19 @@ export function SuperAdminUsersView() {
               type="button"
               disabled={page <= 1}
               onClick={() => loadUsers(page - 1, roleFilter, search)}
-              className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
             >
-              {t("userPrevBtn")}
+              <i className="bi bi-caret-left-fill text-fajar" aria-hidden="true" />
+              <span>{t("userPrevBtn")}</span>
             </button>
             <button
               type="button"
               disabled={page >= totalPages}
               onClick={() => loadUsers(page + 1, roleFilter, search)}
-              className="rounded-lg bg-obsidian border border-telaga-700 px-3 py-1 text-kabut disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian border border-telaga-700 px-3 py-1.5 text-xs font-bold text-kabut hover:border-fajar disabled:opacity-30 transition"
             >
-              {t("userNextBtn")}
+              <span>{t("userNextBtn")}</span>
+              <i className="bi bi-caret-right-fill text-fajar" aria-hidden="true" />
             </button>
           </div>
         </div>
