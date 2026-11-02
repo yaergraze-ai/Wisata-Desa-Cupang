@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import { GateType } from "@prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { formatRupiah } from "@/lib/currency";
@@ -31,7 +32,7 @@ export default async function HomePage({
   const { locale: rawLocale } = await params;
   const locale: AppLocale = rawLocale === "en" ? "en" : "id";
 
-  const [tHero, tHome, tFac, catalog, authCtx, staffStatus, reviewsData, galleryItems] =
+  const [tHero, tHome, tFac, catalog, authCtx, staffStatus, reviewsData, galleryItems, cookieStore] =
     await Promise.all([
       getTranslations({ locale, namespace: "Hero" }),
       getTranslations({ locale, namespace: "Home" }),
@@ -41,7 +42,10 @@ export default async function HomePage({
       getPublicStaffStatusData(locale),
       getPublicReviewsData({ filter: "all", locale, limit: 12 }),
       getGalleryItems(),
+      cookies(),
     ]);
+
+  const hasSeenIntro = cookieStore.get("wdc_intro_seen")?.value === "true";
 
   const todayQuote = await calculateServerOrderQuote({
     visitDate: catalog.todayYmd,
@@ -82,7 +86,7 @@ export default async function HomePage({
 
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-      <CinematicIntro />
+      {!hasSeenIntro ? <CinematicIntro /> : null}
       <MobileNotificationPrompt />
       <PublicNavbar user={navbarUser} />
 

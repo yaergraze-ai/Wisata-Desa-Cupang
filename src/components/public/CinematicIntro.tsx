@@ -21,6 +21,8 @@ export function CinematicIntro() {
 
   const handleFinish = useCallback(() => {
     try {
+      document.cookie = "wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax";
+      localStorage.setItem("wdc_cinematic_intro_seen", "true");
       sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
     } catch {
       // ignore
@@ -46,11 +48,23 @@ export function CinematicIntro() {
   // Periksa status seen dan daftarkan replay global
   useEffect(() => {
     try {
-      const hasSeen = sessionStorage.getItem("wdc_cinematic_intro_seen");
-      if (hasSeen === "true") {
+      const cookieSeen =
+        typeof document !== "undefined" &&
+        document.cookie.includes("wdc_intro_seen=true");
+      const localSeen =
+        localStorage.getItem("wdc_cinematic_intro_seen") === "true";
+      const sessionSeen =
+        sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
+
+      if (cookieSeen || localSeen || sessionSeen) {
         setIsDismissed(true);
         return;
       }
+
+      // Segera kunci status seen agar saat refresh atau navigasi ulang, intro tidak akan pernah muncul lagi
+      document.cookie = "wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax";
+      localStorage.setItem("wdc_cinematic_intro_seen", "true");
+      sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
     } catch {
       // ignore
     }
@@ -58,14 +72,13 @@ export function CinematicIntro() {
     if (typeof window !== "undefined") {
       (window as unknown as { replayWdcIntro?: () => void }).replayWdcIntro = () => {
         try {
+          document.cookie = "wdc_intro_seen=; path=/; max-age=0";
+          localStorage.removeItem("wdc_cinematic_intro_seen");
           sessionStorage.removeItem("wdc_cinematic_intro_seen");
         } catch {
           // ignore
         }
-        setIsDismissed(false);
-        setIsComplete(false);
-        setAltitude(0);
-        setProgress(0);
+        window.location.reload();
       };
     }
   }, []);
@@ -168,20 +181,6 @@ export function CinematicIntro() {
 
   return (
     <>
-      {/* Script sinkron untuk mencegah keduluan halaman sebelum intro */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            try {
-              if (sessionStorage.getItem("wdc_cinematic_intro_seen") === "true") {
-                var el = document.getElementById("wdc-cinematic-intro");
-                if (el) el.style.display = "none";
-              }
-            } catch(e) {}
-          `,
-        }}
-      />
-
       <div
         id="wdc-cinematic-intro"
         ref={containerRef}
@@ -320,6 +319,23 @@ export function CinematicIntro() {
           </p>
         </div>
       </div>
+
+      {/* Script sinkron pasca-elemen: Menyembunyikan intro seketika sebelum frame pertama jika sudah pernah dilihat */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            try {
+              var cookieSeen = document.cookie.indexOf("wdc_intro_seen=true") !== -1;
+              var localSeen = localStorage.getItem("wdc_cinematic_intro_seen") === "true";
+              var sessionSeen = sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
+              if (cookieSeen || localSeen || sessionSeen) {
+                var el = document.getElementById("wdc-cinematic-intro");
+                if (el) el.style.display = "none";
+              }
+            } catch(e) {}
+          `,
+        }}
+      />
     </>
   );
 }
