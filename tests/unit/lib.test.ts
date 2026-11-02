@@ -12,6 +12,7 @@ import {
   haversineDistanceM,
   type TrailPointNode,
 } from "../../src/lib/geo";
+import { validateIndonesianNik } from "../../src/lib/nik-validator";
 
 const GUNUNG_BENDERA_TRAIL: TrailPointNode[] = [
   {
@@ -158,5 +159,68 @@ describe("Geometri Jalur Nyata Gunung Bendera (§5.8)", () => {
     expect(telemetry.isOffTrail).toBe(true);
     expect(telemetry.distanceToTrailM).toBeGreaterThan(55);
     expect(["E", "NE", "SE"]).toContain(telemetry.returnDirectionCode);
+  });
+});
+
+describe("validateIndonesianNik - Standar Dukcapil & UU No. 24/2013", () => {
+  it("memvalidasi NIK pria yang sah (3209121508980001 - Jawa Barat)", () => {
+    const res = validateIndonesianNik("3209121508980001");
+    expect(res.isValid).toBe(true);
+    expect(res.data?.gender).toBe("LAKI_LAKI");
+    expect(res.data?.birthDay).toBe(15);
+    expect(res.data?.birthMonth).toBe(8);
+    expect(res.data?.provinceCode).toBe("32");
+    expect(res.data?.provinceName).toBe("Jawa Barat");
+  });
+
+  it("memvalidasi NIK wanita yang sah (+40 pada hari lahir: 3171015504010002 - DKI Jakarta)", () => {
+    // 15 April 2001 wanita -> 15 + 40 = 55
+    const res = validateIndonesianNik("3171015504010002");
+    expect(res.isValid).toBe(true);
+    expect(res.data?.gender).toBe("PEREMPUAN");
+    expect(res.data?.birthDay).toBe(15);
+    expect(res.data?.birthMonth).toBe(4);
+    expect(res.data?.provinceCode).toBe("31");
+    expect(res.data?.provinceName).toBe("DKI Jakarta");
+  });
+
+  it("menolak NIK kosong, kurang digit, atau mengandung karakter non-angka", () => {
+    expect(validateIndonesianNik("").isValid).toBe(false);
+    expect(validateIndonesianNik("32091215089800").isValid).toBe(false);
+    expect(validateIndonesianNik("320912150898000199").isValid).toBe(false);
+    expect(validateIndonesianNik("320912150898000A").isValid).toBe(false);
+  });
+
+  it("menolak NIK dummy repetitif identik", () => {
+    expect(validateIndonesianNik("1111111111111111").isValid).toBe(false);
+    expect(validateIndonesianNik("0000000000000000").isValid).toBe(false);
+  });
+
+  it("menolak NIK urutan angka dummy", () => {
+    expect(validateIndonesianNik("1234567890123456").isValid).toBe(false);
+    expect(validateIndonesianNik("0123456789012345").isValid).toBe(false);
+  });
+
+  it("menolak kode provinsi yang tidak terdaftar di Indonesia", () => {
+    // 99 bukan kode provinsi di Indonesia
+    const res = validateIndonesianNik("9909121508980001");
+    expect(res.isValid).toBe(false);
+    expect(res.message).toContain("Kode wilayah provinsi");
+  });
+
+  it("menolak tanggal lahir di luar batas (misal 32 pria atau 72 wanita)", () => {
+    // Pria tanggal 32
+    expect(validateIndonesianNik("3209123208980001").isValid).toBe(false);
+    // Wanita tanggal 32 + 40 = 72
+    expect(validateIndonesianNik("3209127208980001").isValid).toBe(false);
+  });
+
+  it("menolak bulan lahir di luar batas 01-12", () => {
+    expect(validateIndonesianNik("3209121513980001").isValid).toBe(false);
+    expect(validateIndonesianNik("3209121500980001").isValid).toBe(false);
+  });
+
+  it("menolak nomor urut registrasi 0000", () => {
+    expect(validateIndonesianNik("3209121508980000").isValid).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import { hashPassword, verifyPassword } from "better-auth/crypto";
 import { db } from "@/server/db";
 import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
+import { validateIndonesianNik } from "@/lib/nik-validator";
 
 export class ProfileServiceError extends Error {
   constructor(
@@ -10,6 +11,7 @@ export class ProfileServiceError extends Error {
       | "WRONG_PASSWORD"
       | "SUPERADMIN_CANNOT_DELETE_SELF"
       | "INVALID_WHATSAPP"
+      | "INVALID_NIK"
       | "PASSWORD_TOO_SHORT"
   ) {
     super(message);
@@ -87,7 +89,12 @@ export async function updateMemberProfile(
     name?: string;
     whatsapp?: string;
     bio?: string;
+    nik?: string;
+    address?: string;
+    province?: string;
     city?: string;
+    district?: string;
+    postalCode?: string;
     emergencyContact?: string;
     currentPassword?: string;
     newPassword?: string;
@@ -106,7 +113,12 @@ export async function updateMemberProfile(
     name?: string;
     whatsapp?: string | null;
     bio?: string | null;
+    nik?: string | null;
+    address?: string | null;
+    province?: string | null;
     city?: string | null;
+    district?: string | null;
+    postalCode?: string | null;
     emergencyContact?: string | null;
   } = {};
 
@@ -118,12 +130,44 @@ export async function updateMemberProfile(
     updateUserData.bio = input.bio.trim().slice(0, 500);
   }
 
+  if (typeof input.nik === "string") {
+    const trimmedNik = input.nik.trim();
+    if (trimmedNik.length > 0) {
+      const nikCheck = validateIndonesianNik(trimmedNik);
+      if (!nikCheck.isValid) {
+        throw new ProfileServiceError(
+          nikCheck.message || "Format NIK e-KTP tidak valid.",
+          "INVALID_NIK"
+        );
+      }
+      updateUserData.nik = trimmedNik;
+    } else {
+      updateUserData.nik = null;
+    }
+  }
+
+  if (typeof input.address === "string") {
+    updateUserData.address = input.address.trim().slice(0, 500) || null;
+  }
+
+  if (typeof input.province === "string") {
+    updateUserData.province = input.province.trim().slice(0, 100) || null;
+  }
+
+  if (typeof input.district === "string") {
+    updateUserData.district = input.district.trim().slice(0, 100) || null;
+  }
+
   if (typeof input.city === "string") {
-    updateUserData.city = input.city.trim().slice(0, 100);
+    updateUserData.city = input.city.trim().slice(0, 100) || null;
+  }
+
+  if (typeof input.postalCode === "string") {
+    updateUserData.postalCode = input.postalCode.trim().slice(0, 10) || null;
   }
 
   if (typeof input.emergencyContact === "string") {
-    updateUserData.emergencyContact = input.emergencyContact.trim().slice(0, 100);
+    updateUserData.emergencyContact = input.emergencyContact.trim().slice(0, 100) || null;
   }
 
   if (typeof input.whatsapp === "string") {

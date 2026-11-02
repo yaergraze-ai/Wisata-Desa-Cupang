@@ -87,10 +87,10 @@ export default async function LocaleLayout({
         />
         <link
           rel="preload"
-          as="image"
-          href="/media/defaults/card-1.webp"
-          type="image/webp"
-          fetchPriority="high"
+          href="/fonts/bootstrap-icons.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
       </head>
       <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative transition-colors duration-200">

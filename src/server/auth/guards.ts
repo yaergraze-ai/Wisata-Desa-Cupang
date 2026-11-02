@@ -39,7 +39,12 @@ export interface AuthenticatedContext {
     whatsappVerifiedAt: Date | null;
     image?: string | null;
     bio?: string | null;
+    nik?: string | null;
+    address?: string | null;
+    province?: string | null;
     city?: string | null;
+    district?: string | null;
+    postalCode?: string | null;
     emergencyContact?: string | null;
     emailVerified: boolean;
     twoFactorEnabled: boolean;
@@ -118,7 +123,12 @@ export async function getServerAuthContext(
       whatsappVerifiedAt: dbUser.whatsappVerifiedAt,
       image: dbUser.image ?? null,
       bio: dbUser.bio ?? null,
+      nik: dbUser.nik ?? null,
+      address: dbUser.address ?? null,
+      province: dbUser.province ?? null,
       city: dbUser.city ?? null,
+      district: dbUser.district ?? null,
+      postalCode: dbUser.postalCode ?? null,
       emergencyContact: dbUser.emergencyContact ?? null,
       emailVerified: Boolean(dbUser.emailVerified),
       twoFactorEnabled: Boolean(dbUser.twoFactorEnabled),

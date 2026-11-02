@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Role } from "@prisma/client";
 import { requireApiRole } from "@/server/auth/guards";
 import { db } from "@/server/db";
+import { validateIndonesianNik } from "@/lib/nik-validator";
 
 export const dynamic = "force-dynamic";
 
@@ -51,11 +52,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!body.identityNumber || body.identityNumber.trim().length === 0) {
+      return NextResponse.json(
+        { error: "NIK e-KTP rekan pendaki wajib diisi untuk verifikasi rombongan & asuransi keselamatan." },
+        { status: 400 }
+      );
+    }
+
+    const nikCheck = validateIndonesianNik(body.identityNumber);
+    if (!nikCheck.isValid) {
+      return NextResponse.json(
+        { error: nikCheck.message || "NIK rekan pendaki tidak valid (harus 16 digit e-KTP sah)." },
+        { status: 400 }
+      );
+    }
+    const cleanIdNumber = body.identityNumber.trim();
+
     const companion = await db.companionProfile.create({
       data: {
         userId: auth.user.id,
         name: body.name.trim(),
-        identityNumber: body.identityNumber?.trim() || null,
+        identityNumber: cleanIdNumber,
         phone: body.phone?.trim() || null,
         relation: body.relation?.trim() || "Keluarga / Rekan",
         age: body.age ? Number(body.age) : null,

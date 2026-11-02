@@ -90,7 +90,12 @@ model User {
   whatsapp            String?
   whatsappVerifiedAt  DateTime?
   bio                 String?   @db.Text
+  nik                 String?
+  address             String?   @db.Text
+  province            String?
   city                String?
+  district            String?
+  postalCode          String?
   emergencyContact    String?
   consentAt           DateTime?
   deletedAt           DateTime?

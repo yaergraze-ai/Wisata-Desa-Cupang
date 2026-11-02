@@ -21,7 +21,12 @@ export async function POST(req: NextRequest) {
       name?: string;
       whatsapp?: string;
       bio?: string;
+      nik?: string;
+      address?: string;
+      province?: string;
       city?: string;
+      district?: string;
+      postalCode?: string;
       emergencyContact?: string;
       currentPassword?: string;
       newPassword?: string;

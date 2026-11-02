@@ -7,6 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import type { AuthenticatedContext } from "@/server/auth/guards";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { ChatOtpCard } from "@/components/auth/ChatOtpCard";
+import { validateIndonesianNik, INDONESIAN_PROVINCES } from "@/lib/nik-validator";
 
 export interface MemberProfileTabProps {
   authCtx: AuthenticatedContext;
@@ -18,7 +19,12 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [name, setName] = useState(authCtx.user.name);
   const [whatsapp, setWhatsapp] = useState(authCtx.user.whatsapp ?? "");
   const [bio, setBio] = useState(authCtx.user.bio ?? "");
+  const [nik, setNik] = useState(authCtx.user.nik ?? "");
+  const [address, setAddress] = useState(authCtx.user.address ?? "");
+  const [province, setProvince] = useState(authCtx.user.province ?? "");
   const [city, setCity] = useState(authCtx.user.city ?? "");
+  const [district, setDistrict] = useState(authCtx.user.district ?? "");
+  const [postalCode, setPostalCode] = useState(authCtx.user.postalCode ?? "");
   const [emergencyContact, setEmergencyContact] = useState(authCtx.user.emergencyContact ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -54,6 +60,10 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [companionNotes, setCompanionNotes] = useState("");
   const [isSavingCompanion, setIsSavingCompanion] = useState(false);
   const [companionError, setCompanionError] = useState<string | null>(null);
+
+  // Validasi Realtime NIK e-KTP Indonesia
+  const memberNikValidation = nik.trim() ? validateIndonesianNik(nik) : null;
+  const companionNikValidation = companionIdNumber.trim() ? validateIndonesianNik(companionIdNumber) : null;
 
   // Verification modal state
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -92,17 +102,25 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
     e.preventDefault();
     setIsSavingCompanion(true);
     setCompanionError(null);
+
+    const check = validateIndonesianNik(companionIdNumber);
+    if (!check.isValid) {
+      setCompanionError(`NIK e-KTP rekan wajib valid: ${check.message}`);
+      setIsSavingCompanion(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/user/companions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: companionName,
-          identityNumber: companionIdNumber,
-          phone: companionPhone,
+          name: companionName.trim(),
+          identityNumber: companionIdNumber.trim(),
+          phone: companionPhone.trim() || null,
           relation: companionRelation,
           age: companionAge ? parseInt(companionAge, 10) : null,
-          notes: companionNotes,
+          notes: companionNotes.trim() || null,
         }),
       });
       const data = await res.json() as { error?: string; companion?: Companion };
@@ -187,11 +205,31 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
     setProfileSuccess(null);
     setProfileError(null);
 
+    if (nik.trim()) {
+      const check = validateIndonesianNik(nik);
+      if (!check.isValid) {
+        setProfileError(`NIK e-KTP tidak valid: ${check.message}`);
+        setIsSavingProfile(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp, bio, city, emergencyContact }),
+        body: JSON.stringify({
+          name,
+          whatsapp,
+          bio,
+          nik: nik.trim() || null,
+          address: address.trim() || null,
+          province: province.trim() || null,
+          city: city.trim() || null,
+          district: district.trim() || null,
+          postalCode: postalCode.trim() || null,
+          emergencyContact: emergencyContact.trim() || null,
+        }),
       });
       const data = (await res.json()) as { error?: string; message?: string };
       if (!res.ok) {
@@ -572,41 +610,180 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
               />
             </div>
 
-            {/* Kota Domisili & Kontak Darurat */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
+            {/* NIK KTP Member / Ketua Rombongan */}
+            <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+              <div className="flex items-center justify-between gap-2">
                 <label
-                  htmlFor="profile-city"
-                  className="block text-xs font-bold text-kabut/90"
+                  htmlFor="profile-nik"
+                  className="block text-xs font-bold text-kabut/90 flex items-center gap-1.5"
                 >
-                  Kota Asal / Domisili
+                  <i className="bi bi-person-vcard text-fajar" aria-hidden="true" />
+                  <span>NIK e-KTP Pemilik Akun / Ketua Rombongan</span>
                 </label>
-                <input
-                  id="profile-city"
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Misal: Cirebon / Jakarta"
-                  className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                {memberNikValidation ? (
+                  memberNikValidation.isValid ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                      <i className="bi bi-patch-check-fill text-emerald-400" aria-hidden="true" />
+                      NIK Sah Dukcapil
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-300">
+                      <i className="bi bi-exclamation-octagon-fill text-red-400" aria-hidden="true" />
+                      Format NIK Tidak Sah
+                    </span>
+                  )
+                ) : null}
+              </div>
+
+              <input
+                id="profile-nik"
+                type="text"
+                maxLength={16}
+                inputMode="numeric"
+                value={nik}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 16);
+                  setNik(val);
+                  if (val.length >= 2 && !province) {
+                    const matchProv = INDONESIAN_PROVINCES.find((p) => p.code === val.slice(0, 2));
+                    if (matchProv) setProvince(matchProv.name);
+                  }
+                }}
+                placeholder="16 digit NIK sesuai e-KTP resmi"
+                className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs font-mono tracking-wider text-kabut focus:border-fajar focus:outline-none"
+              />
+
+              {memberNikValidation ? (
+                memberNikValidation.isValid && memberNikValidation.data ? (
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-2 text-[11px] text-emerald-200 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
+                    <span>• {memberNikValidation.data.gender === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}</span>
+                    <span>• Lahir: {String(memberNikValidation.data.birthDay).padStart(2, "0")}/{String(memberNikValidation.data.birthMonth).padStart(2, "0")}/19{memberNikValidation.data.birthYearSuffix < 30 ? "20" + String(memberNikValidation.data.birthYearSuffix).padStart(2, "0") : String(memberNikValidation.data.birthYearSuffix).padStart(2, "0")}</span>
+                    {memberNikValidation.data.provinceName ? (
+                      <span>• {memberNikValidation.data.provinceName}</span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-red-400 flex items-center gap-1">
+                    <i className="bi bi-info-circle text-xs" aria-hidden="true" />
+                    <span>{memberNikValidation.message}</span>
+                  </p>
+                )
+              ) : (
+                <p className="text-[10px] text-kabut/45">
+                  Digunakan untuk manifes asuransi keselamatan pendakian Gunung Bendera & Batu Lawang.
+                </p>
+              )}
+            </div>
+
+            {/* Alamat Domisili Lengkap & Terstruktur */}
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+              <p className="text-xs font-bold text-kabut/90 flex items-center gap-1.5 pb-1 border-b border-white/5">
+                <i className="bi bi-geo-alt-fill text-fajar" aria-hidden="true" />
+                <span>Alamat Domisili Lengkap (Sesuai KTP / Tempat Tinggal)</span>
+              </p>
+
+              <div>
+                <label htmlFor="profile-address" className="block text-[11px] font-bold text-kabut/80 mb-1">
+                  Alamat Jalan / Dusun / Blok / RT / RW / No. Rumah
+                </label>
+                <textarea
+                  id="profile-address"
+                  rows={2}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Contoh: Jl. Pangeran Kejaksan No. 12, RT 03 / RW 05, Desa Cupang"
+                  className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none resize-none"
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="profile-emergency"
-                  className="block text-xs font-bold text-kabut/90"
-                >
-                  Kontak Darurat (Keluarga)
-                </label>
-                <input
-                  id="profile-emergency"
-                  type="text"
-                  value={emergencyContact}
-                  onChange={(e) => setEmergencyContact(e.target.value)}
-                  placeholder="Nama & No HP (Ibu/Ayah)"
-                  className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="profile-province" className="block text-[11px] font-bold text-kabut/80 mb-1">
+                    Provinsi
+                  </label>
+                  <select
+                    id="profile-province"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                  >
+                    <option value="">Pilih Provinsi...</option>
+                    {INDONESIAN_PROVINCES.map((p) => (
+                      <option key={p.code} value={p.name}>
+                        {p.code} — {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="profile-city" className="block text-[11px] font-bold text-kabut/80 mb-1">
+                    Kota / Kabupaten
+                  </label>
+                  <input
+                    id="profile-city"
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Contoh: Kabupaten Cirebon"
+                    className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                  />
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="profile-district" className="block text-[11px] font-bold text-kabut/80 mb-1">
+                    Kecamatan / Kelurahan
+                  </label>
+                  <input
+                    id="profile-district"
+                    type="text"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    placeholder="Contoh: Gempol / Cupang"
+                    className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="profile-postal" className="block text-[11px] font-bold text-kabut/80 mb-1">
+                    Kode Pos (5 Digit)
+                  </label>
+                  <input
+                    id="profile-postal"
+                    type="text"
+                    maxLength={5}
+                    inputMode="numeric"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                    placeholder="45161"
+                    className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs font-mono text-kabut focus:border-fajar focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Kontak Darurat Keluarga */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-1.5">
+              <label
+                htmlFor="profile-emergency"
+                className="block text-xs font-bold text-kabut/90 flex items-center gap-1.5"
+              >
+                <i className="bi bi-telephone-fill text-fajar" aria-hidden="true" />
+                <span>Kontak Darurat Keluarga Terdekat</span>
+              </label>
+              <input
+                id="profile-emergency"
+                type="text"
+                value={emergencyContact}
+                onChange={(e) => setEmergencyContact(e.target.value)}
+                placeholder="Contoh: Budi Santoso (Ayah) - 081234567890"
+                className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+              />
+              <p className="text-[10px] text-kabut/45">
+                Dihubungi tim SAR pos pemantau jika terjadi kendala darurat di jalur pendakian.
+              </p>
             </div>
 
             <div>
@@ -759,14 +936,20 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
                     </span>
                   </div>
 
-                  <div className="mt-2.5 space-y-1 text-[11px] font-mono text-kabut/60">
+                  <div className="mt-2.5 space-y-1.5 text-[11px] font-mono text-kabut/75">
                     {comp.identityNumber ? (
-                      <p className="truncate">NIK/KTP: {comp.identityNumber}</p>
+                      <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-500/20 rounded-md px-2 py-0.5">
+                        <i className="bi bi-shield-check" aria-hidden="true" />
+                        <span>NIK: {comp.identityNumber}</span>
+                      </div>
                     ) : null}
                     {comp.phone ? (
-                      <p className="truncate">No HP: {comp.phone}</p>
+                      <p className="truncate flex items-center gap-1.5 text-kabut/60">
+                        <i className="bi bi-whatsapp text-emerald-400 text-xs" />
+                        <span>{comp.phone}</span>
+                      </p>
                     ) : null}
-                    {comp.age ? <p>Usia: {comp.age} tahun</p> : null}
+                    {comp.age ? <p className="text-kabut/60">Usia: {comp.age} tahun</p> : null}
                     {comp.notes ? (
                       <p className="text-kabut/45 italic truncate mt-1">
                         &ldquo;{comp.notes}&rdquo;
@@ -860,16 +1043,56 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-kabut/90">Nomor Induk Kependudukan (NIK)</label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-kabut/90">
+                    Nomor Induk Kependudukan (NIK e-KTP) *
+                  </label>
+                  {companionNikValidation ? (
+                    companionNikValidation.isValid ? (
+                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                        <i className="bi bi-patch-check-fill" aria-hidden="true" />
+                        Sah Dukcapil
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                        <i className="bi bi-exclamation-octagon-fill" aria-hidden="true" />
+                        Tidak Valid
+                      </span>
+                    )
+                  ) : null}
+                </div>
                 <input
                   type="text"
+                  required
                   maxLength={16}
+                  inputMode="numeric"
                   value={companionIdNumber}
-                  onChange={(e) => setCompanionIdNumber(e.target.value)}
-                  placeholder="16 digit NIK (opsional untuk asuransi)"
-                  className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                  onChange={(e) => setCompanionIdNumber(e.target.value.replace(/\D/g, "").slice(0, 16))}
+                  placeholder="16 digit NIK resmi anggota rombongan"
+                  className="w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs font-mono text-kabut focus:border-fajar focus:outline-none"
                 />
+
+                {companionNikValidation ? (
+                  companionNikValidation.isValid && companionNikValidation.data ? (
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-2 text-[10px] text-emerald-200 flex flex-wrap gap-x-2 font-mono">
+                      <span>✓ {companionNikValidation.data.gender === "LAKI_LAKI" ? "Laki-laki" : "Perempuan"}</span>
+                      <span>• Lahir: {String(companionNikValidation.data.birthDay).padStart(2, "0")}/{String(companionNikValidation.data.birthMonth).padStart(2, "0")}/19{companionNikValidation.data.birthYearSuffix < 30 ? "20" + String(companionNikValidation.data.birthYearSuffix).padStart(2, "0") : String(companionNikValidation.data.birthYearSuffix).padStart(2, "0")}</span>
+                      {companionNikValidation.data.provinceName ? (
+                        <span>• {companionNikValidation.data.provinceName}</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-red-400 flex items-center gap-1">
+                      <i className="bi bi-info-circle text-xs" aria-hidden="true" />
+                      <span>{companionNikValidation.message}</span>
+                    </p>
+                  )
+                ) : (
+                  <p className="text-[10px] text-kabut/45">
+                    Wajib 16 digit sesuai e-KTP untuk manifes tiket rombongan & asuransi pendakian.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -904,8 +1127,8 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSavingCompanion}
-                  className="btn-ui btn-fajar py-2 px-4 text-xs font-bold"
+                  disabled={isSavingCompanion || !companionNikValidation?.isValid || !companionName.trim()}
+                  className="btn-ui btn-fajar py-2 px-4 text-xs font-bold disabled:opacity-50"
                 >
                   {isSavingCompanion ? "Menyimpan..." : "Simpan Profil Rekan"}
                 </button>
