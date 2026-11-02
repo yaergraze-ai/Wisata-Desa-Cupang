@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export interface PublicNavbarUser {
   name: string;
@@ -230,7 +231,8 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             </a>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <ThemeToggle compact />
             <LocaleSwitcher />
 
             {user ? (

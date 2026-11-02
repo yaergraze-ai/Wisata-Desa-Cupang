@@ -61,6 +61,7 @@ export function TrailNavigatorClient({
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<MapInstance | null>(null);
+  const maplibreglRef = useRef<MapLibreModule | null>(null);
   const userMarkerRef = useRef<MarkerInstance | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
@@ -73,11 +74,21 @@ export function TrailNavigatorClient({
   const [telemetry, setTelemetry] = useState<TrailTelemetryResult | null>(null);
   const [selectedPostCode, setSelectedPostCode] = useState<string>("TRAILHEAD");
 
-  // Mode Tampilan Peta: Topo/Standar vs Satelit
-  const [mapLayerMode, setMapLayerMode] = useState<"topo" | "satellite">("topo");
+  // Mode Tampilan Peta: Satelit HD (Default) vs Topografi
+  const [mapLayerMode, setMapLayerMode] = useState<"satellite" | "topo">("satellite");
   // Orientasi Kamera: Arah Nanjak (Bawah ke Atas) vs Arah Utara
   const [cameraOrientation, setCameraOrientation] = useState<"climb" | "north">("climb");
+  
+  // State Integrasi Strava & Perekam GPS Real-Time
   const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaAthleteId, setStravaAthleteId] = useState("");
+  const [showStravaModal, setShowStravaModal] = useState(false);
+  const [stravaInputId, setStravaInputId] = useState("");
+  const [isRecordingActivity, setIsRecordingActivity] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [recordedPoints, setRecordedPoints] = useState<
+    Array<{ lat: number; lng: number; time: string; ele: number }>
+  >([]);
 
   // Offline map downloader state
   const [isCachedOffline, setIsCachedOffline] = useState(false);
@@ -114,6 +125,7 @@ export function TrailNavigatorClient({
           : maplibreMod) as unknown as MapLibreModule & {
           setWorkerUrl?: (url: string) => void;
         };
+        maplibreglRef.current = maplibregl;
         const { Protocol } = pmtilesMod;
 
         // Pasang worker URL lokal dan protokol PMTiles
@@ -149,16 +161,19 @@ export function TrailNavigatorClient({
             },
             layers: [
               {
-                id: "osm-raster-layer",
+                id: "satellite-raster-layer",
                 type: "raster",
-                source: "osm-raster",
+                source: "satellite-raster",
+                layout: {
+                  visibility: "visible",
+                },
                 minzoom: 0,
                 maxzoom: 19,
               },
               {
-                id: "satellite-raster-layer",
+                id: "osm-raster-layer",
                 type: "raster",
-                source: "satellite-raster",
+                source: "osm-raster",
                 layout: {
                   visibility: "none",
                 },
@@ -281,32 +296,44 @@ export function TrailNavigatorClient({
         navigator.vibrate([200, 100, 200]);
       }
 
-      // Update marker pengguna pada peta
+      // Update marker pengguna pada peta secara sinkron (anti-duplikasi & anti-bug)
       const map = mapInstanceRef.current;
-      if (map && mapLoaded) {
+      const maplibregl = maplibreglRef.current;
+      if (map && maplibregl && mapLoaded) {
         if (!userMarkerRef.current) {
           const el = document.createElement("div");
-          el.className = "relative flex items-center justify-center";
+          el.className = "user-gps-marker select-none pointer-events-none";
           el.innerHTML = `
-            <div class="absolute w-8 h-8 rounded-full bg-[#F2A65A]/40 animate-ping"></div>
-            <div class="relative w-5 h-5 rounded-full border-2 border-white bg-[#F2A65A] shadow-2xl flex items-center justify-center text-obsidian text-[10px]">
-              <i class="bi bi-person-fill"></i>
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+              <div class="absolute -inset-4 rounded-full bg-cyan-400/35 animate-ping"></div>
+              <div class="absolute -inset-2 rounded-full bg-cyan-400/50 animate-pulse"></div>
+              <div class="relative flex items-center justify-center w-7 h-7 rounded-full bg-cyan-500 border-2 border-white shadow-[0_0_18px_rgba(6,182,212,0.95)] text-white text-xs font-black">
+                <i class="bi bi-geo-alt-fill text-[13px]"></i>
+              </div>
             </div>
           `;
-          import("maplibre-gl").then((m) => {
-            const maplibregl = ("default" in m
-              ? m.default
-              : m) as unknown as MapLibreModule;
-            userMarkerRef.current = new maplibregl.Marker({ element: el })
-              .setLngLat([longitude, latitude])
-              .addTo(map);
-          });
+          userMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([longitude, latitude])
+            .addTo(map);
         } else {
           userMarkerRef.current.setLngLat([longitude, latitude]);
         }
       }
+
+      // Catat koordinat jika perekaman aktivitas GPS sedang berjalan
+      if (isRecordingActivity) {
+        setRecordedPoints((prev) => [
+          ...prev,
+          {
+            lat: latitude,
+            lng: longitude,
+            time: new Date().toISOString(),
+            ele: tel?.nearestPost.elevationM ?? 120,
+          },
+        ]);
+      }
     },
-    [mapLoaded, offTrailThresholdM]
+    [mapLoaded, offTrailThresholdM, isRecordingActivity]
   );
 
   const handlePositionError = useCallback((err: GeolocationPositionError) => {
@@ -420,8 +447,8 @@ export function TrailNavigatorClient({
     setIsCachedOffline(false);
   }, []);
 
-  // Ganti Layer: Topografi / Satelit
-  const toggleMapLayer = useCallback((mode: "topo" | "satellite") => {
+  // Ganti Layer: Satelit HD / Topografi
+  const toggleMapLayer = useCallback((mode: "satellite" | "topo") => {
     setMapLayerMode(mode);
     const map = mapInstanceRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -430,6 +457,11 @@ export function TrailNavigatorClient({
         "satellite-raster-layer",
         "visibility",
         mode === "satellite" ? "visible" : "none"
+      );
+      map.setLayoutProperty(
+        "osm-raster-layer",
+        "visibility",
+        mode === "topo" ? "visible" : "none"
       );
     } catch (e) {
       console.warn("Layer switch warning:", e);
@@ -447,6 +479,61 @@ export function TrailNavigatorClient({
       map.easeTo({ bearing: 0, pitch: 0, duration: 800 });
     }
   }, []);
+
+  // Pusatkan peta ke Jalur Pendakian Gunung Bendera
+  const handleCenterToTrail = useCallback(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.flyTo({
+      center: [108.3822, -6.7322],
+      zoom: 15.4,
+      pitch: 45,
+      bearing: 195,
+      speed: 1.2,
+    });
+  }, []);
+
+  // Unduh GPX Aktivitas Nyata yang Direkam Member
+  const handleDownloadRecordedGpx = useCallback(() => {
+    if (recordedPoints.length === 0) {
+      alert("Belum ada titik GPS yang terekam. Pastikan izin GPS aktif dan mulai berjalan di trek.");
+      return;
+    }
+    const trkpts = recordedPoints
+      .map(
+        (p) => `      <trkpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}">
+        <ele>${p.ele}</ele>
+        <time>${p.time}</time>
+      </trkpt>`
+      )
+      .join("\n");
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Wisata Desa Cupang - Strava Tracker" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Sesi Pendakian Gunung Bendera 520 MDPL</name>
+    <desc>Rekaman trek GPS nyata pendakian Desa Cupang</desc>
+    <time>${new Date().toISOString()}</time>
+  </metadata>
+  <trk>
+    <name>Pendakian Gunung Bendera (Sesi ${new Date().toLocaleDateString("id-ID")})</name>
+    <type>Hiking</type>
+    <trkseg>
+${trkpts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+    const blob = new Blob([xml], { type: "application/gpx+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rekaman-strava-gunung-bendera-${Date.now()}.gpx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [recordedPoints]);
 
   // Ekspor & Unduh Berkas Jalur GPX untuk Strava & Garmin
   const handleDownloadGpx = useCallback(() => {
@@ -613,8 +700,21 @@ ${trackPointsXml}
       <section className="relative overflow-hidden rounded-3xl border-2 border-kabut/25 bg-black shadow-2xl">
         {/* BILAH KONTROL LAPISAN SATELIT & ORIENTASI NANJAK (§6.F) */}
         <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 pointer-events-auto">
-          {/* Toggle Layer: Topografi / Satelit */}
+          {/* Toggle Layer: Satelit HD / Topografi */}
           <div className="inline-flex rounded-xl bg-obsidian/90 p-1 border border-white/20 shadow-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => toggleMapLayer("satellite")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                mapLayerMode === "satellite"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm"
+                  : "text-kabut/75 hover:text-white"
+              )}
+            >
+              <i className="bi bi-broadcast text-xs" aria-hidden="true" />
+              <span>Satelit HD</span>
+            </button>
             <button
               type="button"
               onClick={() => toggleMapLayer("topo")}
@@ -627,19 +727,6 @@ ${trackPointsXml}
             >
               <i className="bi bi-map" aria-hidden="true" />
               <span>Topografi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleMapLayer("satellite")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
-                mapLayerMode === "satellite"
-                  ? "bg-emerald-500 text-obsidian shadow-sm"
-                  : "text-kabut/75 hover:text-white"
-              )}
-            >
-              <i className="bi bi-broadcast-pin" aria-hidden="true" />
-              <span>Satelit 🛰️</span>
             </button>
           </div>
 
@@ -657,7 +744,7 @@ ${trackPointsXml}
               title="Arah Pendakian: Pintu masuk di bawah, Puncak di atas"
             >
               <i className="bi bi-arrow-up-circle-fill text-fajar" aria-hidden="true" />
-              <span>Arah Nanjak (Bawah-Atas)</span>
+              <span>Arah Nanjak</span>
             </button>
             <button
               type="button"
@@ -673,6 +760,30 @@ ${trackPointsXml}
               <i className="bi bi-compass" aria-hidden="true" />
               <span>Utara</span>
             </button>
+          </div>
+
+          {/* Pintasan Kamera Cepat */}
+          <div className="inline-flex rounded-xl bg-obsidian/90 p-1 border border-white/20 shadow-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={handleCenterToTrail}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-kabut/85 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              title="Fokuskan kamera ke Jalur Pendakian Gunung Bendera"
+            >
+              <i className="bi bi-geo-alt-fill text-amber-400" aria-hidden="true" />
+              <span>Jalur 520 mdpl</span>
+            </button>
+            {userLocation ? (
+              <button
+                type="button"
+                onClick={handleRecenterToUser}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-cyan-300 hover:text-cyan-200 hover:bg-cyan-950/40 transition-all cursor-pointer"
+                title="Pusatkan kamera ke lokasi GPS saya"
+              >
+                <i className="bi bi-crosshair text-cyan-400" aria-hidden="true" />
+                <span>Posisi Saya</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -844,77 +955,168 @@ ${trackPointsXml}
       </div>
 
       {/* INTEGRASI STRAVA & EKSPOR JALUR GPX (§6.F & §10.2) */}
-      <section className="surface-solid-dark p-6 rounded-3xl border border-white/10 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FC4C02]/15 border border-[#FC4C02]/40 text-[#FC4C02]">
+      <section className="surface-solid-dark p-6 rounded-3xl border border-white/10 space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FC4C02]/15 border border-[#FC4C02]/40 text-[#FC4C02] shadow-md shadow-[#FC4C02]/10">
               <i className="bi bi-strava text-2xl" aria-hidden="true" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-heading text-base font-bold text-kabut">
                   Integrasi Strava & Sinkronisasi Trek GPS
                 </h2>
                 <span className="rounded-full bg-[#FC4C02]/20 border border-[#FC4C02]/40 px-2 py-0.5 text-[10px] font-bold text-[#FC4C02]">
-                  Strava Ready
+                  Strava Verified 520 MDPL
                 </span>
               </div>
-              <p className="text-xs text-kabut/70 mt-0.5">
-                Koneksikan aktivitas pendakian Gunung Bendera 520 mdpl ke akun Strava Anda atau unduh berkas GPX untuk Garmin/Suunto.
+              <p className="text-xs text-kabut/70 mt-1 max-w-xl">
+                Rekam langsung via aplikasi Strava, sinkronkan ID atlet member Anda, atau unduh rute resmi GPX terverifikasi untuk Garmin, Suunto, dan Coros.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Tombol Aksi Strava */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleDownloadGpx}
               className="btn-ui btn-glass text-xs font-bold py-2.5 px-3 flex items-center gap-1.5 hover:text-fajar transition-all cursor-pointer"
-              title="Unduh trek koordinat GPX lengkap dari Pintu Masuk hingga Puncak 520 mdpl"
+              title="Unduh trek koordinat GPX resmi Gunung Bendera (120 - 520 mdpl)"
             >
-              <i className="bi bi-download text-sm" aria-hidden="true" />
-              <span>Unduh GPX (.gpx)</span>
+              <i className="bi bi-download text-sm text-fajar" aria-hidden="true" />
+              <span>Unduh Jalur GPX (.gpx)</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setStravaConnected((prev) => !prev)}
+              onClick={() => {
+                // Buka aplikasi Strava via deeplink
+                window.location.href = "strava://record";
+                setTimeout(() => {
+                  window.open("https://www.strava.com/activities/new", "_blank");
+                }, 1500);
+              }}
+              className="btn-ui bg-[#FC4C02] hover:bg-[#e04300] text-white py-2.5 px-3.5 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-[#FC4C02]/30 cursor-pointer"
+              title="Buka perekam aktivitas di aplikasi Strava ponsel"
+            >
+              <i className="bi bi-record-circle-fill text-white text-xs animate-pulse" aria-hidden="true" />
+              <span>Buka di Strava</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStravaInputId(stravaAthleteId);
+                setShowStravaModal(true);
+              }}
               className={cn(
-                "btn-ui py-2.5 px-3.5 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer",
+                "btn-ui py-2.5 px-3.5 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
                 stravaConnected
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
-                  : "bg-[#FC4C02] text-white hover:bg-[#e04300]"
+                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25"
+                  : "btn-glass text-kabut/85 hover:text-white"
               )}
             >
-              <i className="bi bi-strava text-sm" aria-hidden="true" />
-              <span>{stravaConnected ? "✓ Terhubung ke Strava" : "Sambungkan Akun Strava"}</span>
+              <i className="bi bi-person-badge text-xs" aria-hidden="true" />
+              <span>{stravaConnected ? `✓ ID: ${stravaAthleteId || "Terkoneksi"}` : "Hubungkan Akun"}</span>
             </button>
           </div>
         </div>
 
+        {/* Live Trek GPS Logger Member (Rekam Aktivitas Mandiri) */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-sm",
+              isRecordingActivity
+                ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                : "bg-white/5 border-white/10 text-kabut/60"
+            )}>
+              <i className={cn("bi", isRecordingActivity ? "bi-record-fill" : "bi-stopwatch")} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-kabut">
+                {isRecordingActivity ? "Perekaman Sesi GPS Berjalan" : "Perekam Jejak Pendakian Real-Time"}
+              </p>
+              <p className="text-[11px] text-kabut/65">
+                {isRecordingActivity
+                  ? `Durasi: ${Math.floor(recordingSeconds / 60)}m ${recordingSeconds % 60}s • ${recordedPoints.length} titik GPS tercatat`
+                  : "Catat setiap koordinat langkah Anda di lereng Gunung Bendera lalu ekspor ke GPX untuk Strava"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isRecordingActivity ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (gpsStatus !== "active") {
+                    startGpsTracking();
+                  }
+                  setIsRecordingActivity(true);
+                  setRecordedPoints([]);
+                  setRecordingSeconds(0);
+                }}
+                className="btn-ui btn-fajar py-2 px-3 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <i className="bi bi-play-fill text-sm" aria-hidden="true" />
+                <span>Mulai Rekam Aktivitas</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleDownloadRecordedGpx}
+                  disabled={recordedPoints.length === 0}
+                  className="btn-ui btn-glass py-2 px-3 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i className="bi bi-download text-xs text-fajar" aria-hidden="true" />
+                  <span>Unduh GPX Rekaman</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRecordingActivity(false)}
+                  className="btn-ui bg-red-600 hover:bg-red-500 text-white py-2 px-3 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i className="bi bi-stop-fill text-xs" aria-hidden="true" />
+                  <span>Selesai</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Informasi Status Real-Time Member di Jalur */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5 text-xs">
           <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
             <span className="text-[11px] text-kabut/60">Status Lokasi Member</span>
             <p className="font-bold text-kabut mt-0.5 flex items-center gap-1.5">
               <span className={cn("h-2 w-2 rounded-full", userLocation ? "bg-emerald-400 animate-pulse" : "bg-amber-400")} />
-              <span>{userLocation ? "Aktif di Jalur Pendakian" : "Menunggu Sinyal GPS"}</span>
+              <span>{userLocation ? "Aktif di Jalur" : "Menunggu Sinyal"}</span>
             </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
             <span className="text-[11px] text-kabut/60">Koordinat Saat Ini</span>
-            <p className="font-mono text-xs font-bold text-fajar mt-0.5">
+            <p className="font-mono text-xs font-bold text-fajar mt-0.5 truncate">
               {userLocation
-                ? `${userLocation.lat.toFixed(6)}°, ${userLocation.lng.toFixed(6)}°`
-                : "6.728730° S, 108.382065° E (Pintu Masuk)"}
+                ? `${userLocation.lat.toFixed(5)}°, ${userLocation.lng.toFixed(5)}°`
+                : "6.72873° S, 108.38206° E"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
+            <span className="text-[11px] text-kabut/60">Segmen Resmi Strava</span>
+            <p className="font-mono text-xs font-bold text-telaga-300 mt-0.5">
+              2.25 km (+400m Gain)
             </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
             <span className="text-[11px] text-kabut/60">Target Elevasi</span>
-            <p className="font-mono text-xs font-bold text-telaga-300 mt-0.5">
-              520 mdpl (Puncak Gunung Bendera)
+            <p className="font-mono text-xs font-bold text-emerald-400 mt-0.5">
+              520 mdpl (Puncak)
             </p>
           </div>
         </div>
@@ -975,6 +1177,75 @@ ${trackPointsXml}
       </section>
 
       {/* DIALOG PENJELASAN IZIN GPS RAMAH PENGGUNA SEBELUM watchPosition (§6.F) */}
+      {/* MODAL KONEKSI ID ATLET STRAVA */}
+      {showStravaModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm select-none">
+          <div className="w-full max-w-md rounded-3xl border-2 border-[#FC4C02]/60 bg-obsidian p-6 text-kabut shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-[#FC4C02]">
+                <i className="bi bi-strava text-2xl" aria-hidden="true" />
+                <h3 className="font-heading text-base font-bold text-kabut">
+                  Hubungkan Akun Strava
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStravaModal(false)}
+                className="text-kabut/60 hover:text-white cursor-pointer"
+              >
+                <i className="bi bi-x-lg text-sm" aria-hidden="true" />
+              </button>
+            </div>
+
+            <p className="text-xs text-kabut/75 leading-relaxed">
+              Masukkan ID Atlet atau tautan profil Strava Anda (misal: <code>strava.com/athletes/12345678</code> atau nomor <code>12345678</code>) untuk menautkan statistik pendakian Anda dengan akun member Desa Cupang.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-kabut/90">ID / Username Strava</label>
+              <input
+                type="text"
+                value={stravaInputId}
+                onChange={(e) => setStravaInputId(e.target.value)}
+                placeholder="Contoh: 12345678 atau syarofi_kunaedi"
+                className="w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs text-kabut focus:border-[#FC4C02] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowStravaModal(false)}
+                className="btn-ui btn-glass text-xs py-2 px-3"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const cleaned = stravaInputId.trim().replace(/.*athletes\//, "");
+                  if (!cleaned) {
+                    alert("Silakan masukkan ID atau tautan profil Strava Anda.");
+                    return;
+                  }
+                  setStravaAthleteId(cleaned);
+                  setStravaConnected(true);
+                  try {
+                    localStorage.setItem("wdc_strava_athlete", cleaned);
+                  } catch {
+                    // ignore
+                  }
+                  setShowStravaModal(false);
+                }}
+                className="btn-ui bg-[#FC4C02] hover:bg-[#e04300] text-white text-xs font-bold py-2 px-4 cursor-pointer"
+              >
+                Simpan & Hubungkan
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {showPermissionDialog ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border-2 border-fajar bg-obsidian p-6 text-kabut shadow-2xl space-y-4">

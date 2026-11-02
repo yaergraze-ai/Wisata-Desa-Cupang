@@ -867,6 +867,14 @@ export function TrailTimelineAndMapSection({
                     <span>{tTimeline("bookForPointWhite")}</span>
                   </button>
                 )}
+
+                <Link
+                  href="/jalur"
+                  className="w-full btn-ui btn-glass py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 hover:text-emerald-300 transition-colors"
+                >
+                  <i className="bi bi-broadcast text-emerald-400" aria-hidden="true" />
+                  <span>Buka Peta Satelit HD & GPS Navigator</span>
+                </Link>
               </div>
             </div>
           ) : null}

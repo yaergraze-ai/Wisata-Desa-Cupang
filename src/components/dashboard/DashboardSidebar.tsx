@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { SignOutButton } from "@/components/dashboard/SignOutButton";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { GoogleFirstTimeSetupModal } from "@/components/auth/GoogleFirstTimeSetupModal";
 
 export interface DashboardSidebarTabItem {
@@ -184,19 +185,19 @@ export function DashboardSidebar({
                   type="button"
                   data-testid={`sidebar-tab-${tab.id}`}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`group flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                  className={`group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? "bg-fajar text-obsidian font-bold shadow-xs"
-                      : "text-kabut/70 hover:bg-white/5 hover:text-white"
+                      ? "bg-gradient-to-r from-fajar to-amber-500 text-obsidian font-bold shadow-md shadow-fajar/25 border border-fajar/50 scale-[1.01]"
+                      : "text-kabut/75 hover:bg-white/[0.06] hover:text-white border border-transparent"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <i
                       className={`bi ${tab.icon} text-sm ${
                         isSelected
-                          ? "text-obsidian"
-                          : "text-kabut/50 group-hover:text-kabut"
-                      } transition-colors`}
+                          ? "text-obsidian scale-110"
+                          : "text-kabut/50 group-hover:text-fajar group-hover:scale-105"
+                      } transition-all duration-200`}
                       aria-hidden="true"
                     />
                     <span className="truncate">{tab.label}</span>
@@ -204,9 +205,9 @@ export function DashboardSidebar({
 
                   {tab.badge ? (
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         isSelected
-                          ? "bg-obsidian text-fajar"
+                          ? "bg-obsidian text-fajar shadow-xs"
                           : tab.badgeColor || "bg-white/10 text-kabut/80"
                       }`}
                     >
@@ -227,20 +228,20 @@ export function DashboardSidebar({
           <nav className="space-y-0.5">
             <Link
               href={`/${locale}`}
-              className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-kabut/65 hover:bg-white/5 hover:text-white transition-colors"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-kabut/75 hover:bg-white/[0.06] hover:text-white transition-all duration-200 border border-transparent"
             >
               <i
-                className="bi bi-house text-sm text-kabut/50 group-hover:text-kabut transition-colors"
+                className="bi bi-house-door-fill text-sm text-cyan-400 group-hover:scale-110 transition-transform duration-200"
                 aria-hidden="true"
               />
               <span>Beranda Publik</span>
             </Link>
             <Link
               href={`/${locale}/jalur`}
-              className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-kabut/65 hover:bg-white/5 hover:text-white transition-colors"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-kabut/75 hover:bg-white/[0.06] hover:text-white transition-all duration-200 border border-transparent"
             >
               <i
-                className="bi bi-map text-sm text-kabut/50 group-hover:text-kabut transition-colors"
+                className="bi bi-map-fill text-sm text-emerald-400 group-hover:scale-110 transition-transform duration-200"
                 aria-hidden="true"
               />
               <span>Peta Jalur & Elevasi</span>
@@ -249,14 +250,17 @@ export function DashboardSidebar({
         </div>
       </div>
 
-      {/* FOOTER SIDEBAR (BAHASA, WAKTU WIB & TOMBOL KELUAR) */}
+      {/* FOOTER SIDEBAR (TEMA, BAHASA, WAKTU WIB & TOMBOL KELUAR) */}
       <div className="space-y-2.5 pt-3 border-t border-white/10 mt-4">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[10px] font-mono text-kabut/45 flex items-center gap-1.5">
-            <i className="bi bi-clock text-xs text-kabut/40" aria-hidden="true" />
+        <div className="flex items-center justify-between px-1 gap-1">
+          <span className="text-[10px] font-mono text-kabut/45 flex items-center gap-1.5 shrink-0">
+            <i className="bi bi-clock text-xs text-fajar" aria-hidden="true" />
             <span>{currentTime || "WIB"}</span>
           </span>
-          <LocaleSwitcher compact />
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle compact />
+            <LocaleSwitcher compact />
+          </div>
         </div>
 
         <div>
@@ -296,7 +300,8 @@ export function DashboardSidebar({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle compact />
           <LocaleSwitcher compact />
           <SignOutButton variant="sidebar" />
         </div>

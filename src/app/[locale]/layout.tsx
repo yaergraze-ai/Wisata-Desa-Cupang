@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AmbientBackground } from "@/components/public/AmbientBackground";
 import { DeferredToaster } from "@/components/shared/DeferredToaster";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -72,14 +73,23 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth">
-      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative">
+    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('wdc_theme')||'system';var d=s==='dark'||(s==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative transition-colors duration-200">
         <AmbientBackground />
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-          <ServiceWorkerRegister />
-          <DeferredToaster />
-        </NextIntlClientProvider>
+        <ThemeProvider>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            {children}
+            <ServiceWorkerRegister />
+            <DeferredToaster />
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
