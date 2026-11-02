@@ -808,6 +808,8 @@ export function MemberDashboardClient({
         role={Role.MEMBER}
         userName={userName}
         userEmail={userEmail}
+        userAvatarImage={authCtx?.user.image}
+        twoFactorEnabled={authCtx?.user.twoFactorEnabled}
         locale={locale}
         tabs={sidebarTabs}
         activeTab={activeTab}

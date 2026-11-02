@@ -7,6 +7,7 @@ import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
 
 export interface PublicNavbarUser {
   name: string;
+  image?: string | null;
   dashboardPath: string;
 }
 
@@ -235,9 +236,17 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             {user ? (
               <Link
                 href={user.dashboardPath}
-                className="hidden md:inline-flex btn-ui btn-glass whitespace-nowrap"
+                className="hidden md:inline-flex btn-ui btn-glass whitespace-nowrap items-center gap-2"
               >
-                <i className="bi bi-person-badge" aria-hidden="true" />
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={user.name}
+                    className="h-5 w-5 rounded-full object-cover border border-fajar/50"
+                  />
+                ) : (
+                  <i className="bi bi-person-badge" aria-hidden="true" />
+                )}
                 <span>{tNav("dashboard")}</span>
               </Link>
             ) : (
@@ -356,18 +365,26 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
               }`}
             >
-              <i
-                className={`${
-                  user
-                    ? activeTab === "account"
-                      ? "bi bi-person-check-fill"
-                      : "bi bi-person-check"
-                    : activeTab === "account"
-                    ? "bi bi-person-circle"
-                    : "bi bi-person"
-                } text-lg leading-none`}
-                aria-hidden="true"
-              />
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name}
+                  className="h-5 w-5 rounded-full object-cover border border-fajar/50 mb-0.5"
+                />
+              ) : (
+                <i
+                  className={`${
+                    user
+                      ? activeTab === "account"
+                        ? "bi bi-person-check-fill"
+                        : "bi bi-person-check"
+                      : activeTab === "account"
+                      ? "bi bi-person-circle"
+                      : "bi bi-person"
+                  } text-lg leading-none`}
+                  aria-hidden="true"
+                />
+              )}
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
                 {user ? "Dasbor" : "Akun"}
               </span>

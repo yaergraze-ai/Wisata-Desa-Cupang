@@ -80,6 +80,7 @@ export default async function HomePage({
   const navbarUser = authCtx
     ? {
         name: authCtx.user.name,
+        image: authCtx.user.image,
         dashboardPath: getRoleHomePath(authCtx.user.role),
       }
     : null;

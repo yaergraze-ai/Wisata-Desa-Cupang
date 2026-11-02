@@ -37,6 +37,7 @@ export interface AuthenticatedContext {
     locale: AppLocale;
     whatsapp: string | null;
     whatsappVerifiedAt: Date | null;
+    image?: string | null;
     bio?: string | null;
     city?: string | null;
     emergencyContact?: string | null;
@@ -115,6 +116,7 @@ export async function getServerAuthContext(
       locale: dbUser.locale === "en" ? "en" : "id",
       whatsapp: dbUser.whatsapp,
       whatsappVerifiedAt: dbUser.whatsappVerifiedAt,
+      image: dbUser.image ?? null,
       bio: dbUser.bio ?? null,
       city: dbUser.city ?? null,
       emergencyContact: dbUser.emergencyContact ?? null,

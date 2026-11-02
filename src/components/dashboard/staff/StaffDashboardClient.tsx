@@ -666,6 +666,8 @@ export function StaffDashboardClient({
         role={Role.STAFF}
         userName={staff.name}
         userEmail={staff.email || "petugas@desacupang.id"}
+        userAvatarImage={authCtx?.user.image}
+        twoFactorEnabled={authCtx?.user.twoFactorEnabled}
         locale={locale}
         tabs={sidebarTabs}
         activeTab={activeTab}

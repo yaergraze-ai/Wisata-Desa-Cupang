@@ -20,6 +20,7 @@ interface DashboardSidebarProps {
   userName: string;
   userEmail: string;
   userAvatarInitials?: string;
+  userAvatarImage?: string | null;
   twoFactorEnabled?: boolean;
   locale?: string;
   tabs: DashboardSidebarTabItem[];
@@ -33,6 +34,7 @@ export function DashboardSidebar({
   userName,
   userEmail,
   userAvatarInitials,
+  userAvatarImage,
   twoFactorEnabled = false,
   locale = "id",
   tabs,
@@ -122,9 +124,17 @@ export function DashboardSidebar({
         {/* KARTU PROFIL PENGGUNA TERHUBUNG */}
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 space-y-2">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10 font-mono text-xs font-bold text-kabut">
-              {initials}
-            </span>
+            {userAvatarImage ? (
+              <img
+                src={userAvatarImage}
+                alt={userName}
+                className="h-8 w-8 shrink-0 rounded-lg object-cover border border-fajar/40 shadow-sm"
+              />
+            ) : (
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10 font-mono text-xs font-bold text-kabut">
+                {initials}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-kabut truncate" title={userName}>
                 {userName || "Pengguna"}

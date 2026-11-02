@@ -21,7 +21,8 @@ export function CinematicIntro() {
 
   const handleFinish = useCallback(() => {
     try {
-      document.cookie = "wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax";
+      const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+      document.cookie = `wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax${isHttps ? "; Secure" : ""}`;
       localStorage.setItem("wdc_cinematic_intro_seen", "true");
       sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
     } catch {
@@ -52,8 +53,10 @@ export function CinematicIntro() {
         typeof document !== "undefined" &&
         document.cookie.includes("wdc_intro_seen=true");
       const localSeen =
+        typeof localStorage !== "undefined" &&
         localStorage.getItem("wdc_cinematic_intro_seen") === "true";
       const sessionSeen =
+        typeof sessionStorage !== "undefined" &&
         sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
 
       if (cookieSeen || localSeen || sessionSeen) {
@@ -62,7 +65,8 @@ export function CinematicIntro() {
       }
 
       // Segera kunci status seen agar saat refresh atau navigasi ulang, intro tidak akan pernah muncul lagi
-      document.cookie = "wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax";
+      const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+      document.cookie = `wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax${isHttps ? "; Secure" : ""}`;
       localStorage.setItem("wdc_cinematic_intro_seen", "true");
       sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
     } catch {
@@ -192,6 +196,13 @@ export function CinematicIntro() {
           background: "radial-gradient(circle at 50% 40%, #15241c 0%, #0a110d 65%, #050806 100%)",
         }}
       >
+        {/* Anti-Flash Synchronous Parser Guard: Sembunyikan seketika sebelum frame digambar jika sudah pernah dilihat */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){var el=document.getElementById('wdc-cinematic-intro');if(el){el.style.display='none';el.setAttribute('aria-hidden','true');}}}catch(e){}`,
+          }}
+        />
+
         {/* Latar Belakang Garis Topografi Halus */}
         <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center">
           <svg

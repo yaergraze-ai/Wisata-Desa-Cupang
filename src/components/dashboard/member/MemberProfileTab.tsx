@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { AuthenticatedContext } from "@/server/auth/guards";
@@ -21,6 +22,12 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [emergencyContact, setEmergencyContact] = useState(authCtx.user.emergencyContact ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  // State Foto Profil (Avatar)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(authCtx.user.image ?? null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEmailVerified, setIsEmailVerified] = useState(authCtx.user.emailVerified);
   const [isWhatsappVerified, setIsWhatsappVerified] = useState(
@@ -125,6 +132,52 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
       }
     } catch {
       alert("Gagal menghapus profil rekan.");
+    }
+  }
+
+  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    setAvatarError(null);
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await fetch("/api/user/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json() as { error?: string; avatarUrl?: string };
+      if (!res.ok) throw new Error(data.error || "Gagal mengunggah foto profil.");
+      if (data.avatarUrl) {
+        setAvatarUrl(data.avatarUrl);
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : "Gagal mengunggah foto.");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteAvatar() {
+    if (!confirm("Hapus foto profil Anda?")) return;
+    setIsUploadingAvatar(true);
+    setAvatarError(null);
+
+    try {
+      const res = await fetch("/api/user/avatar", { method: "DELETE" });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus foto profil.");
+      setAvatarUrl(null);
+      router.refresh();
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : "Gagal menghapus foto.");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   }
 
@@ -309,6 +362,80 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
               {profileError}
             </div>
           ) : null}
+
+          {/* FOTO PROFIL (AVATAR) RESMI MEMBER */}
+          <div className="rounded-xl border border-white/10 bg-obsidian/60 p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Pratinjau Foto */}
+              <div className="relative">
+                {avatarUrl ? (
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-fajar/50 shadow-xl bg-obsidian">
+                    <Image
+                      src={avatarUrl}
+                      alt={name}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/5 border border-white/10 font-unbounded text-xl font-bold text-fajar shadow-lg">
+                    {name ? name.trim().slice(0, 2).toUpperCase() : "DC"}
+                  </div>
+                )}
+                {isUploadingAvatar ? (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-obsidian/80 backdrop-blur-xs">
+                    <i className="bi bi-arrow-repeat animate-spin text-fajar text-lg" aria-hidden="true" />
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Kontrol Aksi Foto */}
+              <div className="space-y-1.5 flex-1 min-w-0 text-xs">
+                <p className="font-bold text-kabut">Foto Profil Akun</p>
+                <p className="text-[11px] text-kabut/65 leading-relaxed">
+                  Format JPG, PNG, atau WebP (maks. 5 MB). Foto akan ditampilkan di menu samping, status tiket, dan ulasan Anda.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="btn-ui btn-fajar py-1.5 px-3 text-xs font-bold cursor-pointer flex items-center gap-1.5"
+                  >
+                    <i className="bi bi-camera-fill text-xs" aria-hidden="true" />
+                    <span>{avatarUrl ? "Ganti Foto" : "Unggah Foto Profil"}</span>
+                  </button>
+
+                  {avatarUrl ? (
+                    <button
+                      type="button"
+                      disabled={isUploadingAvatar}
+                      onClick={handleDeleteAvatar}
+                      className="btn-ui btn-glass py-1.5 px-2.5 text-xs font-bold text-red-300 hover:text-red-200 cursor-pointer flex items-center gap-1"
+                    >
+                      <i className="bi bi-trash" aria-hidden="true" />
+                      <span>Hapus</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {avatarError ? (
+              <div className="rounded-lg border border-red-500/40 bg-red-950/40 p-2.5 text-[11px] text-red-200">
+                {avatarError}
+              </div>
+            ) : null}
+          </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "bootstrap-icons/font/bootstrap-icons.css";
+@import "./bootstrap-icons-swap.css";
 
 @theme {
   /* ========================================================================
@@ -184,22 +184,22 @@
   font-family: var(--font-unbounded), "Unbounded Variable", "Unbounded", system-ui, sans-serif !important;
 }
 
-/* Animasi Menyala-Mati Pelan (Slow Pulse Warning) untuk Indikator 2FA Belum Aktif */
+/* Animasi Menyala-Mati Pelan (Slow Pulse Warning) untuk Indikator 2FA Belum Aktif (100% GPU Composited) */
 @keyframes pulse-slow-warning {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
-    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.75));
   }
   50% {
-    opacity: 0.38;
+    opacity: 0.45;
     transform: scale(0.97);
-    filter: drop-shadow(0 0 1px rgba(245, 158, 11, 0.15));
   }
 }
 
 .animate-pulse-warning {
   animation: pulse-slow-warning 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform, opacity;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
 /* Motif Khas: Tekstur Garis Kontur Topografi Pegunungan (Opasitas ~5%) */

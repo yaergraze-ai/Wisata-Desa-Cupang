@@ -82,6 +82,7 @@ export function AdminDashboardClient({
         role={Role.ADMIN}
         userName={authCtx.user.name}
         userEmail={authCtx.user.email}
+        userAvatarImage={authCtx.user.image}
         twoFactorEnabled={authCtx.user.twoFactorEnabled}
         locale={locale}
         tabs={sidebarTabs}
