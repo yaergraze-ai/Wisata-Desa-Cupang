@@ -7,9 +7,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "icons:css": "node scripts/build-icons-css.mjs",
-    "dev": "node scripts/build-icons-css.mjs && next dev",
-    "build": "node scripts/build-icons-css.mjs && prisma generate && next build",
+    "dev": "next dev",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

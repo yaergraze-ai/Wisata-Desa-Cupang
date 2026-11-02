@@ -4,7 +4,6 @@ import { getTodayWibDateString } from "@/lib/datetime-wib";
 import { requirePageRole } from "@/server/auth/guards";
 import { calculateServerOrderQuote } from "@/server/pricing/quote-service";
 import { getMemberDashboardSnapshot } from "@/server/orders/order-service";
-import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
 import {
   MemberDashboardClient,
   type MemberDashboardTab,
@@ -96,7 +95,6 @@ export default async function MemberDashboardPage({
 
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-      <DashboardTopBar locale={locale} authCtx={authCtx} />
       <main className="w-full flex-1">
         <MemberDashboardClient
           locale={locale}

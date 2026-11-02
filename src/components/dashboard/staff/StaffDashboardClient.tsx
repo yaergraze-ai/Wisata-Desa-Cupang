@@ -678,37 +678,34 @@ export function StaffDashboardClient({
       </div>
 
       {/* Header Petugas, Destinasi, dan Pemilih Gerbang */}
-      <section className="relative overflow-hidden surface-solid-dark rounded-3xl border border-telaga-700/60 bg-gradient-to-br from-hutan/90 via-obsidian/95 to-obsidian p-6 sm:p-7 shadow-2xl before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-telaga-400">
+      <section className="relative surface-solid-dark rounded-2xl border border-telaga-700/60 bg-obsidian p-6 shadow-xl">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-telaga-400/80 bg-telaga-950 px-3 py-1 text-xs font-extrabold text-telaga-200 uppercase shadow-inner">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-telaga-600/60 bg-telaga-950 px-2.5 py-0.5 text-xs font-semibold text-telaga-200 uppercase">
               <i className="bi bi-shield-fill-check text-fajar" aria-hidden="true" />
               <span>{t("eyebrow")} — {staff.destinationName}</span>
             </span>
-            <h1 className="mt-2 font-heading text-2xl font-extrabold text-kabut sm:text-3xl">
+            <h1 className="mt-2 font-heading text-xl font-bold text-kabut sm:text-2xl">
               {t("heading")}
             </h1>
-            <p className="mt-1 text-xs text-kabut/80">
+            <p className="mt-1 text-xs text-kabut/75">
               {t("staffLabel")}{" "}
-              <strong className="text-fajar font-bold">{staff.name}</strong> ({staff.jobTitle})
+              <strong className="text-fajar font-semibold">{staff.name}</strong> ({staff.jobTitle})
             </p>
           </div>
 
           {/* Penghitung Pengunjung Masuk Hari Ini di Gerbang Terpilih */}
-          <div className="relative overflow-hidden rounded-2xl border border-fajar/50 bg-gradient-to-br from-fajar/10 via-obsidian/90 to-obsidian p-4 text-center sm:text-right shadow-lg">
-            <div className="flex items-center justify-center sm:justify-end gap-2 text-xs font-bold tracking-wider text-kabut/80 uppercase">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+          <div className="rounded-xl border border-telaga-700/60 bg-obsidian/90 p-4 text-center sm:text-right">
+            <div className="flex items-center justify-center sm:justify-end gap-1.5 text-xs font-semibold tracking-wider text-kabut/70 uppercase">
+              <span className="inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               <span>{t("todayAdmittedCount")}</span>
             </div>
             <p
               data-testid="staff-today-admitted-count"
-              className="mt-1 font-heading text-3xl sm:text-4xl font-black text-fajar"
+              className="mt-1 font-heading text-2xl sm:text-3xl font-extrabold text-fajar"
             >
               {todayAdmittedCount}{" "}
-              <span className="text-sm font-semibold text-kabut/75">
+              <span className="text-xs font-semibold text-kabut/75">
                 {t("todayAdmittedUnit")}
               </span>
             </p>

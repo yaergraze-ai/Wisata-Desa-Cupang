@@ -6,7 +6,6 @@ import { requirePageRole } from "@/server/auth/guards";
 import { db } from "@/server/db";
 import { getTodayScanHistory } from "@/server/scan/scan-service";
 import { getStaffSelfState } from "@/server/staff/staff-schedule-service";
-import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
 import { StaffDashboardClient } from "@/components/dashboard/staff/StaffDashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +73,6 @@ export default async function StaffDashboardPage({
 
     return (
       <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-        <DashboardTopBar locale={locale} authCtx={authCtx} />
         <main className="w-full flex-1">
           <StaffDashboardClient
             locale={locale}
@@ -95,7 +93,6 @@ export default async function StaffDashboardPage({
 
     return (
       <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-        <DashboardTopBar locale={locale} authCtx={authCtx} />
         <main className="mx-auto w-full max-w-md flex-1 px-4 py-16 flex items-center justify-center">
           <div className="w-full surface-solid-dark p-8 rounded-3xl border border-telaga-600/50 text-center space-y-5">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-3xl text-fajar">

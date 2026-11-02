@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./bootstrap-icons-swap.css";
+@import "bootstrap-icons/font/bootstrap-icons.css";
 
 @theme {
   /* ========================================================================

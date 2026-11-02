@@ -815,92 +815,33 @@ export function MemberDashboardClient({
         title="Dashboard Wisatawan"
       />
       <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Header Sambutan & Navigasi Tab dengan Garis Aktif Motion layoutId (§7.2) */}
-        <section className="surface-solid-dark p-5 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-r from-hutan/90 via-obsidian/95 to-obsidian">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/30 to-obsidian border border-fajar/40 text-fajar font-heading font-extrabold text-lg sm:text-xl shadow-inner">
-              {userName ? userName.slice(0, 2).toUpperCase() : "MB"}
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
-                  {tShell("welcome", { name: userName })}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Member Resmi</span>
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-kabut/75 font-mono">
-                {tShell("signedInAs", { email: userEmail })}
-              </p>
-            </div>
+        {/* Header Halaman Aktif */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-telaga-800/60">
+          <div>
+            <h1 className="font-heading text-xl font-bold text-kabut sm:text-2xl flex items-center gap-2.5">
+              <i className={`bi ${tabs.find((t) => t.id === activeTab)?.icon} text-fajar text-lg`} aria-hidden="true" />
+              <span>{tabs.find((t) => t.id === activeTab)?.label}</span>
+            </h1>
+            <p className="mt-0.5 text-xs text-kabut/65">
+              Selamat datang, {userName}. Kelola tiket dan penjelajahan alam Desa Cupang.
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setWizardStep(1);
-              setActiveCheckoutOrder(null);
-              selectTab("buy");
-            }}
-            className="btn-ui btn-fajar self-start md:self-auto shadow-lg shadow-fajar/20 hover:scale-105 active:scale-95 transition-transform"
-          >
-            <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
-            <span>{t("tabBuy")}</span>
-          </button>
+          {activeTab !== "buy" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setWizardStep(1);
+                setActiveCheckoutOrder(null);
+                selectTab("buy");
+              }}
+              className="btn-ui btn-fajar self-start sm:self-auto text-xs"
+            >
+              <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
+              <span>{t("tabBuy")}</span>
+            </button>
+          ) : null}
         </div>
-
-        {/* Baris Tab */}
-        <nav
-          aria-label={t("tabsNavAria")}
-          className="mt-6 flex flex-wrap gap-2 border-t border-kabut/15 pt-4"
-        >
-          {tabs.map((tab) => {
-            const isSelected = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                data-testid={`member-tab-${tab.id}`}
-                onClick={() => selectTab(tab.id)}
-                className={cn(
-                  "relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors sm:text-sm",
-                  isSelected
-                    ? "text-obsidian"
-                    : "bg-obsidian/55 text-kabut hover:bg-obsidian"
-                )}
-              >
-                {isSelected ? (
-                  <motion.span
-                    layoutId="member-tab-indicator"
-                    className="absolute inset-0 rounded-xl bg-fajar"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  />
-                ) : null}
-                <i
-                  className={cn("bi relative z-10", tab.icon)}
-                  aria-hidden="true"
-                />
-                <span className="relative z-10">{tab.label}</span>
-                {tab.badge ? (
-                  <span
-                    className={cn(
-                      "relative z-10 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold",
-                      isSelected
-                        ? "bg-obsidian text-fajar"
-                        : "bg-telaga-700 text-kabut"
-                    )}
-                  >
-                    {tab.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
-      </section>
 
       {/* Banner Peringatan Pesanan PENDING yang Menunggu Pembayaran */}
       {pendingOrders.length > 0 && activeTab !== "buy" ? (

@@ -2,7 +2,6 @@ import { getTranslations } from "next-intl/server";
 import { Role } from "@prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { requirePageRole } from "@/server/auth/guards";
-import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
 import {
   AdminDashboardClient,
   type AdminTab,
@@ -49,7 +48,6 @@ export default async function AdminDashboardPage({
 
   return (
     <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
-      <DashboardTopBar locale={locale} authCtx={authCtx} />
       <main className="w-full flex-1">
         {/* Client Tabs Controller with Left Sidebar */}
         <AdminDashboardClient locale={locale} authCtx={authCtx} initialTab={activeTab} />

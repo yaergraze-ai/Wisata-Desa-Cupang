@@ -9,13 +9,16 @@ import {
   type PublicReviewReactionsDto,
 } from "@/lib/reviews/reactions";
 
-const REACTION_LABELS: Record<AllowedReaction, string> = {
-  "👍": "Suka",
-  "❤️": "Cinta",
-  "🔥": "Keren",
-  "👏": "Mantap",
-  "⛰️": "Petualang",
-  "💡": "Bermanfaat",
+export const REACTION_BOOTSTRAP_ICONS: Record<
+  AllowedReaction,
+  { icon: string; label: string; color: string }
+> = {
+  "👍": { icon: "bi-hand-thumbs-up-fill", label: "Suka", color: "text-blue-400" },
+  "❤️": { icon: "bi-heart-fill", label: "Cinta", color: "text-rose-500" },
+  "🔥": { icon: "bi-fire", label: "Keren", color: "text-amber-500" },
+  "👏": { icon: "bi-emoji-smile-fill", label: "Mantap", color: "text-emerald-400" },
+  "⛰️": { icon: "bi-geo-alt-fill", label: "Petualang", color: "text-teal-400" },
+  "💡": { icon: "bi-lightbulb-fill", label: "Bermanfaat", color: "text-yellow-400" },
 };
 
 interface ReviewReactionRowProps {
@@ -127,25 +130,26 @@ export function ReviewReactionRow({
         {activeEmojiList.map((emoji) => {
           const count = reactions.counts[emoji] ?? 0;
           const isSelected = reactions.userReaction === emoji;
+          const cfg = REACTION_BOOTSTRAP_ICONS[emoji];
 
           return (
             <motion.button
               key={emoji}
               type="button"
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleToggleReaction(emoji)}
-              aria-label={`Reaksi ${REACTION_LABELS[emoji]} (${count})`}
-              title={`${REACTION_LABELS[emoji]} (${count})`}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+              aria-label={`Reaksi ${cfg.label} (${count})`}
+              title={`${cfg.label} (${count})`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                 isSelected
-                  ? "bg-fajar/20 border-2 border-fajar text-fajar shadow-md scale-105"
+                  ? "bg-fajar/20 border border-fajar text-fajar"
                   : "bg-obsidian/70 border border-telaga-700/80 text-kabut hover:border-telaga-500 hover:text-fajar"
               }`}
             >
-              <span className="text-sm select-none">{emoji}</span>
+              <i className={`bi ${cfg.icon} text-xs ${cfg.color}`} aria-hidden="true" />
               <span
                 className={`text-[11px] font-mono ${
-                  isSelected ? "text-fajar font-extrabold" : "text-kabut/75"
+                  isSelected ? "text-fajar font-bold" : "text-kabut/75"
                 }`}
               >
                 {count}
@@ -159,13 +163,13 @@ export function ReviewReactionRow({
           <button
             type="button"
             onClick={() => setIsPickerOpen((prev) => !prev)}
-            aria-label="Tambah reaksi emote"
+            aria-label="Tambah reaksi"
             aria-expanded={isPickerOpen}
             className="inline-flex items-center gap-1 rounded-full bg-obsidian/60 border border-telaga-700/60 px-2.5 py-1 text-xs font-medium text-kabut/80 hover:text-fajar hover:border-fajar/50 transition cursor-pointer hover:bg-obsidian"
           >
             <i
               className={`bi ${
-                isPickerOpen ? "bi-x" : "bi-emoji-smile"
+                isPickerOpen ? "bi-x-lg" : "bi-emoji-smile"
               } text-xs text-fajar`}
               aria-hidden="true"
             />
@@ -176,7 +180,7 @@ export function ReviewReactionRow({
             ) : null}
           </button>
 
-          {/* DOCK POPUP PEMILIH REAKSI EMOTE */}
+          {/* DOCK POPUP PEMILIH REAKSI BOOTSTRAP ICONS */}
           <AnimatePresence>
             {isPickerOpen ? (
               <>
@@ -187,30 +191,29 @@ export function ReviewReactionRow({
                 />
 
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                  initial={{ opacity: 0, scale: 0.9, y: 6 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.85, y: 8 }}
-                  transition={{ type: "spring", stiffness: 450, damping: 28 }}
-                  className="absolute bottom-full left-0 mb-2 z-40 flex items-center gap-1.5 rounded-2xl bg-obsidian/95 border border-fajar/40 p-2 shadow-2xl backdrop-blur-md"
+                  exit={{ opacity: 0, scale: 0.9, y: 6 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full left-0 mb-2 z-40 flex items-center gap-1 rounded-xl bg-obsidian/95 border border-telaga-700/80 p-1.5 shadow-xl backdrop-blur-md"
                 >
                   {ALLOWED_REACTIONS.map((emoji) => {
                     const isSelected = reactions.userReaction === emoji;
+                    const cfg = REACTION_BOOTSTRAP_ICONS[emoji];
                     return (
-                      <motion.button
+                      <button
                         key={emoji}
                         type="button"
-                        whileHover={{ scale: 1.3, y: -3 }}
-                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleToggleReaction(emoji)}
-                        title={REACTION_LABELS[emoji]}
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg transition-colors cursor-pointer ${
+                        title={cfg.label}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-fajar/25 border border-fajar shadow"
-                            : "hover:bg-hutan"
+                            ? "bg-fajar/20 border border-fajar"
+                            : "hover:bg-hutan/80"
                         }`}
                       >
-                        <span className="select-none">{emoji}</span>
-                      </motion.button>
+                        <i className={`bi ${cfg.icon} text-sm ${cfg.color}`} aria-hidden="true" />
+                      </button>
                     );
                   })}
                 </motion.div>

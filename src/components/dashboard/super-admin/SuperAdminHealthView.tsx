@@ -115,7 +115,7 @@ export function SuperAdminHealthView() {
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
                           isConnected
-                            ? "bg-emerald-400 animate-pulse"
+                            ? "bg-emerald-400"
                             : isDegraded
                             ? "bg-amber-400"
                             : "bg-red-400"
