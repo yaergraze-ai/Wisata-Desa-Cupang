@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { SignOutButton } from "@/components/dashboard/SignOutButton";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { GoogleFirstTimeSetupModal } from "@/components/auth/GoogleFirstTimeSetupModal";
 
 export interface DashboardSidebarTabItem {
@@ -282,7 +281,6 @@ export function DashboardSidebar({
             <span>{currentTime || "WIB"}</span>
           </span>
           <div className="flex items-center gap-1.5">
-            <ThemeToggle compact />
             <LocaleSwitcher compact />
           </div>
         </div>
@@ -335,7 +333,6 @@ export function DashboardSidebar({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <ThemeToggle compact />
           <LocaleSwitcher compact />
           <SignOutButton variant="sidebar" />
         </div>

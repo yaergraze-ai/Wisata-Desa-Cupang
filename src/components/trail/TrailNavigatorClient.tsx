@@ -53,6 +53,30 @@ interface OfflineMapManifest {
 
 const MAP_CACHE_NAME = "wisata_cirebon_map_cache";
 
+function createGeoJsonCircle(center: [number, number], radiusInMeters: number, points = 48) {
+  const coords: [number, number][] = [];
+  const km = Math.max(radiusInMeters, 8) / 1000;
+  const distanceX = km / (111.32 * Math.cos((center[1] * Math.PI) / 180));
+  const distanceY = km / 110.574;
+
+  for (let i = 0; i < points; i++) {
+    const theta = (i / points) * (2 * Math.PI);
+    const x = distanceX * Math.cos(theta);
+    const y = distanceY * Math.sin(theta);
+    coords.push([center[0] + x, center[1] + y]);
+  }
+  coords.push(coords[0]!);
+
+  return {
+    type: "Feature" as const,
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [coords],
+    },
+    properties: {},
+  };
+}
+
 export function TrailNavigatorClient({
   offTrailThresholdM,
 }: TrailNavigatorClientProps) {
@@ -71,6 +95,15 @@ export function TrailNavigatorClient({
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const [userLocation, setUserLocation] = useState<GeoCoord | null>(null);
   const [userAccuracyM, setUserAccuracyM] = useState<number | null>(null);
+  const [userSpeedKmh, setUserSpeedKmh] = useState<number | null>(null);
+  const [userAltitudeM, setUserAltitudeM] = useState<number | null>(null);
+  const [isAutoFollow, setIsAutoFollow] = useState(true);
+  const isAutoFollowRef = useRef(true);
+  useEffect(() => {
+    isAutoFollowRef.current = isAutoFollow;
+  }, [isAutoFollow]);
+
+  const hasCenteredOnFirstFixRef = useRef(false);
   const [telemetry, setTelemetry] = useState<TrailTelemetryResult | null>(null);
   const [selectedPostCode, setSelectedPostCode] = useState<string>("TRAILHEAD");
 
@@ -259,6 +292,41 @@ export function TrailNavigatorClient({
               .addTo(map);
           });
 
+          // 3. Sumber & Lapisan Lingkaran Akurasi Real-Time ala Google Maps
+          map.addSource("user-accuracy-circle", {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: [],
+            },
+          });
+
+          map.addLayer({
+            id: "user-accuracy-circle-fill",
+            type: "fill",
+            source: "user-accuracy-circle",
+            paint: {
+              "fill-color": "#1a73e8",
+              "fill-opacity": 0.14,
+            },
+          });
+
+          map.addLayer({
+            id: "user-accuracy-circle-stroke",
+            type: "line",
+            source: "user-accuracy-circle",
+            paint: {
+              "line-color": "#1a73e8",
+              "line-width": 1.5,
+              "line-opacity": 0.5,
+            },
+          });
+
+          // Saat pengguna menggeser peta secara manual, nonaktifkan auto-follow agar peta tidak terpental
+          map.on("dragstart", () => {
+            setIsAutoFollow(false);
+          });
+
           // Kontrol navigasi bawaan MapLibre
           map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
         });
@@ -278,14 +346,21 @@ export function TrailNavigatorClient({
     };
   }, []);
 
-  // Handler update posisi GPS pengguna
+  // Handler update posisi GPS pengguna (Real-Time GPS Tracking)
   const handlePositionUpdate = useCallback(
     (pos: GeolocationPosition) => {
-      const { latitude, longitude, accuracy } = pos.coords;
+      const { latitude, longitude, accuracy, speed, altitude } = pos.coords;
       const coord: GeoCoord = { lat: latitude, lng: longitude };
       setUserLocation(coord);
       setUserAccuracyM(Math.round(accuracy));
       setGpsStatus("active");
+
+      if (typeof speed === "number" && !isNaN(speed) && speed >= 0) {
+        setUserSpeedKmh(Math.round(speed * 3.6));
+      }
+      if (typeof altitude === "number" && !isNaN(altitude)) {
+        setUserAltitudeM(Math.round(altitude));
+      }
 
       // Hitung telemetri jalur & deteksi deviasi keluar jalur
       const tel = computeTrailTelemetry(coord, GUNUNG_BENDERA_TRAIL_POSTS, offTrailThresholdM);
@@ -296,20 +371,34 @@ export function TrailNavigatorClient({
         navigator.vibrate([200, 100, 200]);
       }
 
-      // Update marker pengguna pada peta secara sinkron (anti-duplikasi & anti-bug)
+      // Update marker dan lingkaran akurasi ala Google Maps secara sinkron
       const map = mapInstanceRef.current;
       const maplibregl = maplibreglRef.current;
       if (map && maplibregl && mapLoaded) {
+        // 1. Lingkaran akurasi Google Maps
+        try {
+          const circleGeoJson = createGeoJsonCircle([longitude, latitude], Math.max(accuracy, 10));
+          const src = map.getSource("user-accuracy-circle") as {
+            setData?: (data: unknown) => void;
+          };
+          if (src && typeof src.setData === "function") {
+            src.setData(circleGeoJson);
+          }
+        } catch {
+          // ignore
+        }
+
+        // 2. Marker Titik Biru Google Maps (Google Maps Blue Dot)
         if (!userMarkerRef.current) {
           const el = document.createElement("div");
-          el.className = "user-gps-marker select-none pointer-events-none";
+          el.className = "google-maps-user-marker select-none pointer-events-none relative flex items-center justify-center";
+          el.style.width = "48px";
+          el.style.height = "48px";
           el.innerHTML = `
-            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-              <div class="absolute -inset-4 rounded-full bg-cyan-400/35 animate-ping"></div>
-              <div class="absolute -inset-2 rounded-full bg-cyan-400/50 animate-pulse"></div>
-              <div class="relative flex items-center justify-center w-7 h-7 rounded-full bg-cyan-500 border-2 border-white shadow-[0_0_18px_rgba(6,182,212,0.95)] text-white text-xs font-black">
-                <i class="bi bi-geo-alt-fill text-[13px]"></i>
-              </div>
+            <div class="absolute inset-0 rounded-full bg-blue-500/20 animate-ping pointer-events-none"></div>
+            <div class="absolute inset-2 rounded-full bg-blue-400/30 animate-pulse pointer-events-none"></div>
+            <div class="relative flex items-center justify-center w-5 h-5 rounded-full bg-[#1a73e8] border-[2.5px] border-white shadow-[0_2px_8px_rgba(0,0,0,0.55),0_0_14px_rgba(26,115,232,0.95)]">
+              <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
             </div>
           `;
           userMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
@@ -317,6 +406,21 @@ export function TrailNavigatorClient({
             .addTo(map);
         } else {
           userMarkerRef.current.setLngLat([longitude, latitude]);
+        }
+
+        // 3. Auto-center pada fix pertama atau saat mode auto-follow aktif
+        if (!hasCenteredOnFirstFixRef.current) {
+          hasCenteredOnFirstFixRef.current = true;
+          map.flyTo({
+            center: [longitude, latitude],
+            zoom: 16.5,
+            speed: 1.2,
+          });
+        } else if (isAutoFollowRef.current) {
+          map.easeTo({
+            center: [longitude, latitude],
+            duration: 400,
+          });
         }
       }
 
@@ -328,7 +432,7 @@ export function TrailNavigatorClient({
             lat: latitude,
             lng: longitude,
             time: new Date().toISOString(),
-            ele: tel?.nearestPost.elevationM ?? 120,
+            ele: altitude ? Math.round(altitude) : tel?.nearestPost.elevationM ?? 120,
           },
         ]);
       }
@@ -359,11 +463,18 @@ export function TrailNavigatorClient({
       handlePositionError,
       {
         enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 4000,
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
   }, [handlePositionError, handlePositionUpdate]);
+
+  // Otomatis aktifkan pencarian GPS realtime saat halaman dibuka
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      startGpsTracking();
+    }
+  }, [startGpsTracking]);
 
   useEffect(() => {
     return () => {
@@ -373,15 +484,21 @@ export function TrailNavigatorClient({
     };
   }, []);
 
-  // Pusatkan peta ke posisi pengguna
+  // Pusatkan peta ke posisi pengguna (ala tombol Google Maps)
   const handleRecenterToUser = useCallback(() => {
-    if (!userLocation || !mapInstanceRef.current) return;
-    mapInstanceRef.current.flyTo({
-      center: [userLocation.lng, userLocation.lat],
-      zoom: 16.5,
-      speed: 1.2,
-    });
-  }, [userLocation]);
+    setIsAutoFollow(true);
+    if (!userLocation) {
+      startGpsTracking();
+      return;
+    }
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 16.8,
+        speed: 1.4,
+      });
+    }
+  }, [userLocation, startGpsTracking]);
 
   // Unduh peta offline PMTiles dan simpan ke CacheStorage
   const handleDownloadOfflineMap = useCallback(async () => {
@@ -482,6 +599,7 @@ export function TrailNavigatorClient({
 
   // Pusatkan peta ke Jalur Pendakian Gunung Bendera
   const handleCenterToTrail = useCallback(() => {
+    setIsAutoFollow(false);
     const map = mapInstanceRef.current;
     if (!map) return;
     map.flyTo({
@@ -650,20 +768,20 @@ ${trackPointsXml}
                 type="button"
                 data-testid="recenter-gps-btn"
                 onClick={handleRecenterToUser}
-                className="btn-ui btn-fajar py-2.5 text-xs font-black"
+                className="btn-ui bg-[#1a73e8] hover:bg-blue-600 text-white py-2.5 text-xs font-black shadow-md shadow-blue-500/20"
               >
-                <i className="bi bi-crosshair" aria-hidden="true" />
-                <span>{t("recenterMapBtn")}</span>
+                <i className={cn("bi", isAutoFollow ? "bi-cursor-fill" : "bi-crosshair")} aria-hidden="true" />
+                <span>{isAutoFollow ? "Mengikuti Posisi Saya" : "Pusatkan ke Posisi Saya"}</span>
               </button>
             ) : (
               <button
                 type="button"
                 data-testid="enable-gps-btn"
-                onClick={() => setShowPermissionDialog(true)}
+                onClick={startGpsTracking}
                 className="btn-ui btn-telaga py-2.5 text-xs font-black"
               >
                 <i className="bi bi-geo-alt-fill" aria-hidden="true" />
-                <span>{t("gpsEnableBtn")}</span>
+                <span>Aktifkan GPS Realtime</span>
               </button>
             )}
 
@@ -678,15 +796,28 @@ ${trackPointsXml}
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-kabut/10 pt-3 text-xs">
           <span className="font-bold text-kabut/75">{t("gpsStatusLabel")}</span>
           {gpsStatus === "active" ? (
-            <span data-testid="gps-active-badge" className="font-bold text-telaga-300">
-              <i className="bi bi-check-circle-fill mr-1" aria-hidden="true" />
-              {t("gpsActiveStatus", { acc: userAccuracyM ?? 10 })}
+            <span data-testid="gps-active-badge" className="font-bold text-blue-300 flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              <span>GPS Realtime Aktif (Akurasi: ±{userAccuracyM ?? 10} meter • Pembaruan Langsung)</span>
+            </span>
+          ) : gpsStatus === "requesting" ? (
+            <span className="font-bold text-amber-300 flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span>Menghubungkan Sinyal Satelit GPS...</span>
             </span>
           ) : gpsStatus === "denied" ? (
-            <span data-testid="gps-denied-badge" className="font-bold text-red-400">
+            <button
+              type="button"
+              onClick={startGpsTracking}
+              data-testid="gps-denied-badge"
+              className="font-bold text-red-400 hover:underline flex items-center gap-1 text-left cursor-pointer"
+            >
               <i className="bi bi-exclamation-circle-fill mr-1" aria-hidden="true" />
-              {t("gpsDenied")}
-            </span>
+              <span>Izin GPS Ditolak / Nonaktif. Klik di sini untuk mencoba lagi</span>
+            </button>
           ) : (
             <span className="text-kabut/60">
               <i className="bi bi-dash-circle mr-1" aria-hidden="true" />
@@ -762,52 +893,115 @@ ${trackPointsXml}
             </button>
           </div>
 
-          {/* Pintasan Kamera Cepat */}
+          {/* Pintasan Kamera Cepat & Real-Time Auto-Follow */}
           <div className="inline-flex rounded-xl bg-obsidian/90 p-1 border border-white/20 shadow-xl backdrop-blur-md">
             <button
               type="button"
+              onClick={handleRecenterToUser}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                isAutoFollow && gpsStatus === "active"
+                  ? "bg-[#1a73e8] text-white shadow-sm"
+                  : "text-blue-300 hover:text-white hover:bg-white/10"
+              )}
+              title="Pusatkan dan ikuti posisi GPS saya secara realtime (Google Maps Mode)"
+            >
+              <i
+                className={cn(
+                  "bi text-xs",
+                  gpsStatus === "active"
+                    ? isAutoFollow
+                      ? "bi-cursor-fill"
+                      : "bi-crosshair"
+                    : "bi-geo-alt-fill text-fajar"
+                )}
+                aria-hidden="true"
+              />
+              <span>Posisi Saya</span>
+              {gpsStatus === "active" ? (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
               onClick={handleCenterToTrail}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-kabut/85 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               title="Fokuskan kamera ke Jalur Pendakian Gunung Bendera"
             >
-              <i className="bi bi-geo-alt-fill text-amber-400" aria-hidden="true" />
+              <i className="bi bi-mountain-fill text-amber-400" aria-hidden="true" />
               <span>Jalur 520 mdpl</span>
             </button>
-            {userLocation ? (
-              <button
-                type="button"
-                onClick={handleRecenterToUser}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-cyan-300 hover:text-cyan-200 hover:bg-cyan-950/40 transition-all cursor-pointer"
-                title="Pusatkan kamera ke lokasi GPS saya"
-              >
-                <i className="bi bi-crosshair text-cyan-400" aria-hidden="true" />
-                <span>Posisi Saya</span>
-              </button>
-            ) : null}
           </div>
         </div>
 
         {/* Indikator Koordinat Real-Time di Kanan Atas Peta */}
         {userLocation ? (
-          <div className="absolute top-3 right-14 z-10 hidden sm:flex items-center gap-1.5 rounded-xl border border-white/20 bg-obsidian/90 px-3 py-1.5 text-[11px] font-mono font-bold text-fajar shadow-xl backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          <div className="absolute top-14 sm:top-3 right-3 sm:right-14 z-10 flex items-center gap-2 rounded-xl border border-white/20 bg-obsidian/95 px-3 py-1.5 text-[11px] font-mono font-bold text-blue-300 shadow-xl backdrop-blur-md">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
             </span>
             <span>
               {userLocation.lat.toFixed(5)}°, {userLocation.lng.toFixed(5)}°
             </span>
-            <span className="text-kabut/50 font-normal">
-              (±{userAccuracyM ?? 10}m)
+            <span className="text-kabut/60 font-normal">
+              ±{userAccuracyM ?? 10}m
             </span>
+            {userSpeedKmh !== null && userSpeedKmh > 0 ? (
+              <span className="text-emerald-400 font-semibold">
+                • {userSpeedKmh} km/h
+              </span>
+            ) : null}
+            {userAltitudeM !== null ? (
+              <span className="text-fajar font-semibold">
+                • {userAltitudeM} mdpl
+              </span>
+            ) : null}
           </div>
-        ) : null}
+        ) : (
+          <div className="absolute top-14 sm:top-3 right-3 sm:right-14 z-10 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-obsidian/95 px-3 py-1.5 text-[11px] font-mono text-amber-300 shadow-xl backdrop-blur-md">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>Mencari Sinyal GPS Realtime...</span>
+          </div>
+        )}
 
         <div
           ref={mapContainerRef}
           data-testid="maplibre-container"
           className="h-[480px] w-full sm:h-[560px]"
         />
+
+        {/* Tombol Floating Action Button (FAB) "Lokasi Saya" ala Google Maps di Sudut Kanan Bawah */}
+        <button
+          type="button"
+          onClick={handleRecenterToUser}
+          aria-label="Pusatkan ke Posisi Saya"
+          className={cn(
+            "absolute bottom-5 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full shadow-2xl border transition-all duration-200 cursor-pointer",
+            isAutoFollow && gpsStatus === "active"
+              ? "bg-[#1a73e8] text-white border-white/90 shadow-[0_0_20px_rgba(26,115,232,0.7)] scale-105"
+              : "bg-obsidian/95 text-kabut hover:text-white border-white/30 backdrop-blur-md hover:scale-105 hover:bg-white/10"
+          )}
+          title={
+            gpsStatus === "active"
+              ? "Pusatkan ke Posisi Saya (Realtime)"
+              : "Aktifkan GPS Realtime"
+          }
+        >
+          <i
+            className={cn(
+              "bi text-xl",
+              gpsStatus === "active"
+                ? isAutoFollow
+                  ? "bi-cursor-fill"
+                  : "bi-crosshair"
+                : "bi-geo-alt-fill text-fajar"
+            )}
+          />
+        </button>
 
         {/* Overlay Kontrol Cepat di Sudut Kiri Bawah Peta */}
         <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex flex-col gap-2">

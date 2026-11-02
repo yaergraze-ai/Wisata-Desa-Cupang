@@ -77,7 +77,7 @@ export default async function LocaleLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('wdc_theme')||'system';var d=s==='dark'||(s==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d);document.documentElement.setAttribute('data-theme',d?'dark':'light');if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){document.documentElement.classList.add('wdc-intro-dismissed');if(document.cookie.indexOf('wdc_intro_seen=true')===-1){document.cookie='wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax';}}}catch(e){}})();`,
+            __html: `(function(){try{document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');document.documentElement.setAttribute('data-theme','dark');if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){document.documentElement.classList.add('wdc-intro-dismissed');if(document.cookie.indexOf('wdc_intro_seen=true')===-1){document.cookie='wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax';}}}catch(e){}})();`,
           }}
         />
         <style
