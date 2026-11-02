@@ -137,6 +137,12 @@ export function StaffDashboardClient({
   const scanLoopRef = useRef<number | null>(null);
   const scanFrameRef = useRef<() => void>(() => {});
   const lastScannedTimeRef = useRef<number>(0);
+  const lastScannedCodeRef = useRef<string>("");
+  const scanOutcomeRef = useRef<ScanOutcome | null>(null);
+
+  useEffect(() => {
+    scanOutcomeRef.current = scanOutcome;
+  }, [scanOutcome]);
 
   // Callback ref untuk elemen video agar stream langsung terhubung seketika saat elemen dimount
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
@@ -274,16 +280,26 @@ export function StaffDashboardClient({
         }
       }
 
-      // 3. Jika kode terdeteksi, lakukan scan dengan jeda debounce 2.5 detik
-      if (detectedCode) {
+      // 3. Jika kode terdeteksi, lakukan scan dengan proteksi anti-duplicate & freeze saat hasil tampil
+      if (detectedCode && !scanOutcomeRef.current && !isSubmittingScan) {
         const now = Date.now();
-        if (now - lastScannedTimeRef.current > 2500 && !isSubmittingScan) {
+        const isSameCode = detectedCode === lastScannedCodeRef.current;
+        const cooldown = isSameCode ? 10000 : 2500;
+
+        if (now - lastScannedTimeRef.current > cooldown) {
           lastScannedTimeRef.current = now;
+          lastScannedCodeRef.current = detectedCode;
           void executeScan(detectedCode);
         }
       }
     }
   }, [executeScan, isSubmittingScan]);
+
+  const dismissOutcome = useCallback(() => {
+    setScanOutcome(null);
+    // Beri tenggang waktu 1.5 detik agar petugas sempat mengarahkan kamera ke pengunjung berikutnya
+    lastScannedTimeRef.current = Date.now() - 1000;
+  }, []);
 
   useEffect(() => {
     scanFrameRef.current = scanFrame;
@@ -1017,7 +1033,7 @@ export function StaffDashboardClient({
       {scanOutcome ? (
         <div
           data-testid="scan-overlay-result"
-          onClick={() => setScanOutcome(null)}
+          onClick={dismissOutcome}
           className={cn(
             "fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md",
             scanOutcome.result === ScanResult.ACCEPTED
@@ -1109,7 +1125,7 @@ export function StaffDashboardClient({
                 data-testid="next-scan-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setScanOutcome(null);
+                  dismissOutcome();
                 }}
                 className="btn-ui btn-fajar py-3 px-8 text-sm font-black shadow-xl"
               >
