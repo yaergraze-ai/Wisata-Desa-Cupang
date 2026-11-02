@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
+import { ReviewReactionRow } from "./ReviewReactionRow";
 import type {
   PublicReviewItemDto,
   PublicReviewsResponse,
@@ -454,6 +455,13 @@ export function VerifiedReviewsSection({
                     <p className="text-sm leading-relaxed text-kabut/90 line-clamp-4">
                       &ldquo;{rev.comment}&rdquo;
                     </p>
+
+                    {/* Reaksi Emote (1 Akun 1 Reaksi) */}
+                    <ReviewReactionRow
+                      reviewId={rev.id}
+                      initialReactions={rev.reactions}
+                      locale={locale}
+                    />
                   </div>
 
                   <div className="space-y-3 pt-2">

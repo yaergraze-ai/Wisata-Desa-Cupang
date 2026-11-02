@@ -3,6 +3,7 @@ import {
   getPublicReviewsData,
   type ReviewDestinationFilter,
 } from "@/server/reviews/public-reviews";
+import { getServerAuthContext } from "@/server/auth/guards";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,10 +14,19 @@ export async function GET(request: Request) {
   const rawLimit = Number.parseInt(searchParams.get("limit") ?? "12", 10);
   const limit = Number.isFinite(rawLimit) ? rawLimit : 12;
 
+  let currentUserId: string | null = null;
+  try {
+    const auth = await getServerAuthContext();
+    currentUserId = auth?.user?.id ?? null;
+  } catch {
+    // Abaikan jika unauthenticated
+  }
+
   const payload = await getPublicReviewsData({
     filter,
     locale,
     limit,
+    currentUserId,
   });
 
   return NextResponse.json(payload, {

@@ -104,6 +104,7 @@ model User {
   orders              Order[]
   reviews             Review[]          @relation("ReviewAuthor")
   repliedReviews      Review[]          @relation("ReviewReplier")
+  reviewReactions     ReviewReaction[]
   gateScans           GateScan[]
   staffProfile        StaffProfile?
   refundRequests      RefundRequest[]   @relation("RefundRequester")
@@ -390,9 +391,25 @@ model Review {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  photos ReviewPhoto[]
+  photos    ReviewPhoto[]
+  reactions ReviewReaction[]
 
   @@index([status, createdAt])
+  @@index([userId])
+}
+
+model ReviewReaction {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
   @@index([userId])
 }
 

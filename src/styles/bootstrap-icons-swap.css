@@ -28,9 +28,11 @@
 .bi-arrow-right-circle-fill::before { content: "\f133"; }
 .bi-arrow-right::before { content: "\f138"; }
 .bi-arrow-up-right-circle::before { content: "\f141"; }
+.bi-arrow-up-right::before { content: "\f144"; }
 .bi-arrows-angle-expand::before { content: "\f14a"; }
 .bi-arrows-expand::before { content: "\f14c"; }
 .bi-bag-plus-fill::before { content: "\f175"; }
+.bi-bar-chart-fill::before { content: "\f17a"; }
 .bi-bell-fill::before { content: "\f189"; }
 .bi-box-arrow-in-right::before { content: "\f1be"; }
 .bi-box-arrow-left::before { content: "\f1c2"; }
@@ -40,6 +42,7 @@
 .bi-brightness-high-fill::before { content: "\f1d1"; }
 .bi-broadcast::before { content: "\f1d6"; }
 .bi-calculator-fill::before { content: "\f1df"; }
+.bi-calendar-event-fill::before { content: "\f1e7"; }
 .bi-calendar-week::before { content: "\f1f3"; }
 .bi-calendar2-week::before { content: "\f209"; }
 .bi-calendar3::before { content: "\f214"; }
@@ -59,6 +62,7 @@
 .bi-chevron-double-right::before { content: "\f280"; }
 .bi-chevron-left::before { content: "\f284"; }
 .bi-chevron-right::before { content: "\f285"; }
+.bi-chevron-up::before { content: "\f286"; }
 .bi-circle::before { content: "\f28a"; }
 .bi-clock-history::before { content: "\f292"; }
 .bi-clock::before { content: "\f293"; }
@@ -71,6 +75,7 @@
 .bi-credit-card-2-front::before { content: "\f2da"; }
 .bi-dash-circle::before { content: "\f2e6"; }
 .bi-download::before { content: "\f30a"; }
+.bi-emoji-smile::before { content: "\f327"; }
 .bi-envelope-fill::before { content: "\f32c"; }
 .bi-envelope::before { content: "\f32f"; }
 .bi-exclamation-circle-fill::before { content: "\f332"; }
@@ -121,6 +126,7 @@
 .bi-person::before { content: "\f4e1"; }
 .bi-phone-vibrate::before { content: "\f4e6"; }
 .bi-play-circle-fill::before { content: "\f4f2"; }
+.bi-plus-circle-fill::before { content: "\f4f9"; }
 .bi-plus-circle::before { content: "\f4fa"; }
 .bi-receipt-cutoff::before { content: "\f50e"; }
 .bi-receipt::before { content: "\f50f"; }
@@ -134,10 +140,12 @@
 .bi-shield-plus::before { content: "\f53a"; }
 .bi-shield-shaded::before { content: "\f53b"; }
 .bi-shield-slash::before { content: "\f53d"; }
+.bi-shuffle::before { content: "\f544"; }
 .bi-signpost-2-fill::before { content: "\f545"; }
 .bi-signpost-split-fill::before { content: "\f548"; }
 .bi-signpost-split::before { content: "\f549"; }
 .bi-sliders::before { content: "\f56b"; }
+.bi-speedometer2::before { content: "\f580"; }
 .bi-star-fill::before { content: "\f586"; }
 .bi-star::before { content: "\f588"; }
 .bi-stars::before { content: "\f589"; }
@@ -148,7 +156,9 @@
 .bi-wallet2::before { content: "\f615"; }
 .bi-whatsapp::before { content: "\f618"; }
 .bi-wifi-off::before { content: "\f61b"; }
+.bi-x-circle-fill::before { content: "\f622"; }
 .bi-x-circle::before { content: "\f623"; }
+.bi-x::before { content: "\f62a"; }
 .bi-check-lg::before { content: "\f633"; }
 .bi-dash-lg::before { content: "\f63b"; }
 .bi-file-earmark-pdf-fill::before { content: "\f63d"; }
@@ -168,6 +178,7 @@
 .bi-ticket-detailed::before { content: "\f6c7"; }
 .bi-ticket-perforated-fill::before { content: "\f6c9"; }
 .bi-ticket-perforated::before { content: "\f6ca"; }
+.bi-chat-heart-fill::before { content: "\f713"; }
 .bi-house-heart-fill::before { content: "\f775"; }
 .bi-trash3-fill::before { content: "\f78a"; }
 .bi-p-circle-fill::before { content: "\f804"; }

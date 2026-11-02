@@ -28,6 +28,7 @@ import { ReviewModal } from "@/components/dashboard/member/ReviewModal";
 import { RefundModal } from "@/components/dashboard/member/RefundModal";
 import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
 import type { PublicReviewItemDto } from "@/server/reviews/public-reviews";
+import { ReviewReactionRow } from "@/components/public/ReviewReactionRow";
 
 const MotionReviewModal = dynamic(
   () =>
@@ -789,15 +790,26 @@ export function MemberDashboardClient({
   return (
     <div className="space-y-6">
       {/* Header Sambutan & Navigasi Tab dengan Garis Aktif Motion layoutId (§7.2) */}
-      <section className="surface-solid-dark p-5 sm:p-7">
+      <section className="surface-solid-dark p-5 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-r from-hutan/90 via-obsidian/95 to-obsidian">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-kabut sm:text-3xl">
-              {tShell("welcome", { name: userName })}
-            </h1>
-            <p className="mt-1 text-xs text-kabut/75">
-              {tShell("signedInAs", { email: userEmail })}
-            </p>
+          <div className="flex items-center gap-4">
+            <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/30 to-obsidian border border-fajar/40 text-fajar font-heading font-extrabold text-lg sm:text-xl shadow-inner">
+              {userName ? userName.slice(0, 2).toUpperCase() : "MB"}
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
+                  {tShell("welcome", { name: userName })}
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Member Resmi</span>
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-kabut/75 font-mono">
+                {tShell("signedInAs", { email: userEmail })}
+              </p>
+            </div>
           </div>
 
           <button
@@ -807,7 +819,7 @@ export function MemberDashboardClient({
               setActiveCheckoutOrder(null);
               selectTab("buy");
             }}
-            className="btn-ui btn-fajar self-start md:self-auto"
+            className="btn-ui btn-fajar self-start md:self-auto shadow-lg shadow-fajar/20 hover:scale-105 active:scale-95 transition-transform"
           >
             <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
             <span>{t("tabBuy")}</span>
@@ -905,7 +917,22 @@ export function MemberDashboardClient({
           {/* 3 KARTU STATISTIK KONTEMPORER */}
           <div className="grid gap-4 sm:grid-cols-3">
             {/* Kartu 1: Tiket Aktif */}
-            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setTicketFilter("active");
+                selectTab("wallet");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setTicketFilter("active");
+                  selectTab("wallet");
+                }
+              }}
+              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
@@ -915,18 +942,34 @@ export function MemberDashboardClient({
                     {activeTickets.length}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner group-hover:scale-110 transition-transform">
                   <i className="bi bi-ticket-perforated-fill text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
-                <i className="bi bi-check-circle-fill text-fajar text-[10px]" aria-hidden="true" />
-                <span>{activeTickets.length > 0 ? "Siap dipindai di gerbang masuk" : "Belum ada tiket aktif"}</span>
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+                <div className="flex items-center gap-1.5">
+                  <i className="bi bi-check-circle-fill text-fajar text-[10px]" aria-hidden="true" />
+                  <span>{activeTickets.length > 0 ? "Siap dipindai di gerbang" : "Belum ada tiket aktif"}</span>
+                </div>
+                <span className="text-fajar font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                  Buka <i className="bi bi-arrow-right text-[10px]" />
+                </span>
               </div>
             </div>
 
             {/* Kartu 2: Kunjungan Terdekat */}
-            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => selectTab("wallet")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectTab("wallet");
+                }
+              }}
+              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
@@ -938,18 +981,34 @@ export function MemberDashboardClient({
                       : t("noUpcomingVisit")}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-300 shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-300 shadow-inner group-hover:scale-110 transition-transform">
                   <i className="bi bi-calendar-event-fill text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
-                <i className="bi bi-geo-alt-fill text-telaga-400 text-[10px]" aria-hidden="true" />
-                <span>Kawasan Wisata Desa Cupang</span>
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+                <div className="flex items-center gap-1.5">
+                  <i className="bi bi-geo-alt-fill text-telaga-400 text-[10px]" aria-hidden="true" />
+                  <span>Kawasan Desa Cupang</span>
+                </div>
+                <span className="text-telaga-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                  Jadwal <i className="bi bi-arrow-right text-[10px]" />
+                </span>
               </div>
             </div>
 
             {/* Kartu 3: Total Transaksi Pesanan */}
-            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-cyan-500 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => selectTab("orders")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectTab("orders");
+                }
+              }}
+              className="group relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-cyan-500 hover:border-emerald-400/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
@@ -959,13 +1018,18 @@ export function MemberDashboardClient({
                     {orders.length}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 shadow-inner group-hover:scale-110 transition-transform">
                   <i className="bi bi-receipt-cutoff text-xl" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
-                <i className="bi bi-shield-check text-emerald-400 text-[10px]" aria-hidden="true" />
-                <span>Pembayaran resmi & terenkripsi</span>
+              <div className="mt-4 flex items-center justify-between text-[11px] text-kabut/70">
+                <div className="flex items-center gap-1.5">
+                  <i className="bi bi-shield-check text-emerald-400 text-[10px]" aria-hidden="true" />
+                  <span>Riwayat pembayaran resmi</span>
+                </div>
+                <span className="text-emerald-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                  Lihat <i className="bi bi-arrow-right text-[10px]" />
+                </span>
               </div>
             </div>
           </div>
@@ -1096,6 +1160,18 @@ export function MemberDashboardClient({
                       <p className="text-xs text-kabut/85 line-clamp-3">
                         &ldquo;{rev.comment}&rdquo;
                       </p>
+                    </div>
+
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="pt-1"
+                    >
+                      <ReviewReactionRow
+                        reviewId={rev.id}
+                        initialReactions={rev.reactions}
+                        locale={locale}
+                        compact={true}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] text-kabut/60 pt-2 border-t border-telaga-900">

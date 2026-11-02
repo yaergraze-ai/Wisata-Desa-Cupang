@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Role } from "@prisma/client";
-import { requireApiRole } from "@/server/auth/guards";
+import { requireApiRole, getServerAuthContext } from "@/server/auth/guards";
 import {
   checkReviewEligibility,
   submitTicketReview,
@@ -35,6 +35,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(eligibility);
     }
 
+    let currentUserId: string | null = null;
+    try {
+      const auth = await getServerAuthContext();
+      currentUserId = auth?.user?.id ?? null;
+    } catch {
+      // unauthenticated
+    }
+
     const data = await getPublicReviewsData({
       filter:
         filter === "batu-lawang" || filter === "gunung-bendera"
@@ -42,6 +50,7 @@ export async function GET(req: NextRequest) {
           : "all",
       locale: locale === "en" ? "en" : "id",
       limit: Number.isFinite(limit) ? limit : 12,
+      currentUserId,
     });
 
     return NextResponse.json(data);

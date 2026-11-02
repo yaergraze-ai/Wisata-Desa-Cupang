@@ -21,11 +21,29 @@ export function AdminMetricsView() {
   const t = useTranslations("AdminDashboard");
   const [metrics, setMetrics] = useState<AdminMetricsSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
 
   // Filter Grafik Interaktif Multi-Periode & Jenis Metrik
   const [period, setPeriod] = useState<AnalyticsPeriod>("daily");
   const [metricType, setMetricType] = useState<AnalyticsMetricType>("revenue");
+
+  async function handleRefreshMetrics() {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch("/api/admin/metrics");
+      if (!res.ok) throw new Error("Gagal memuat metrik.");
+      const data = (await res.json()) as { metrics: AdminMetricsSnapshot };
+      setMetrics(data.metrics);
+      setLastRefreshedAt(new Date());
+      setError(null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal memuat metrik.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     let ignore = false;
@@ -34,7 +52,10 @@ export function AdminMetricsView() {
         const res = await fetch("/api/admin/metrics");
         if (!res.ok) throw new Error("Gagal memuat metrik.");
         const data = (await res.json()) as { metrics: AdminMetricsSnapshot };
-        if (!ignore) setMetrics(data.metrics);
+        if (!ignore) {
+          setMetrics(data.metrics);
+          setLastRefreshedAt(new Date());
+        }
       } catch (err: unknown) {
         if (!ignore) {
           setError(err instanceof Error ? err.message : "Gagal memuat metrik.");
@@ -117,7 +138,33 @@ export function AdminMetricsView() {
   }
 
   return (
-    <div className="space-y-8" data-testid="admin-metrics-view">
+    <div className="space-y-6 sm:space-y-8" data-testid="admin-metrics-view">
+      {/* TOOLBAR REFRESH & STATUS WAKTU NYATA */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-obsidian/70 border border-telaga-800/80 rounded-2xl p-4 shadow-lg">
+        <div>
+          <h2 className="font-heading text-base sm:text-lg font-bold text-kabut flex items-center gap-2">
+            <i className="bi bi-speedometer2 text-fajar" aria-hidden="true" />
+            <span>Ringkasan Metrik Kinerja Operasional</span>
+          </h2>
+          <p className="text-xs text-kabut/70 mt-0.5">
+            Diperbarui pukul {lastRefreshedAt.toLocaleTimeString("id-ID")} WIB
+          </p>
+        </div>
+
+        <button
+          type="button"
+          disabled={isRefreshing}
+          onClick={handleRefreshMetrics}
+          className="inline-flex items-center gap-2 rounded-xl bg-obsidian border border-telaga-700 px-3.5 py-2 text-xs font-bold text-kabut hover:border-fajar hover:text-fajar transition-all cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <i
+            className={`bi bi-arrow-repeat text-sm ${isRefreshing ? "animate-spin text-fajar" : ""}`}
+            aria-hidden="true"
+          />
+          <span>{isRefreshing ? "Menyinkronkan..." : "Segarkan Metrik"}</span>
+        </button>
+      </div>
+
       {/* 4 KARTU METRIK UTAMA (DESAIN KONTEMPORER LUXURY) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Kartu 1: Total Pendapatan */}

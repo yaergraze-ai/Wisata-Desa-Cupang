@@ -6,6 +6,14 @@ import { getStorageProvider } from "@/server/integrations/storage";
 
 export type ReviewDestinationFilter = "all" | "batu-lawang" | "gunung-bendera";
 
+import {
+  ALLOWED_REACTIONS,
+  type AllowedReaction,
+  type PublicReviewReactionsDto,
+} from "@/lib/reviews/reactions";
+
+export { ALLOWED_REACTIONS, type AllowedReaction, type PublicReviewReactionsDto };
+
 export interface PublicReviewPhotoDto {
   id: string;
   url: string;
@@ -25,6 +33,7 @@ export interface PublicReviewItemDto {
   managerReply: string | null;
   repliedAtDisplay: string | null;
   photos: PublicReviewPhotoDto[];
+  reactions: PublicReviewReactionsDto;
 }
 
 export interface RatingDistributionItem {
@@ -55,6 +64,7 @@ export async function getPublicReviewsData(params: {
   filter: ReviewDestinationFilter;
   locale: SupportedLocale;
   limit?: number;
+  currentUserId?: string | null;
 }): Promise<PublicReviewsResponse> {
   const limit = Math.min(100, Math.max(1, params.limit ?? 50));
 
@@ -88,6 +98,12 @@ export async function getPublicReviewsData(params: {
         photos: {
           orderBy: { order: "asc" },
         },
+        reactions: {
+          select: {
+            emoji: true,
+            userId: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
@@ -113,28 +129,44 @@ export async function getPublicReviewsData(params: {
     return { stars, count, percentage };
   });
 
-  const reviews: PublicReviewItemDto[] = rows.map((row) => ({
-    id: row.id,
-    authorName: row.user.name,
-    authorInitials: getInitials(row.user.name),
-    productCode: row.productCode,
-    destinationSlugs: row.destinationSlugs,
-    rating: row.rating,
-    comment: row.comment,
-    createdAtDisplay: formatTimestampWib(row.createdAt, params.locale),
-    managerReply: row.managerReply,
-    repliedAtDisplay: row.repliedAt
-      ? formatTimestampWib(row.repliedAt, params.locale)
-      : null,
-    photos: row.photos.map((p) => ({
-      id: p.id,
-      url: p.storageKey.startsWith("/")
-        ? p.storageKey
-        : getStorageProvider().getUrl(p.storageKey),
-      width: p.width,
-      height: p.height,
-    })),
-  }));
+  const reviews: PublicReviewItemDto[] = rows.map((row) => {
+    const reactionCounts: Record<string, number> = {};
+    let userReaction: string | null = null;
+    for (const rx of row.reactions) {
+      reactionCounts[rx.emoji] = (reactionCounts[rx.emoji] ?? 0) + 1;
+      if (params.currentUserId && rx.userId === params.currentUserId) {
+        userReaction = rx.emoji;
+      }
+    }
+
+    return {
+      id: row.id,
+      authorName: row.user.name,
+      authorInitials: getInitials(row.user.name),
+      productCode: row.productCode,
+      destinationSlugs: row.destinationSlugs,
+      rating: row.rating,
+      comment: row.comment,
+      createdAtDisplay: formatTimestampWib(row.createdAt, params.locale),
+      managerReply: row.managerReply,
+      repliedAtDisplay: row.repliedAt
+        ? formatTimestampWib(row.repliedAt, params.locale)
+        : null,
+      photos: row.photos.map((p) => ({
+        id: p.id,
+        url: p.storageKey.startsWith("/")
+          ? p.storageKey
+          : getStorageProvider().getUrl(p.storageKey),
+        width: p.width,
+        height: p.height,
+      })),
+      reactions: {
+        counts: reactionCounts,
+        total: row.reactions.length,
+        userReaction,
+      },
+    };
+  });
 
   return {
     filter: params.filter,
@@ -142,5 +174,87 @@ export async function getPublicReviewsData(params: {
     averageRating,
     ratingDistribution,
     reviews,
+  };
+}
+
+export async function toggleReviewReaction(params: {
+  reviewId: string;
+  userId: string;
+  emoji: string;
+}): Promise<{
+  userReaction: string | null;
+  counts: Record<string, number>;
+  total: number;
+}> {
+  const { reviewId, userId, emoji } = params;
+
+  if (!ALLOWED_REACTIONS.includes(emoji as AllowedReaction)) {
+    throw new Error("Emoji reaksi tidak valid.");
+  }
+
+  // Cek apakah ulasan ada dan berstatus PUBLISHED
+  const review = await db.review.findUnique({
+    where: { id: reviewId },
+    select: { id: true, status: true },
+  });
+
+  if (!review || review.status !== ReviewStatus.PUBLISHED) {
+    throw new Error("Ulasan tidak ditemukan.");
+  }
+
+  // Cek reaksi yang ada untuk akun ini (1 akun 1 reaksi)
+  const existing = await db.reviewReaction.findUnique({
+    where: {
+      reviewId_userId: {
+        reviewId,
+        userId,
+      },
+    },
+  });
+
+  let nextUserReaction: string | null = null;
+
+  if (existing) {
+    if (existing.emoji === emoji) {
+      // Toggle off (batal reaksi jika klik emote yang sama)
+      await db.reviewReaction.delete({
+        where: { id: existing.id },
+      });
+      nextUserReaction = null;
+    } else {
+      // Ganti reaksi ke emoji baru (1 akun 1 reaksi)
+      await db.reviewReaction.update({
+        where: { id: existing.id },
+        data: { emoji },
+      });
+      nextUserReaction = emoji;
+    }
+  } else {
+    // Tambah reaksi baru
+    await db.reviewReaction.create({
+      data: {
+        reviewId,
+        userId,
+        emoji,
+      },
+    });
+    nextUserReaction = emoji;
+  }
+
+  // Hitung ulang agregat reaksi untuk ulasan ini
+  const allReactions = await db.reviewReaction.findMany({
+    where: { reviewId },
+    select: { emoji: true },
+  });
+
+  const counts: Record<string, number> = {};
+  for (const rx of allReactions) {
+    counts[rx.emoji] = (counts[rx.emoji] ?? 0) + 1;
+  }
+
+  return {
+    userReaction: nextUserReaction,
+    counts,
+    total: allReactions.length,
   };
 }

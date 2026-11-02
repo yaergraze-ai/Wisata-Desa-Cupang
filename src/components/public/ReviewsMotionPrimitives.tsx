@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import type { PublicReviewItemDto, PublicReviewPhotoDto } from "@/server/reviews/public-reviews";
+import { ReviewReactionRow } from "./ReviewReactionRow";
 
 export function MotionTabPill() {
   return (
@@ -259,6 +260,14 @@ export function MotionReviewModal({
                   <p className="text-sm leading-relaxed text-kabut/95 whitespace-pre-line relative z-10">
                     {review.comment}
                   </p>
+
+                  {/* Reaksi Emote Pengunjung (1 Akun 1 Reaksi) */}
+                  <div className="pt-3 border-t border-telaga-800/80 mt-3">
+                    <ReviewReactionRow
+                      reviewId={review.id}
+                      initialReactions={review.reactions}
+                    />
+                  </div>
                 </div>
 
                 {/* Tanggapan Resmi Pengelola (Bila Ada) */}
@@ -328,6 +337,11 @@ export function MotionPhotoLightbox({
     managerReply: null,
     repliedAtDisplay: null,
     photos: [photo],
+    reactions: {
+      counts: {},
+      total: 0,
+      userReaction: null,
+    },
   };
 
   return (

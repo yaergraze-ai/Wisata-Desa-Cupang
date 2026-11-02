@@ -89,53 +89,73 @@ export function SuperAdminHealthView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {integrations.map((item) => (
-            <div
-              key={item.id}
-              className="p-5 rounded-xl border border-telaga-700/60 bg-obsidian/60 space-y-3.5 flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-kabut/60 uppercase tracking-wider">
-                    {item.category}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      item.status === "CONNECTED"
-                        ? "bg-green-950 text-green-300 border border-green-700/60"
-                        : item.status === "DEGRADED"
-                        ? "bg-amber-950 text-amber-300 border border-amber-700/60"
-                        : "bg-slate-900 text-slate-300 border border-slate-700/60"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </div>
+          {integrations.map((item) => {
+            const isConnected = item.status === "CONNECTED";
+            const isDegraded = item.status === "DEGRADED";
 
-                <div className="flex items-baseline justify-between">
-                  <h3 className="font-heading text-base font-bold text-kabut">{item.name}</h3>
-                  {item.latencyMs !== null ? (
-                    <span className="font-mono text-xs text-fajar">
-                      {t("latencyLabel", { ms: item.latencyMs })}
+            return (
+              <div
+                key={item.id}
+                className={`relative overflow-hidden p-5 rounded-2xl border bg-gradient-to-br from-obsidian/95 to-hutan/40 space-y-3.5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 before:absolute before:inset-x-0 before:top-0 before:h-1 ${
+                  isConnected
+                    ? "border-emerald-700/60 before:bg-emerald-400 hover:border-emerald-500"
+                    : isDegraded
+                    ? "border-amber-700/60 before:bg-amber-400 hover:border-amber-500"
+                    : "border-red-700/60 before:bg-red-500 hover:border-red-500"
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono font-bold text-kabut/60 uppercase tracking-wider">
+                      {item.category}
                     </span>
-                  ) : null}
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                        isConnected
+                          ? "bg-emerald-950 text-emerald-300 border border-emerald-600/50"
+                          : isDegraded
+                          ? "bg-amber-950 text-amber-300 border border-amber-600/50"
+                          : "bg-red-950 text-red-300 border border-red-600/50"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isConnected
+                            ? "bg-emerald-400 animate-pulse"
+                            : isDegraded
+                            ? "bg-amber-400"
+                            : "bg-red-400"
+                        }`}
+                      />
+                      <span>{item.status}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between">
+                    <h3 className="font-heading text-base font-bold text-kabut">{item.name}</h3>
+                    {item.latencyMs !== null ? (
+                      <span className="font-mono text-xs font-bold text-fajar">
+                        {t("latencyLabel", { ms: item.latencyMs })}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="text-xs text-kabut/80 leading-relaxed">{item.message}</p>
                 </div>
 
-                <p className="text-xs text-kabut/80 leading-relaxed">{item.message}</p>
+                {Object.keys(item.details).length > 0 ? (
+                  <div className="pt-2 border-t border-telaga-700/30 text-[11px] text-kabut/60 font-mono space-y-0.5">
+                    {Object.entries(item.details).map(([k, v]) => (
+                      <div key={k} className="flex justify-between">
+                        <span>{k}:</span>
+                        <span className="text-kabut/80">{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-
-              {Object.keys(item.details).length > 0 ? (
-                <div className="pt-2 border-t border-telaga-700/30 text-[11px] text-kabut/60 font-mono space-y-0.5">
-                  {Object.entries(item.details).map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span>{k}:</span>
-                      <span className="text-kabut/80">{String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

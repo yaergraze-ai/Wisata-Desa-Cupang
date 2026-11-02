@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { GateType, ScanResult, StaffOverrideMode } from "@prisma/client";
 import jsQR from "jsqr";
 import { useTranslations } from "next-intl";
@@ -95,6 +96,34 @@ export function StaffDashboardClient({
     useState<number>(initialAdmittedCount);
   const [history, setHistory] =
     useState<StaffScanHistoryRow[]>(initialHistory);
+
+  // History search & filter states
+  const [historyFilter, setHistoryFilter] = useState<"all" | "accepted" | "rejected">("all");
+  const [historySearch, setHistorySearch] = useState<string>("");
+
+  const filteredHistory = useMemo(() => {
+    return history.filter((item) => {
+      if (historyFilter === "accepted" && item.result !== ScanResult.ACCEPTED) return false;
+      if (historyFilter === "rejected" && item.result !== ScanResult.REJECTED) return false;
+      if (historySearch.trim()) {
+        const q = historySearch.toLowerCase();
+        const matchCode = item.publicCode.toLowerCase().includes(q);
+        const matchName = item.visitorName.toLowerCase().includes(q);
+        const matchReason = item.reason.toLowerCase().includes(q);
+        return matchCode || matchName || matchReason;
+      }
+      return true;
+    });
+  }, [history, historyFilter, historySearch]);
+
+  const historyAcceptedCount = useMemo(
+    () => history.filter((h) => h.result === ScanResult.ACCEPTED).length,
+    [history]
+  );
+  const historyRejectedCount = useMemo(
+    () => history.filter((h) => h.result === ScanResult.REJECTED).length,
+    [history]
+  );
 
   // Scanner state
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -712,11 +741,11 @@ export function StaffDashboardClient({
         {/* Tab Navigasi Staf */}
         <div className="mt-6 flex flex-wrap gap-2 border-t border-telaga-800/80 pt-4">
           {[
-            { id: "scanner" as const, label: t("tabScanner"), icon: "bi-qr-code-scan" },
-            { id: "history" as const, label: t("tabHistory"), icon: "bi-clock-history" },
-            { id: "search" as const, label: t("tabSearch"), icon: "bi-search" },
-            { id: "schedule" as const, label: t("tabSchedule"), icon: "bi-calendar2-week" },
-            { id: "profile" as const, label: "Profil Petugas", icon: "bi-person-gear" },
+            { id: "scanner" as const, label: t("tabScanner"), icon: "bi-qr-code-scan", badge: null },
+            { id: "history" as const, label: t("tabHistory"), icon: "bi-clock-history", badge: history.length > 0 ? history.length : null },
+            { id: "search" as const, label: t("tabSearch"), icon: "bi-search", badge: null },
+            { id: "schedule" as const, label: t("tabSchedule"), icon: "bi-calendar2-week", badge: null },
+            { id: "profile" as const, label: "Profil Petugas", icon: "bi-person-gear", badge: null },
           ].map((tab) => {
             const isCurrent = activeTab === tab.id;
             return (
@@ -726,14 +755,33 @@ export function StaffDashboardClient({
                 data-testid={`staff-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold uppercase transition-all cursor-pointer sm:text-sm",
+                  "relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold uppercase transition-all cursor-pointer sm:text-sm",
                   isCurrent
-                    ? "bg-fajar text-obsidian shadow-md shadow-fajar/25 font-black"
+                    ? "text-obsidian font-black shadow-md shadow-fajar/25"
                     : "bg-obsidian/60 border border-telaga-800/60 text-kabut hover:border-telaga-600 hover:text-white"
                 )}
               >
-                <i className={cn("bi", tab.icon)} aria-hidden="true" />
-                <span>{tab.label}</span>
+                {isCurrent ? (
+                  <motion.span
+                    layoutId="staff-tab-indicator"
+                    className="absolute inset-0 rounded-xl bg-fajar"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                ) : null}
+                <i className={cn("bi relative z-10", tab.icon)} aria-hidden="true" />
+                <span className="relative z-10">{tab.label}</span>
+                {tab.badge ? (
+                  <span
+                    className={cn(
+                      "relative z-10 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black",
+                      isCurrent
+                        ? "bg-obsidian text-fajar"
+                        : "bg-telaga-700 text-kabut"
+                    )}
+                  >
+                    {tab.badge}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -1314,13 +1362,81 @@ export function StaffDashboardClient({
             </button>
           </div>
 
-          {history.length === 0 ? (
+          {/* Filter Cepat & Pencarian Riwayat */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("all")}
+                className={cn(
+                  "rounded-xl px-3 py-1.5 text-xs font-bold transition-all border cursor-pointer",
+                  historyFilter === "all"
+                    ? "border-fajar bg-fajar text-obsidian shadow-sm"
+                    : "border-telaga-700/60 bg-obsidian text-kabut hover:border-telaga-500"
+                )}
+              >
+                Semua ({history.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("accepted")}
+                className={cn(
+                  "rounded-xl px-3 py-1.5 text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1.5",
+                  historyFilter === "accepted"
+                    ? "border-emerald-500 bg-emerald-500 text-obsidian shadow-sm"
+                    : "border-telaga-700/60 bg-obsidian text-emerald-300 hover:border-emerald-500"
+                )}
+              >
+                <i className="bi bi-check-circle-fill text-[11px]" />
+                Berhasil ({historyAcceptedCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("rejected")}
+                className={cn(
+                  "rounded-xl px-3 py-1.5 text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1.5",
+                  historyFilter === "rejected"
+                    ? "border-red-500 bg-red-500 text-white shadow-sm"
+                    : "border-telaga-700/60 bg-obsidian text-red-300 hover:border-red-500"
+                )}
+              >
+                <i className="bi bi-x-circle-fill text-[11px]" />
+                Ditolak ({historyRejectedCount})
+              </button>
+            </div>
+
+            <div className="relative min-w-[220px]">
+              <i className="bi bi-search absolute left-3 top-2.5 text-xs text-kabut/50" />
+              <input
+                type="text"
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                placeholder="Cari kode tiket / nama..."
+                className="w-full rounded-xl border border-telaga-700/60 bg-obsidian/90 pl-8 pr-8 py-1.5 text-xs text-kabut placeholder:text-kabut/40 focus:border-fajar focus:outline-none"
+              />
+              {historySearch ? (
+                <button
+                  type="button"
+                  onClick={() => setHistorySearch("")}
+                  className="absolute right-2.5 top-2 text-kabut/50 hover:text-kabut cursor-pointer"
+                >
+                  <i className="bi bi-x-circle-fill text-xs" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {filteredHistory.length === 0 ? (
             <div className="rounded-2xl border-2 border-kabut/15 bg-hutan p-8 text-center text-sm text-kabut/75">
-              {t("historyEmpty")}
+              {history.length === 0
+                ? t("historyEmpty")
+                : "Tidak ada riwayat scan yang cocok dengan filter atau kata kunci."}
             </div>
           ) : (
             <div className="divide-y-2 divide-kabut/10 rounded-2xl border-2 border-kabut/20 bg-hutan overflow-hidden">
-              {history.map((item) => (
+              {filteredHistory.map((item) => (
                 <div
                   key={item.id}
                   className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"
