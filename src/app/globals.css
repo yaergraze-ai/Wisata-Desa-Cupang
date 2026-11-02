@@ -1,11 +1,13 @@
 @import "@fontsource-variable/bricolage-grotesque";
 @import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/unbounded";
 @import "../styles/tokens.css";
 @import "../styles/glass.css";
 
 :root {
   --font-bricolage: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
   --font-jakarta: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-unbounded: "Unbounded Variable", "Unbounded", system-ui, sans-serif;
 }
 
 /* Aksesibilitas WCAG AA: Fokus terlihat jelas & prefers-reduced-motion (§7.1, §10.2) */

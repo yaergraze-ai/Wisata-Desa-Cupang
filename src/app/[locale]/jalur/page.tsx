@@ -84,6 +84,8 @@ export default async function TrailNavigatorPage({
         managerWhatsappDigits={managerWhatsappDigits}
         managerEmail={managerEmail}
         footerMedia={catalog.mediaSlots["footer"]}
+        tiktokUrl={catalog.settings["socialTiktokUrl"]}
+        instagramUrl={catalog.settings["socialInstagramUrl"]}
       />
     </div>
   );

@@ -168,10 +168,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fajar shadow-[0_0_10px_#f2a65a] animate-pulse" />
             </span>
             <div className="leading-tight shrink-0">
-              <p className="font-heading text-sm sm:text-base font-bold text-kabut whitespace-nowrap">
+              <p className="font-unbounded text-xs sm:text-sm font-bold text-kabut tracking-tight whitespace-nowrap">
                 {tNav("brandTitle")}
               </p>
-              <p className="hidden sm:block text-xs text-kabut/80 whitespace-nowrap">
+              <p className="hidden sm:block text-[11px] font-mono text-kabut/70 whitespace-nowrap">
                 {tNav("brandSubtitle")}
               </p>
             </div>

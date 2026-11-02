@@ -17,12 +17,13 @@ import type {
 import type { StaffSelfState } from "@/server/staff/staff-schedule-service";
 import type { AuthenticatedContext } from "@/server/auth/guards";
 import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
+import { SocialLinksManager } from "@/components/dashboard/shared/SocialLinksManager";
 import {
   DashboardSidebar,
   type DashboardSidebarTabItem,
 } from "@/components/dashboard/DashboardSidebar";
 
-export type StaffTab = "scanner" | "history" | "search" | "schedule" | "profile";
+export type StaffTab = "scanner" | "history" | "search" | "schedule" | "social" | "profile";
 
 export interface StaffDashboardClientProps {
   locale: AppLocale;
@@ -653,6 +654,7 @@ export function StaffDashboardClient({
       },
       { id: "search", label: t("tabSearch"), icon: "bi-search" },
       { id: "schedule", label: t("tabSchedule"), icon: "bi-calendar2-week" },
+      { id: "social", label: "Media Sosial", icon: "bi-share" },
       { id: "profile", label: "Profil Petugas", icon: "bi-person-gear" },
     ],
     [t, history.length]
@@ -1794,7 +1796,12 @@ export function StaffDashboardClient({
         </section>
       ) : null}
 
-      {/* TAB 5: PROFIL PETUGAS */}
+      {/* TAB 5: MEDIA SOSIAL */}
+      {activeTab === "social" ? (
+        <SocialLinksManager userRole={Role.STAFF} />
+      ) : null}
+
+      {/* TAB 6: PROFIL PETUGAS */}
       {activeTab === "profile" && authCtx ? (
         <MemberProfileTab authCtx={authCtx} />
       ) : null}

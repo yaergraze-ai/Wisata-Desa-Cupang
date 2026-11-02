@@ -16,6 +16,9 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const router = useRouter();
   const [name, setName] = useState(authCtx.user.name);
   const [whatsapp, setWhatsapp] = useState(authCtx.user.whatsapp ?? "");
+  const [bio, setBio] = useState(authCtx.user.bio ?? "");
+  const [city, setCity] = useState(authCtx.user.city ?? "");
+  const [emergencyContact, setEmergencyContact] = useState(authCtx.user.emergencyContact ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
@@ -23,6 +26,27 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [isWhatsappVerified, setIsWhatsappVerified] = useState(
     Boolean(authCtx.user.whatsappVerifiedAt)
   );
+
+  // State Profil Rekan Pendaki / Anggota Rombongan
+  interface Companion {
+    id: string;
+    name: string;
+    identityNumber?: string | null;
+    phone?: string | null;
+    relation?: string | null;
+    age?: number | null;
+    notes?: string | null;
+  }
+  const [companions, setCompanions] = useState<Companion[]>([]);
+  const [isCompanionModalOpen, setIsCompanionModalOpen] = useState(false);
+  const [companionName, setCompanionName] = useState("");
+  const [companionIdNumber, setCompanionIdNumber] = useState("");
+  const [companionPhone, setCompanionPhone] = useState("");
+  const [companionRelation, setCompanionRelation] = useState("Keluarga");
+  const [companionAge, setCompanionAge] = useState("");
+  const [companionNotes, setCompanionNotes] = useState("");
+  const [isSavingCompanion, setIsSavingCompanion] = useState(false);
+  const [companionError, setCompanionError] = useState<string | null>(null);
 
   // Verification modal state
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -45,6 +69,65 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Muat data profil rekan pendaki tersimpan
+  useState(() => {
+    if (typeof window !== "undefined") {
+      fetch("/api/user/companions")
+        .then((res) => res.json())
+        .then((data: { companions?: Companion[] }) => {
+          if (data.companions) setCompanions(data.companions);
+        })
+        .catch(() => undefined);
+    }
+  });
+
+  async function handleAddCompanion(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSavingCompanion(true);
+    setCompanionError(null);
+    try {
+      const res = await fetch("/api/user/companions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: companionName,
+          identityNumber: companionIdNumber,
+          phone: companionPhone,
+          relation: companionRelation,
+          age: companionAge ? parseInt(companionAge, 10) : null,
+          notes: companionNotes,
+        }),
+      });
+      const data = await res.json() as { error?: string; companion?: Companion };
+      if (!res.ok) throw new Error(data.error || "Gagal menambah profil rekan.");
+      if (data.companion) {
+        setCompanions((prev) => [data.companion!, ...prev]);
+      }
+      setIsCompanionModalOpen(false);
+      setCompanionName("");
+      setCompanionIdNumber("");
+      setCompanionPhone("");
+      setCompanionAge("");
+      setCompanionNotes("");
+    } catch (err: unknown) {
+      setCompanionError(err instanceof Error ? err.message : "Gagal menambah profil.");
+    } finally {
+      setIsSavingCompanion(false);
+    }
+  }
+
+  async function handleDeleteCompanion(id: string) {
+    if (!confirm("Hapus profil rekan pendaki ini dari daftar tersimpan?")) return;
+    try {
+      const res = await fetch(`/api/user/companions?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setCompanions((prev) => prev.filter((c) => c.id !== id));
+      }
+    } catch {
+      alert("Gagal menghapus profil rekan.");
+    }
+  }
+
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
     setIsSavingProfile(true);
@@ -55,7 +138,7 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
       const res = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp }),
+        body: JSON.stringify({ name, whatsapp, bio, city, emergencyContact }),
       });
       const data = (await res.json()) as { error?: string; message?: string };
       if (!res.ok) {
@@ -157,6 +240,55 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
           {t("profileLead")}
         </p>
       </div>
+
+      {/* BANNER PERINGATAN 2FA BELUM AKTIF DENGAN KELAP-KELIP PELAN */}
+      {!authCtx.user.twoFactorEnabled ? (
+        <div className="animate-pulse-warning rounded-2xl border-2 border-amber-500/60 bg-amber-950/30 p-4 sm:p-5 text-amber-200 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-obsidian text-lg font-black shadow-md">
+              !
+            </span>
+            <div>
+              <h3 className="font-heading text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2">
+                <span>Peringatan Keamanan: 2FA Belum Aktif</span>
+                <span className="rounded bg-amber-500/20 border border-amber-500/40 px-2 py-0.2 text-[10px] font-mono text-amber-300">
+                  Belum Terverifikasi
+                </span>
+              </h3>
+              <p className="text-xs text-amber-200/80 mt-1 max-w-xl">
+                Akun Anda belum diproteksi oleh Autentikasi Dua Faktor (2FA). Aktifkan sekarang menggunakan Google Authenticator agar tiket dan saldo Anda aman dari akses tidak sah.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/verifikasi-2fa?setup=1")}
+            className="btn-ui btn-fajar whitespace-nowrap text-xs font-black px-4 py-2.5 rounded-xl shadow-lg shrink-0 cursor-pointer"
+          >
+            <i className="bi bi-shield-lock-fill mr-1.5" aria-hidden="true" />
+            <span>Pasang 2FA Sekarang</span>
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-4 text-emerald-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 text-lg">
+              <i className="bi bi-shield-check" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-emerald-100">
+                Autentikasi Dua Faktor (2FA) Aktif
+              </p>
+              <p className="text-[11px] text-emerald-200/70">
+                Akun Anda terlindungi dengan standar keamanan TOTP RFC-6238.
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
+            Terverifikasi
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Form Informasi Profil */}
@@ -290,6 +422,66 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
               </div>
             </div>
 
+            {/* Bio Catatan Singkat Pendaki */}
+            <div>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="profile-bio"
+                  className="block text-xs font-bold text-kabut/90"
+                >
+                  Bio Singkat / Catatan Pendaki
+                </label>
+                <span className="text-[10px] text-kabut/50 font-mono">
+                  {bio.length}/500
+                </span>
+              </div>
+              <textarea
+                id="profile-bio"
+                rows={3}
+                value={bio}
+                onChange={(e) => setBio(e.target.value.slice(0, 500))}
+                placeholder="Tuliskan pengalaman hiking, minat alam bebas, atau catatan khusus pendakian Anda..."
+                className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-3 text-xs text-kabut focus:border-fajar focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Kota Domisili & Kontak Darurat */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="profile-city"
+                  className="block text-xs font-bold text-kabut/90"
+                >
+                  Kota Asal / Domisili
+                </label>
+                <input
+                  id="profile-city"
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Misal: Cirebon / Jakarta"
+                  className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="profile-emergency"
+                  className="block text-xs font-bold text-kabut/90"
+                >
+                  Kontak Darurat (Keluarga)
+                </label>
+                <input
+                  id="profile-emergency"
+                  type="text"
+                  value={emergencyContact}
+                  onChange={(e) => setEmergencyContact(e.target.value)}
+                  placeholder="Nama & No HP (Ibu/Ayah)"
+                  className="mt-1.5 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-xs text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-kabut/90">
                 {t("profileRoleLabel")}
@@ -383,6 +575,218 @@ export function MemberProfileTab({ authCtx }: MemberProfileTabProps) {
           </form>
         </section>
       </div>
+
+      {/* SEKSI PROFIL REKAN PENDAKI / ANGGOTA KELUARGA TERDAFTAR */}
+      <section className="surface-solid-dark p-6 sm:p-7 rounded-2xl border border-white/10 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-heading text-lg font-bold text-kabut flex items-center gap-2">
+                <i className="bi bi-people-fill text-fajar" aria-hidden="true" />
+                <span>Profil Rekan Pendaki & Rombongan</span>
+              </h3>
+              <span className="rounded-full bg-fajar/10 border border-fajar/20 px-2 py-0.2 text-[10px] font-mono text-fajar">
+                {companions.length} Tersimpan
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-kabut/70">
+              Simpan data identitas anggota rombongan atau keluarga agar pemesanan tiket mendaki berikutnya lebih cepat tanpa perlu input manual.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCompanionError(null);
+              setIsCompanionModalOpen(true);
+            }}
+            className="btn-ui btn-fajar whitespace-nowrap text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <i className="bi bi-person-plus-fill text-sm" aria-hidden="true" />
+            <span>Tambah Rekan Pendaki</span>
+          </button>
+        </div>
+
+        {companions.length === 0 ? (
+          <div className="rounded-xl border border-white/5 bg-obsidian/40 p-6 text-center text-xs text-kabut/60 space-y-2">
+            <i className="bi bi-person-vcard text-3xl text-kabut/30" aria-hidden="true" />
+            <p>Belum ada profil rekan pendaki yang disimpan.</p>
+            <p className="text-[11px] text-kabut/40">
+              Klik &quot;Tambah Rekan Pendaki&quot; untuk mendaftarkan identitas teman atau keluarga Anda.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {companions.map((comp) => (
+              <div
+                key={comp.id}
+                className="rounded-xl border border-white/10 bg-obsidian/60 p-4 flex flex-col justify-between gap-3 hover:border-white/20 transition-all"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-heading text-sm font-bold text-kabut truncate" title={comp.name}>
+                      {comp.name}
+                    </p>
+                    <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-kabut/75">
+                      {comp.relation || "Rekan"}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5 space-y-1 text-[11px] font-mono text-kabut/60">
+                    {comp.identityNumber ? (
+                      <p className="truncate">NIK/KTP: {comp.identityNumber}</p>
+                    ) : null}
+                    {comp.phone ? (
+                      <p className="truncate">No HP: {comp.phone}</p>
+                    ) : null}
+                    {comp.age ? <p>Usia: {comp.age} tahun</p> : null}
+                    {comp.notes ? (
+                      <p className="text-kabut/45 italic truncate mt-1">
+                        &ldquo;{comp.notes}&rdquo;
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCompanion(comp.id)}
+                    className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <i className="bi bi-trash" aria-hidden="true" />
+                    <span>Hapus</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* MODAL TAMBAH PROFIL REKAN PENDAKI */}
+      {isCompanionModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/85 backdrop-blur-md"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-hutan border border-white/20 p-6 shadow-2xl text-kabut space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <h3 className="font-heading text-base font-bold flex items-center gap-2">
+                <i className="bi bi-person-plus-fill text-fajar" aria-hidden="true" />
+                <span>Tambah Profil Rekan Pendaki</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCompanionModalOpen(false)}
+                className="text-kabut/60 hover:text-white cursor-pointer"
+              >
+                <i className="bi bi-x-lg text-xs" aria-hidden="true" />
+              </button>
+            </div>
+
+            {companionError ? (
+              <div className="rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-200">
+                {companionError}
+              </div>
+            ) : null}
+
+            <form onSubmit={handleAddCompanion} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-kabut/90">Nama Lengkap *</label>
+                <input
+                  type="text"
+                  required
+                  value={companionName}
+                  onChange={(e) => setCompanionName(e.target.value)}
+                  placeholder="Nama sesuai KTP/Identitas"
+                  className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-kabut/90">Hubungan</label>
+                  <select
+                    value={companionRelation}
+                    onChange={(e) => setCompanionRelation(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                  >
+                    <option value="Keluarga">Keluarga</option>
+                    <option value="Rekan Pendaki">Rekan Pendaki</option>
+                    <option value="Pasangan">Pasangan</option>
+                    <option value="Sahabat">Sahabat</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-kabut/90">Usia (Tahun)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={companionAge}
+                    onChange={(e) => setCompanionAge(e.target.value)}
+                    placeholder="Contoh: 26"
+                    className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-kabut/90">Nomor Induk Kependudukan (NIK)</label>
+                <input
+                  type="text"
+                  maxLength={16}
+                  value={companionIdNumber}
+                  onChange={(e) => setCompanionIdNumber(e.target.value)}
+                  placeholder="16 digit NIK (opsional untuk asuransi)"
+                  className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-kabut/90">Nomor Telepon / WhatsApp</label>
+                <input
+                  type="tel"
+                  value={companionPhone}
+                  onChange={(e) => setCompanionPhone(e.target.value)}
+                  placeholder="08..."
+                  className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-kabut/90">Catatan Khusus (Opsional)</label>
+                <input
+                  type="text"
+                  value={companionNotes}
+                  onChange={(e) => setCompanionNotes(e.target.value)}
+                  placeholder="Misal: Riwayat asma, golongan darah O"
+                  className="mt-1 w-full rounded-xl border border-telaga-700/80 bg-obsidian/70 p-2.5 text-kabut focus:border-fajar focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsCompanionModalOpen(false)}
+                  className="btn-ui btn-glass py-2 px-3 text-xs"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingCompanion}
+                  className="btn-ui btn-fajar py-2 px-4 text-xs font-bold"
+                >
+                  {isSavingCompanion ? "Menyimpan..." : "Simpan Profil Rekan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {/* Bagian Hak Privasi UU PDP */}
       <section className="surface-solid-dark p-6 sm:p-8 rounded-2xl border border-telaga-700/60 space-y-6">

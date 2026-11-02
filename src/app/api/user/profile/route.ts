@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       name?: string;
       whatsapp?: string;
+      bio?: string;
+      city?: string;
+      emergencyContact?: string;
       currentPassword?: string;
       newPassword?: string;
     };

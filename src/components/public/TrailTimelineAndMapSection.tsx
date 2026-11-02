@@ -176,8 +176,8 @@ export function TrailTimelineAndMapSection({
 
     return rawList.map((item) => {
       const normX = (item.lng - minLng) / lngSpan;
-      // Lintang lebih besar (lebih utara) berada di atas kanvas SVG
-      const normY = 1 - (item.lat - minLat) / latSpan;
+      // Orientasi pendakian menanjak dari bawah ke atas: Pintu masuk di bawah, Puncak 520 mdpl di atas kanvas
+      const normY = (item.lat - minLat) / latSpan;
       return {
         ...item,
         svgX: Math.round((padX + normX * width) * 10) / 10,

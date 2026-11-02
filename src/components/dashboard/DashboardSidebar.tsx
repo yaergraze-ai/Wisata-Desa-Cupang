@@ -99,7 +99,7 @@ export function DashboardSidebar({
               <i className="bi bi-compass text-base" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="font-heading text-sm font-bold tracking-wide text-kabut leading-tight truncate">
+              <p className="font-unbounded text-xs font-bold tracking-tight text-kabut leading-tight truncate">
                 Desa Cupang
               </p>
               <p className="text-[10px] font-mono text-kabut/45 leading-tight truncate mt-0.5">
@@ -148,10 +148,12 @@ export function DashboardSidebar({
             ) : (
               <Link
                 href="/verifikasi-2fa?setup=1"
-                className="text-[10px] font-mono text-kabut/45 hover:text-fajar flex items-center gap-1 transition-colors"
-                title="Aktifkan autentikasi dua faktor"
+                className="animate-pulse-warning inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
+                title="Peringatan: Akun belum terproteksi 2FA. Klik untuk mengaktifkan sekarang"
               >
-                <i className="bi bi-shield text-xs" aria-hidden="true" />
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-obsidian text-[9px] font-black leading-none">
+                  !
+                </span>
                 <span>Pasang 2FA</span>
               </Link>
             )}

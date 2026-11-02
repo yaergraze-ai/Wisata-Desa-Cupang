@@ -488,6 +488,8 @@ export default async function HomePage({
             managerWhatsappDigits={managerWhatsappDigits}
             managerEmail={managerEmail}
             footerMedia={catalog.mediaSlots["footer"]}
+            tiktokUrl={catalog.settings["socialTiktokUrl"]}
+            instagramUrl={catalog.settings["socialInstagramUrl"]}
           />
         </div>
       </main>

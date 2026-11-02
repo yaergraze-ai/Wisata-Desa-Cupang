@@ -86,6 +86,9 @@ export async function updateMemberProfile(
   input: {
     name?: string;
     whatsapp?: string;
+    bio?: string;
+    city?: string;
+    emergencyContact?: string;
     currentPassword?: string;
     newPassword?: string;
   },
@@ -102,10 +105,25 @@ export async function updateMemberProfile(
   const updateUserData: {
     name?: string;
     whatsapp?: string | null;
+    bio?: string | null;
+    city?: string | null;
+    emergencyContact?: string | null;
   } = {};
 
   if (typeof input.name === "string" && input.name.trim().length >= 2) {
     updateUserData.name = input.name.trim();
+  }
+
+  if (typeof input.bio === "string") {
+    updateUserData.bio = input.bio.trim().slice(0, 500);
+  }
+
+  if (typeof input.city === "string") {
+    updateUserData.city = input.city.trim().slice(0, 100);
+  }
+
+  if (typeof input.emergencyContact === "string") {
+    updateUserData.emergencyContact = input.emergencyContact.trim().slice(0, 100);
   }
 
   if (typeof input.whatsapp === "string") {
@@ -200,6 +218,9 @@ export async function updateMemberProfile(
     name: updated.name,
     email: updated.email,
     whatsapp: updated.whatsapp,
+    bio: updated.bio,
+    city: updated.city,
+    emergencyContact: updated.emergencyContact,
     role: updated.role,
   };
 }

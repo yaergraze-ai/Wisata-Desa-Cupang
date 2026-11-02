@@ -12,6 +12,8 @@ export interface ContactAndFooterSectionProps {
   managerWhatsappDigits: string;
   managerEmail: string;
   footerMedia: PublicSlotMedia | undefined;
+  tiktokUrl?: string;
+  instagramUrl?: string;
 }
 
 export async function ContactAndFooterSection({
@@ -20,6 +22,8 @@ export async function ContactAndFooterSection({
   managerWhatsappDigits,
   managerEmail,
   footerMedia,
+  tiktokUrl,
+  instagramUrl,
 }: ContactAndFooterSectionProps) {
   const [tContact, tNav, tFooter] = await Promise.all([
     getTranslations({ locale, namespace: "Contact" }),
@@ -123,6 +127,30 @@ export async function ContactAndFooterSection({
               <p className="mt-3 max-w-md text-xs leading-relaxed text-kabut/80">
                 {tFooter("tagline")}
               </p>
+
+              {/* Tautan Resmi Media Sosial Desa Wisata */}
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <a
+                  href={instagramUrl || "https://www.instagram.com/wisatadesacupang"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-bold text-kabut hover:text-pink-400 hover:border-pink-500/40 hover:bg-pink-500/10 transition-all"
+                  title="Kunjungi Instagram Resmi Wisata Desa Cupang"
+                >
+                  <i className="bi bi-instagram text-sm text-pink-400" aria-hidden="true" />
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href={tiktokUrl || "https://www.tiktok.com/@desacupang_official"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-bold text-kabut hover:text-sky-400 hover:border-sky-500/40 hover:bg-sky-500/10 transition-all"
+                  title="Kunjungi TikTok Resmi Wisata Desa Cupang"
+                >
+                  <i className="bi bi-tiktok text-sm text-sky-400" aria-hidden="true" />
+                  <span>TikTok</span>
+                </a>
+              </div>
             </div>
 
             <div className="md:col-span-3">

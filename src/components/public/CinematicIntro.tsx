@@ -264,7 +264,7 @@ export function CinematicIntro() {
           </p>
           <h1
             ref={titleRef}
-            className="font-heading text-3xl sm:text-5xl md:text-6xl font-black tracking-tight bg-gradient-to-r from-amber-100 via-fajar to-amber-300 bg-clip-text text-transparent drop-shadow-md"
+            className="font-unbounded text-2xl sm:text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-amber-100 via-fajar to-amber-300 bg-clip-text text-transparent drop-shadow-md"
           >
             WISATA DESA CUPANG
           </h1>

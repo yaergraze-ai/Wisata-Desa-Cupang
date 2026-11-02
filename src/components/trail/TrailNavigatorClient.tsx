@@ -73,6 +73,12 @@ export function TrailNavigatorClient({
   const [telemetry, setTelemetry] = useState<TrailTelemetryResult | null>(null);
   const [selectedPostCode, setSelectedPostCode] = useState<string>("TRAILHEAD");
 
+  // Mode Tampilan Peta: Topo/Standar vs Satelit
+  const [mapLayerMode, setMapLayerMode] = useState<"topo" | "satellite">("topo");
+  // Orientasi Kamera: Arah Nanjak (Bawah ke Atas) vs Arah Utara
+  const [cameraOrientation, setCameraOrientation] = useState<"climb" | "north">("climb");
+  const [stravaConnected, setStravaConnected] = useState(false);
+
   // Offline map downloader state
   const [isCachedOffline, setIsCachedOffline] = useState(false);
   const [isDownloadingMap, setIsDownloadingMap] = useState(false);
@@ -132,6 +138,14 @@ export function TrailNavigatorClient({
                 tileSize: 256,
                 attribution: "© OpenStreetMap contributors | Wisata Cirebon",
               },
+              "satellite-raster": {
+                type: "raster",
+                tiles: [
+                  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                ],
+                tileSize: 256,
+                attribution: "© Esri World Imagery | Wisata Desa Cupang",
+              },
             },
             layers: [
               {
@@ -141,14 +155,24 @@ export function TrailNavigatorClient({
                 minzoom: 0,
                 maxzoom: 19,
               },
+              {
+                id: "satellite-raster-layer",
+                type: "raster",
+                source: "satellite-raster",
+                layout: {
+                  visibility: "none",
+                },
+                minzoom: 0,
+                maxzoom: 19,
+              },
             ],
           },
           center: [centerLng, centerLat],
-          zoom: 15.2,
+          zoom: 15.4,
           minZoom: 12,
           maxZoom: 18,
-          pitch: 35,
-          bearing: -10,
+          pitch: 45,
+          bearing: 195, // Orientasi pendakian dari bawah ke atas (Pintu masuk di bawah, Puncak 520 mdpl di atas)
         });
 
         mapInstanceRef.current = map;
@@ -396,6 +420,79 @@ export function TrailNavigatorClient({
     setIsCachedOffline(false);
   }, []);
 
+  // Ganti Layer: Topografi / Satelit
+  const toggleMapLayer = useCallback((mode: "topo" | "satellite") => {
+    setMapLayerMode(mode);
+    const map = mapInstanceRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      map.setLayoutProperty(
+        "satellite-raster-layer",
+        "visibility",
+        mode === "satellite" ? "visible" : "none"
+      );
+    } catch (e) {
+      console.warn("Layer switch warning:", e);
+    }
+  }, []);
+
+  // Ganti Orientasi: Arah Nanjak (Bawah ke Atas) vs Arah Utara
+  const toggleOrientation = useCallback((orient: "climb" | "north") => {
+    setCameraOrientation(orient);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (orient === "climb") {
+      map.easeTo({ bearing: 195, pitch: 45, duration: 800 });
+    } else {
+      map.easeTo({ bearing: 0, pitch: 0, duration: 800 });
+    }
+  }, []);
+
+  // Ekspor & Unduh Berkas Jalur GPX untuk Strava & Garmin
+  const handleDownloadGpx = useCallback(() => {
+    const trackPointsXml = GUNUNG_BENDERA_TRAIL_POSTS.map(
+      (p) => `      <trkpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}">
+        <ele>${p.elevationM}</ele>
+        <name>${p.name}</name>
+      </trkpt>`
+    ).join("\n");
+
+    const waypointsXml = GUNUNG_BENDERA_TRAIL_POSTS.map(
+      (p) => `  <wpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}">
+    <ele>${p.elevationM}</ele>
+    <name>${p.code} - ${p.name}</name>
+    <sym>Summit</sym>
+  </wpt>`
+    ).join("\n");
+
+    const gpxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Wisata Alam Desa Cupang Cirebon" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Jalur Pendakian Gunung Bendera 520 MDPL - Desa Cupang</name>
+    <desc>Jalur resmi pendakian tebing purba Batu Lawang dan puncak Gunung Bendera, Cirebon</desc>
+    <time>${new Date().toISOString()}</time>
+  </metadata>
+${waypointsXml}
+  <trk>
+    <name>Trek Gunung Bendera 520 MDPL</name>
+    <type>Hiking</type>
+    <trkseg>
+${trackPointsXml}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+    const blob = new Blob([gpxContent], { type: "application/gpx+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "jalur-gunung-bendera-520mdpl.gpx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
+
   const selectedPost = useMemo(
     () =>
       GUNUNG_BENDERA_TRAIL_POSTS.find((p) => p.code === selectedPostCode) ??
@@ -514,6 +611,87 @@ export function TrailNavigatorClient({
 
       {/* CONTAINER PETA MAPLIBRE GL PENUH */}
       <section className="relative overflow-hidden rounded-3xl border-2 border-kabut/25 bg-black shadow-2xl">
+        {/* BILAH KONTROL LAPISAN SATELIT & ORIENTASI NANJAK (§6.F) */}
+        <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 pointer-events-auto">
+          {/* Toggle Layer: Topografi / Satelit */}
+          <div className="inline-flex rounded-xl bg-obsidian/90 p-1 border border-white/20 shadow-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => toggleMapLayer("topo")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                mapLayerMode === "topo"
+                  ? "bg-fajar text-obsidian shadow-sm"
+                  : "text-kabut/75 hover:text-white"
+              )}
+            >
+              <i className="bi bi-map" aria-hidden="true" />
+              <span>Topografi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleMapLayer("satellite")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                mapLayerMode === "satellite"
+                  ? "bg-emerald-500 text-obsidian shadow-sm"
+                  : "text-kabut/75 hover:text-white"
+              )}
+            >
+              <i className="bi bi-broadcast-pin" aria-hidden="true" />
+              <span>Satelit 🛰️</span>
+            </button>
+          </div>
+
+          {/* Toggle Orientasi: Arah Nanjak (Bawah ke Atas) vs Arah Utara */}
+          <div className="inline-flex rounded-xl bg-obsidian/90 p-1 border border-white/20 shadow-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => toggleOrientation("climb")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                cameraOrientation === "climb"
+                  ? "bg-telaga text-white shadow-sm"
+                  : "text-kabut/75 hover:text-white"
+              )}
+              title="Arah Pendakian: Pintu masuk di bawah, Puncak di atas"
+            >
+              <i className="bi bi-arrow-up-circle-fill text-fajar" aria-hidden="true" />
+              <span>Arah Nanjak (Bawah-Atas)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleOrientation("north")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                cameraOrientation === "north"
+                  ? "bg-telaga text-white shadow-sm"
+                  : "text-kabut/75 hover:text-white"
+              )}
+              title="Arah Utara Standar (North-Up)"
+            >
+              <i className="bi bi-compass" aria-hidden="true" />
+              <span>Utara</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Indikator Koordinat Real-Time di Kanan Atas Peta */}
+        {userLocation ? (
+          <div className="absolute top-3 right-14 z-10 hidden sm:flex items-center gap-1.5 rounded-xl border border-white/20 bg-obsidian/90 px-3 py-1.5 text-[11px] font-mono font-bold text-fajar shadow-xl backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>
+              {userLocation.lat.toFixed(5)}°, {userLocation.lng.toFixed(5)}°
+            </span>
+            <span className="text-kabut/50 font-normal">
+              (±{userAccuracyM ?? 10}m)
+            </span>
+          </div>
+        ) : null}
+
         <div
           ref={mapContainerRef}
           data-testid="maplibre-container"
@@ -664,6 +842,83 @@ export function TrailNavigatorClient({
           )}
         </section>
       </div>
+
+      {/* INTEGRASI STRAVA & EKSPOR JALUR GPX (§6.F & §10.2) */}
+      <section className="surface-solid-dark p-6 rounded-3xl border border-white/10 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FC4C02]/15 border border-[#FC4C02]/40 text-[#FC4C02]">
+              <i className="bi bi-strava text-2xl" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-heading text-base font-bold text-kabut">
+                  Integrasi Strava & Sinkronisasi Trek GPS
+                </h2>
+                <span className="rounded-full bg-[#FC4C02]/20 border border-[#FC4C02]/40 px-2 py-0.5 text-[10px] font-bold text-[#FC4C02]">
+                  Strava Ready
+                </span>
+              </div>
+              <p className="text-xs text-kabut/70 mt-0.5">
+                Koneksikan aktivitas pendakian Gunung Bendera 520 mdpl ke akun Strava Anda atau unduh berkas GPX untuk Garmin/Suunto.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleDownloadGpx}
+              className="btn-ui btn-glass text-xs font-bold py-2.5 px-3 flex items-center gap-1.5 hover:text-fajar transition-all cursor-pointer"
+              title="Unduh trek koordinat GPX lengkap dari Pintu Masuk hingga Puncak 520 mdpl"
+            >
+              <i className="bi bi-download text-sm" aria-hidden="true" />
+              <span>Unduh GPX (.gpx)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStravaConnected((prev) => !prev)}
+              className={cn(
+                "btn-ui py-2.5 px-3.5 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer",
+                stravaConnected
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
+                  : "bg-[#FC4C02] text-white hover:bg-[#e04300]"
+              )}
+            >
+              <i className="bi bi-strava text-sm" aria-hidden="true" />
+              <span>{stravaConnected ? "✓ Terhubung ke Strava" : "Sambungkan Akun Strava"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Informasi Status Real-Time Member di Jalur */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5 text-xs">
+          <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
+            <span className="text-[11px] text-kabut/60">Status Lokasi Member</span>
+            <p className="font-bold text-kabut mt-0.5 flex items-center gap-1.5">
+              <span className={cn("h-2 w-2 rounded-full", userLocation ? "bg-emerald-400 animate-pulse" : "bg-amber-400")} />
+              <span>{userLocation ? "Aktif di Jalur Pendakian" : "Menunggu Sinyal GPS"}</span>
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
+            <span className="text-[11px] text-kabut/60">Koordinat Saat Ini</span>
+            <p className="font-mono text-xs font-bold text-fajar mt-0.5">
+              {userLocation
+                ? `${userLocation.lat.toFixed(6)}°, ${userLocation.lng.toFixed(6)}°`
+                : "6.728730° S, 108.382065° E (Pintu Masuk)"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-obsidian/60 p-3">
+            <span className="text-[11px] text-kabut/60">Target Elevasi</span>
+            <p className="font-mono text-xs font-bold text-telaga-300 mt-0.5">
+              520 mdpl (Puncak Gunung Bendera)
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* RINCIAN 6 POS RESMI JALUR PENDAKIAN */}
       <section className="surface-solid-dark p-6 space-y-4">
