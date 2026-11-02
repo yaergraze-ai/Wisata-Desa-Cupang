@@ -23,6 +23,13 @@ export function AdminReviewsView() {
   const [replyText, setReplyText] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
+  // Photo preview modal
+  const [previewPhoto, setPreviewPhoto] = useState<{
+    url: string;
+    userName: string;
+    comment: string;
+  } | null>(null);
+
   async function loadReviews(p = 1, r = ratingFilter, s = statusFilter) {
     setIsLoading(true);
     setError(null);
@@ -242,9 +249,18 @@ export function AdminReviewsView() {
               {r.photos.length > 0 ? (
                 <div className="flex flex-wrap gap-2 pt-1">
                   {r.photos.map((p) => (
-                    <div
+                    <button
                       key={p.id}
-                      className="relative h-16 w-16 rounded-lg overflow-hidden border border-telaga-700"
+                      type="button"
+                      onClick={() =>
+                        setPreviewPhoto({
+                          url: p.url,
+                          userName: r.userName,
+                          comment: r.comment,
+                        })
+                      }
+                      className="relative h-16 w-16 rounded-xl overflow-hidden border border-telaga-700 hover:border-fajar hover:scale-105 transition cursor-pointer shadow-sm"
+                      title="Klik untuk melihat foto lebih besar"
                     >
                       <Image
                         src={p.url}
@@ -253,7 +269,7 @@ export function AdminReviewsView() {
                         className="object-cover"
                         unoptimized
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : null}
@@ -316,6 +332,53 @@ export function AdminReviewsView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MODAL PRATINJAU FOTO ULASAN */}
+      {previewPhoto ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewPhoto(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/90 p-4 backdrop-blur-md"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-telaga-700/80 bg-hutan shadow-2xl space-y-4 p-5"
+          >
+            <div className="flex items-center justify-between border-b border-telaga-800 pb-3">
+              <div>
+                <h3 className="font-heading text-sm font-bold text-kabut">
+                  Foto Ulasan Pengunjung
+                </h3>
+                <p className="text-xs text-kabut/70 mt-0.5">
+                  Pengunggah: <span className="text-fajar font-semibold">{previewPhoto.userName}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPhoto(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-obsidian border border-telaga-700 text-kabut hover:text-fajar"
+              >
+                <i className="bi bi-x-lg text-xs" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-obsidian">
+              <Image
+                src={previewPhoto.url}
+                alt={previewPhoto.userName}
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+
+            <p className="text-xs text-kabut/90 italic bg-obsidian/60 p-3 rounded-xl border border-telaga-800">
+              &ldquo;{previewPhoto.comment}&rdquo;
+            </p>
           </div>
         </div>
       ) : null}

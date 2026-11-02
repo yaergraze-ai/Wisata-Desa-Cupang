@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-bd6baffcd2fb4583a6d96e9be2673659.r2.dev",
+      },
     ],
     localPatterns: [
       {
@@ -30,6 +38,9 @@ const nextConfig: NextConfig = {
       },
       {
         pathname: "/api/review-photos/**",
+      },
+      {
+        pathname: "/uploads/**",
       },
     ],
   },

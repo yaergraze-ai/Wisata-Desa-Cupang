@@ -212,7 +212,10 @@
     "openPhotoAria": "Perbesar foto ulasan {index}",
     "closeLightboxAria": "Tutup tampilan foto",
     "emptyTitle": "Belum Ada Ulasan Terverifikasi pada Kategori Ini",
-    "emptyDesc": "Kami tidak menampilkan testimoni karangan. Ulasan akan muncul secara otomatis setelah pengunjung menyelesaikan pemindaian QR di gerbang dan membagikan pengalamannya."
+    "emptyDesc": "Kami tidak menampilkan testimoni karangan. Ulasan akan muncul secara otomatis setelah pengunjung menyelesaikan pemindaian QR di gerbang dan membagikan pengalamannya.",
+    "viewDetailBtn": "Buka Foto & Ulasan",
+    "viewReviewBtn": "Lihat Ulasan Lengkap",
+    "photoCountBadge": "{count} Foto"
   },
   "Contact": {
     "eyebrow": "LAYANAN PENGUNJUNG & PENGELOLA",

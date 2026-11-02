@@ -212,7 +212,10 @@
     "openPhotoAria": "Enlarge review photo {index}",
     "closeLightboxAria": "Close photo viewer",
     "emptyTitle": "No Verified Reviews in This Category Yet",
-    "emptyDesc": "We never display fabricated testimonials. Visitor reviews appear automatically once guests complete an official gate QR scan and share their visit."
+    "emptyDesc": "We never display fabricated testimonials. Visitor reviews appear automatically once guests complete an official gate QR scan and share their visit.",
+    "viewDetailBtn": "View Photo & Review",
+    "viewReviewBtn": "Read Full Review",
+    "photoCountBadge": "{count} Photos"
   },
   "Contact": {
     "eyebrow": "VISITOR DESK & MANAGEMENT",
