@@ -77,8 +77,20 @@ export default async function LocaleLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('wdc_theme')||'system';var d=s==='dark'||(s==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('wdc_theme')||'system';var d=s==='dark'||(s==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d);document.documentElement.setAttribute('data-theme',d?'dark':'light');if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){document.documentElement.classList.add('wdc-intro-dismissed');if(document.cookie.indexOf('wdc_intro_seen=true')===-1){document.cookie='wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax';}}}catch(e){}})();`,
           }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `html.wdc-intro-dismissed #wdc-cinematic-intro { display: none !important; }`,
+          }}
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/media/defaults/card-1.webp"
+          type="image/webp"
+          fetchPriority="high"
         />
       </head>
       <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative transition-colors duration-200">

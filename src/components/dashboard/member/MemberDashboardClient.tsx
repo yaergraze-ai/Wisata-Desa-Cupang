@@ -907,7 +907,7 @@ export function MemberDashboardClient({
                   <span className="text-[11px] font-mono font-bold tracking-wider text-kabut/75 uppercase block">
                     {t("activeTicketsStat")}
                   </span>
-                  <p className="mt-2 font-heading text-3xl sm:text-4xl font-extrabold text-fajar">
+                  <p className="mt-2 font-unbounded text-2xl sm:text-3xl font-black text-fajar tracking-tight">
                     {activeTickets.length}
                   </p>
                 </div>
@@ -983,7 +983,7 @@ export function MemberDashboardClient({
                   <span className="text-[11px] font-mono font-bold tracking-wider text-kabut/75 uppercase block">
                     {t("totalOrdersStat")}
                   </span>
-                  <p className="mt-2 font-heading text-3xl sm:text-4xl font-extrabold text-telaga-200">
+                  <p className="mt-2 font-unbounded text-2xl sm:text-3xl font-black text-telaga-200 tracking-tight">
                     {orders.length}
                   </p>
                 </div>

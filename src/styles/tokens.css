@@ -94,6 +94,7 @@
   /* TIPOGRAFI (dihubungkan ke variabel next/font pada <html>) */
   --font-heading: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
   --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-unbounded: var(--font-unbounded), "Unbounded", system-ui, sans-serif;
 
   /* SKALA UKURAN TEKS (minimal 12px untuk konten bermakna) */
   --text-scale-12: 0.75rem;
@@ -407,76 +408,174 @@ html.light body {
   color: #0f172a !important;
 }
 
+/* Kanvas Utama & Latar Halaman Terang */
 html.light .bg-obsidian {
   background-color: #f8fafc !important;
 }
 
+html.light .bg-obsidian\/95,
 html.light .bg-obsidian\/90 {
-  background-color: rgba(248, 250, 252, 0.92) !important;
+  background-color: rgba(248, 250, 252, 0.94) !important;
 }
 
 html.light .bg-obsidian\/80 {
-  background-color: rgba(248, 250, 252, 0.85) !important;
+  background-color: rgba(248, 250, 252, 0.88) !important;
 }
 
-html.light .bg-obsidian\/60 {
-  background-color: rgba(241, 245, 249, 0.9) !important;
-}
-
+html.light .bg-obsidian\/60,
 html.light .bg-obsidian\/40 {
-  background-color: rgba(241, 245, 249, 0.6) !important;
+  background-color: rgba(241, 245, 249, 0.85) !important;
 }
 
+/* Kartu & Permukaan Gelap Berubah Menjadi Frosted Glass Terang Kristal */
+html.light .bg-hutan,
+html.light .bg-hutan\/95,
+html.light .bg-hutan\/90,
+html.light .bg-hutan\/85,
+html.light .bg-hutan\/80,
+html.light .bg-hutan\/70,
+html.light .bg-hutan\/60,
+html.light .bg-hutan-900,
+html.light .bg-hutan-950 {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  color: #0f172a !important;
+}
+
+/* Penyesuaian Gradien Bento & Container Dashboard */
+html.light .from-hutan\/85,
+html.light .from-hutan {
+  --tw-gradient-from: rgba(255, 255, 255, 0.96) var(--tw-gradient-from-position) !important;
+}
+
+html.light .via-obsidian\/95,
+html.light .via-obsidian {
+  --tw-gradient-via: rgba(248, 250, 252, 0.94) var(--tw-gradient-via-position) !important;
+}
+
+html.light .to-obsidian {
+  --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position) !important;
+}
+
+/* Tipografi Kontras Tinggi untuk Mode Terang */
 html.light .text-kabut {
   color: #0f172a !important;
 }
 
-html.light .text-kabut\/70,
-html.light .text-kabut\/75,
+html.light .text-kabut\/90,
+html.light .text-kabut\/85,
 html.light .text-kabut\/80,
-html.light .text-kabut\/85 {
+html.light .text-kabut\/75,
+html.light .text-kabut\/70 {
   color: #334155 !important;
 }
 
-html.light .text-kabut\/40,
-html.light .text-kabut\/45,
-html.light .text-kabut\/50,
+html.light .text-kabut\/65,
 html.light .text-kabut\/60,
-html.light .text-kabut\/65 {
+html.light .text-kabut\/50,
+html.light .text-kabut\/45,
+html.light .text-kabut\/40 {
   color: #64748b !important;
 }
 
+/* Garis Pembatas (Borders) & Pembagi (Dividers) Halus */
+html.light .border-white\/5,
 html.light .border-white\/10,
 html.light .border-white\/20,
-html.light .border-white\/5 {
-  border-color: rgba(15, 23, 42, 0.12) !important;
+html.light .border-white\/30,
+html.light .border-white\/40 {
+  border-color: rgba(203, 213, 225, 0.75) !important;
 }
 
+html.light .border-telaga-700\/70,
+html.light .border-telaga-700\/60,
+html.light .border-telaga-800\/60,
+html.light .border-telaga-700,
+html.light .border-telaga-800,
+html.light .border-telaga-600,
+html.light .border-telaga\/60,
+html.light .border-telaga {
+  border-color: rgba(203, 213, 225, 0.85) !important;
+}
+
+html.light .border-kabut\/15,
+html.light .border-kabut\/20,
+html.light .border-kabut\/25,
+html.light .border-kabut\/30 {
+  border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+html.light .divide-telaga-700\/60 > * + *,
+html.light .divide-telaga-700 > * + *,
+html.light .divide-telaga-800\/60 > * + *,
+html.light .divide-telaga-800 > * + *,
+html.light .divide-white\/10 > * + *,
+html.light .divide-white\/5 > * + * {
+  border-color: rgba(226, 232, 240, 0.85) !important;
+}
+
+/* Permukaan Lembut & Glass Highlight */
 html.light .bg-white\/5,
 html.light .bg-white\/\[0\.02\],
-html.light .bg-white\/\[0\.04\] {
-  background-color: rgba(15, 23, 42, 0.04) !important;
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.06\] {
+  background-color: rgba(241, 245, 249, 0.75) !important;
 }
 
 html.light aside {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+html.light header {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* Komponen Form, Input & Tabel Mode Terang */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light textarea,
+html.light select {
   background-color: #ffffff !important;
-  border-color: rgba(15, 23, 42, 0.1) !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.light thead {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light tbody tr:hover {
+  background-color: rgba(241, 245, 249, 0.75) !important;
 }
 
 html.light .surface-solid-dark {
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
   color: #0f172a !important;
-  border-color: rgba(15, 23, 42, 0.1) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.06);
 }
 
 html.light .btn-glass {
-  background: rgba(15, 23, 42, 0.05) !important;
+  background: rgba(241, 245, 249, 0.92) !important;
   color: #0f172a !important;
-  border-color: rgba(15, 23, 42, 0.12) !important;
+  border-color: #cbd5e1 !important;
 }
 
 html.light .btn-glass:hover {
-  background: rgba(15, 23, 42, 0.09) !important;
+  background: #e2e8f0 !important;
   color: #0f172a !important;
+}
+
+/* Overlay Backdrop Terang */
+html.light .fixed.inset-0.bg-obsidian\/80,
+html.light .fixed.inset-0.bg-obsidian\/85,
+html.light .fixed.inset-0.bg-obsidian\/90 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
 }

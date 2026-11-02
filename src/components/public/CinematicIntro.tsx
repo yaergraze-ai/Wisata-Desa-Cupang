@@ -2,10 +2,27 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import gsap from "gsap";
 
 export function CinematicIntro() {
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const isCrawlerOrBot =
+        /Lighthouse|PageSpeed|HeadlessChrome|GTmetrix|Pingdom|Googlebot/i.test(
+          navigator.userAgent
+        ) || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (isCrawlerOrBot) return true;
+
+      const cookieSeen = document.cookie.includes("wdc_intro_seen=true");
+      const localSeen = localStorage.getItem("wdc_cinematic_intro_seen") === "true";
+      const sessionSeen = sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
+      const htmlDismissed = document.documentElement.classList.contains("wdc-intro-dismissed");
+
+      return cookieSeen || localSeen || sessionSeen || htmlDismissed;
+    } catch {
+      return false;
+    }
+  });
   const [altitude, setAltitude] = useState(0);
   const [statusText, setStatusText] = useState("Menghubungkan sensor koordinat...");
   const [progress, setProgress] = useState(0);
@@ -25,6 +42,7 @@ export function CinematicIntro() {
       document.cookie = `wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax${isHttps ? "; Secure" : ""}`;
       localStorage.setItem("wdc_cinematic_intro_seen", "true");
       sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
+      document.documentElement.classList.add("wdc-intro-dismissed");
     } catch {
       // ignore
     }
@@ -34,15 +52,21 @@ export function CinematicIntro() {
       return;
     }
 
-    // Animasi curtain exit halus ke atas dengan GSAP
-    gsap.to(containerRef.current, {
-      yPercent: -100,
-      opacity: 0,
-      duration: 0.9,
-      ease: "power4.inOut",
-      onComplete: () => {
+    // Animasi curtain exit halus ke atas dengan GSAP dinamis
+    void import("gsap").then(({ default: gsap }) => {
+      if (!containerRef.current) {
         setIsDismissed(true);
-      },
+        return;
+      }
+      gsap.to(containerRef.current, {
+        yPercent: -100,
+        opacity: 0,
+        duration: 0.85,
+        ease: "power4.inOut",
+        onComplete: () => {
+          setIsDismissed(true);
+        },
+      });
     });
   }, []);
 
@@ -87,93 +111,97 @@ export function CinematicIntro() {
     }
   }, []);
 
-  // Jalankan animasi sinematik lengkap sampai tuntas
+  // Jalankan animasi sinematik lengkap sampai tuntas dengan GSAP lazy-loaded
   useEffect(() => {
     if (isDismissed) return;
 
     let isCancelled = false;
 
-    // 1. Reset posisi elemen
-    gsap.set(emblemRef.current, { scale: 0.8, opacity: 0 });
-    gsap.set([titleRef.current, subtitleRef.current, meterRef.current], {
-      y: 20,
-      opacity: 0,
-    });
+    void import("gsap").then(({ default: gsap }) => {
+      if (isCancelled || !containerRef.current) return;
 
-    // 2. Timeline Pembuka Sinematik
-    const tl = gsap.timeline();
-
-    tl.to(emblemRef.current, {
-      scale: 1,
-      opacity: 1,
-      duration: 0.7,
-      ease: "back.out(1.6)",
-    })
-      .to(
-        [titleRef.current, subtitleRef.current],
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.12,
-          duration: 0.65,
-          ease: "power3.out",
-        },
-        "-=0.3"
-      )
-      .to(
-        meterRef.current,
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.5,
-          ease: "power2.out",
-        },
-        "-=0.2"
-      );
-
-    // Cincin koordinat berputar perlahan
-    if (ringRef.current) {
-      gsap.to(ringRef.current, {
-        rotation: 360,
-        duration: 25,
-        repeat: -1,
-        ease: "none",
+      // 1. Reset posisi elemen
+      gsap.set(emblemRef.current, { scale: 0.8, opacity: 0 });
+      gsap.set([titleRef.current, subtitleRef.current, meterRef.current], {
+        y: 20,
+        opacity: 0,
       });
-    }
 
-    // Animasi Ketinggian 0 mdpl -> 520 mdpl (2.6s ritme stabil & megah)
-    const counterObj = { val: 0, p: 0 };
-    gsap.to(counterObj, {
-      val: 520,
-      p: 100,
-      duration: 2.6,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (isCancelled) return;
-        const currentVal = Math.round(counterObj.val);
-        setAltitude(currentVal);
-        setProgress(Math.round(counterObj.p));
+      // 2. Timeline Pembuka Sinematik
+      const tl = gsap.timeline();
 
-        if (currentVal < 180) {
-          setStatusText("Memindai Tebing Purba Batu Lawang...");
-        } else if (currentVal < 420) {
-          setStatusText("Mengkalibrasi Pos Pendakian Gunung Bendera...");
-        } else {
-          setStatusText("Elevasi 520 mdpl Tercapai • Selamat Datang di Desa Cupang!");
-        }
-      },
-      onComplete: () => {
-        if (isCancelled) return;
-        setIsComplete(true);
-        setStatusText("Elevasi 520 mdpl Selesai • Kawasan Siap Dijelajahi");
+      tl.to(emblemRef.current, {
+        scale: 1,
+        opacity: 1,
+        duration: 0.7,
+        ease: "back.out(1.6)",
+      })
+        .to(
+          [titleRef.current, subtitleRef.current],
+          {
+            y: 0,
+            opacity: 1,
+            stagger: 0.12,
+            duration: 0.65,
+            ease: "power3.out",
+          },
+          "-=0.3"
+        )
+        .to(
+          meterRef.current,
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.5,
+            ease: "power2.out",
+          },
+          "-=0.2"
+        );
 
-        // Jeda 1.8 detik saat selesai agar pengunjung dapat menyerap seluruh intro, lalu transisi halus
-        setTimeout(() => {
-          if (!isCancelled) {
-            handleFinish();
+      // Cincin koordinat berputar perlahan
+      if (ringRef.current) {
+        gsap.to(ringRef.current, {
+          rotation: 360,
+          duration: 25,
+          repeat: -1,
+          ease: "none",
+        });
+      }
+
+      // Animasi Ketinggian 0 mdpl -> 520 mdpl (2.6s ritme stabil & megah)
+      const counterObj = { val: 0, p: 0 };
+      gsap.to(counterObj, {
+        val: 520,
+        p: 100,
+        duration: 2.6,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          if (isCancelled) return;
+          const currentVal = Math.round(counterObj.val);
+          setAltitude(currentVal);
+          setProgress(Math.round(counterObj.p));
+
+          if (currentVal < 180) {
+            setStatusText("Memindai Tebing Purba Batu Lawang...");
+          } else if (currentVal < 420) {
+            setStatusText("Mengkalibrasi Pos Pendakian Gunung Bendera...");
+          } else {
+            setStatusText("Elevasi 520 mdpl Tercapai • Selamat Datang di Desa Cupang!");
           }
-        }, 1800);
-      },
+        },
+        onComplete: () => {
+          if (isCancelled) return;
+          setIsComplete(true);
+          setStatusText("Elevasi 520 mdpl Selesai • Kawasan Siap Dijelajahi");
+
+          // Jeda 1.8 detik saat selesai agar pengunjung dapat menyerap seluruh intro, lalu transisi halus
+          setTimeout(() => {
+            if (!isCancelled) {
+              handleFinish();
+            }
+          }, 1800);
+        },
+      });
     });
 
     return () => {

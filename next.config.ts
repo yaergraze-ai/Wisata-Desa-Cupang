@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   serverExternalPackages: ["sharp", "pg"],
+  experimental: {
+    optimizePackageImports: ["bootstrap-icons", "date-fns"],
+  },
   images: {
     formats: ["image/webp"],
     remotePatterns: [

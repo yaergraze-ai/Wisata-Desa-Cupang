@@ -68,6 +68,26 @@ export function DashboardSidebar({
     setMobileOpen(false);
   }
 
+  const isEn = locale === "en";
+
+  const tLabels = {
+    navMenu: isEn ? "Navigation" : "Menu Navigasi",
+    tourShortcuts: isEn ? "Explore Park" : "Pintasan Wisata",
+    publicHome: isEn ? "Public Home" : "Beranda Publik",
+    trailMap: isEn ? "Trail & Elevation Map" : "Peta Jalur & Elevasi",
+    setup2fa: isEn ? "Setup 2FA" : "Pasang 2FA",
+    active2fa: isEn ? "2FA Active" : "2FA Aktif",
+    alert2faTitle: isEn
+      ? "Warning: Account not protected by 2FA. Click to setup now"
+      : "Peringatan: Akun belum terproteksi 2FA. Klik untuk mengaktifkan sekarang",
+    closeMenuAria: isEn ? "Close sidebar menu" : "Tutup menu samping",
+    openMenuAria: isEn ? "Open navigation menu" : "Buka navigasi menu samping",
+    backHomeTitle: isEn ? "Back to Wisata Cirebon Home" : "Kembali ke Beranda Wisata Cirebon",
+    homeHint: isEn ? "• Home ↗" : "• Beranda ↗",
+    staff: isEn ? "Staff" : "Petugas",
+    user: isEn ? "User" : "Pengguna",
+  };
+
   const roleConfig = {
     [Role.SUPER_ADMIN]: {
       label: "Super Admin",
@@ -76,13 +96,13 @@ export function DashboardSidebar({
       label: "Admin",
     },
     [Role.STAFF]: {
-      label: "Petugas",
+      label: tLabels.staff,
     },
     [Role.MEMBER]: {
       label: "Member",
     },
   }[role] ?? {
-    label: "Pengguna",
+    label: tLabels.user,
   };
 
   const initials =
@@ -92,20 +112,24 @@ export function DashboardSidebar({
   const sidebarContent = (
     <div className="flex h-full flex-col justify-between overflow-y-auto p-3.5 select-none scrollbar-thin">
       <div className="space-y-4">
-        {/* BRAND & LOGO BAR */}
+        {/* BRAND & LOGO BAR (Kembali ke Beranda Wisata Cirebon) */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <Link
             href={`/${locale}`}
-            className="flex items-center gap-2.5 group transition-opacity hover:opacity-85"
+            title="Kembali ke Beranda Wisata Cirebon"
+            className="flex items-center gap-2.5 group transition-all p-1.5 -ml-1 rounded-xl hover:bg-white/[0.06] cursor-pointer"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fajar/10 border border-fajar/20 text-fajar">
-              <i className="bi bi-compass text-base" aria-hidden="true" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fajar/25 to-amber-500/10 border border-fajar/40 text-fajar shadow-sm shadow-fajar/10 group-hover:scale-105 transition-transform">
+              <i className="bi bi-compass-fill text-lg" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="font-unbounded text-xs font-bold tracking-tight text-kabut leading-tight truncate">
-                Desa Cupang
-              </p>
-              <p className="text-[10px] font-mono text-kabut/45 leading-tight truncate mt-0.5">
+              <div className="flex items-center gap-1.5">
+                <p className="font-unbounded text-xs font-bold tracking-tight text-kabut leading-tight truncate">
+                  Desa Cupang
+                </p>
+                <i className="bi bi-arrow-up-right text-[10px] text-fajar opacity-60 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <p className="text-[10px] font-mono text-kabut/50 leading-tight truncate mt-0.5 group-hover:text-fajar transition-colors">
                 Wisata Alam Cirebon
               </p>
             </div>
@@ -116,7 +140,7 @@ export function DashboardSidebar({
             type="button"
             onClick={() => setMobileOpen(false)}
             className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-kabut hover:text-white cursor-pointer"
-            aria-label="Tutup menu samping"
+            aria-label={tLabels.closeMenuAria}
           >
             <i className="bi bi-x-lg text-xs" aria-hidden="true" />
           </button>
@@ -138,7 +162,7 @@ export function DashboardSidebar({
             )}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-kabut truncate" title={userName}>
-                {userName || "Pengguna"}
+                {userName || tLabels.user}
               </p>
               <p className="text-[10px] font-mono text-kabut/45 truncate" title={userEmail}>
                 {userEmail}
@@ -154,18 +178,18 @@ export function DashboardSidebar({
             {twoFactorEnabled ? (
               <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
                 <i className="bi bi-shield-check text-xs" aria-hidden="true" />
-                <span>2FA Aktif</span>
+                <span>{tLabels.active2fa}</span>
               </span>
             ) : (
               <Link
                 href="/verifikasi-2fa?setup=1"
                 className="animate-pulse-warning inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
-                title="Peringatan: Akun belum terproteksi 2FA. Klik untuk mengaktifkan sekarang"
+                title={tLabels.alert2faTitle}
               >
                 <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-obsidian text-[9px] font-black leading-none">
                   !
                 </span>
-                <span>Pasang 2FA</span>
+                <span>{tLabels.setup2fa}</span>
               </Link>
             )}
           </div>
@@ -174,7 +198,7 @@ export function DashboardSidebar({
         {/* DAFTAR MENU UTAMA DASHBOARD */}
         <div className="space-y-1">
           <p className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-kabut/40 pb-1">
-            Menu Navigasi
+            {tLabels.navMenu}
           </p>
           <nav className="space-y-0.5" aria-label="Navigasi dashboard">
             {tabs.map((tab) => {
@@ -223,7 +247,7 @@ export function DashboardSidebar({
         {/* PINTASAN WISATA EKSTERNAL */}
         <div className="space-y-1 pt-3 border-t border-white/10">
           <p className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-kabut/40 pb-1">
-            Pintasan Wisata
+            {tLabels.tourShortcuts}
           </p>
           <nav className="space-y-0.5">
             <Link
@@ -231,20 +255,20 @@ export function DashboardSidebar({
               className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-kabut/75 hover:bg-white/[0.06] hover:text-white transition-all duration-200 border border-transparent"
             >
               <i
-                className="bi bi-house-door-fill text-sm text-cyan-400 group-hover:scale-110 transition-transform duration-200"
+                className="bi bi-house-door-fill text-sm text-kabut/60 group-hover:text-fajar group-hover:scale-105 transition-all duration-200"
                 aria-hidden="true"
               />
-              <span>Beranda Publik</span>
+              <span>{tLabels.publicHome}</span>
             </Link>
             <Link
               href={`/${locale}/jalur`}
               className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-kabut/75 hover:bg-white/[0.06] hover:text-white transition-all duration-200 border border-transparent"
             >
               <i
-                className="bi bi-map-fill text-sm text-emerald-400 group-hover:scale-110 transition-transform duration-200"
+                className="bi bi-map-fill text-sm text-kabut/60 group-hover:text-fajar group-hover:scale-105 transition-all duration-200"
                 aria-hidden="true"
               />
-              <span>Peta Jalur & Elevasi</span>
+              <span>{tLabels.trailMap}</span>
             </Link>
           </nav>
         </div>
@@ -281,23 +305,33 @@ export function DashboardSidebar({
 
       {/* 2. TOP BAR TUNGGAL MOBILE (Layar < lg) */}
       <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-obsidian px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            aria-label="Buka navigasi menu samping"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-kabut hover:text-white transition cursor-pointer"
+            aria-label={tLabels.openMenuAria}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-kabut hover:text-white transition cursor-pointer shrink-0"
           >
             <i className="bi bi-list text-base" aria-hidden="true" />
           </button>
-          <div className="min-w-0">
-            <p className="font-heading text-xs font-bold text-kabut truncate">
-              {title}
-            </p>
-            <p className="text-[10px] font-mono text-kabut/50 truncate">
-              {roleConfig.label}
-            </p>
-          </div>
+          <Link
+            href={`/${locale}`}
+            title={tLabels.backHomeTitle}
+            className="min-w-0 flex items-center gap-2 group transition-opacity cursor-pointer"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar">
+              <i className="bi bi-compass-fill text-xs" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-heading text-xs font-bold text-kabut truncate group-hover:text-fajar transition-colors">
+                {title}
+              </p>
+              <p className="text-[10px] font-mono text-kabut/50 truncate flex items-center gap-1">
+                <span>{roleConfig.label}</span>
+                <span className="text-fajar/80 font-semibold">{tLabels.homeHint}</span>
+              </p>
+            </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-1.5">
