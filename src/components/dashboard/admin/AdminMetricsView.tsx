@@ -118,56 +118,91 @@ export function AdminMetricsView() {
 
   return (
     <div className="space-y-8" data-testid="admin-metrics-view">
-      {/* 4 KARTU METRIK UTAMA */}
+      {/* 4 KARTU METRIK UTAMA (DESAIN KONTEMPORER LUXURY) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 relative overflow-hidden">
-          <span className="text-xs font-semibold text-kabut/70 uppercase tracking-wider block">
-            {t("metricTotalRevenue")}
-          </span>
-          <p className="mt-2 text-2xl sm:text-3xl font-heading font-bold text-fajar">
-            {formatRupiah(metrics.totalRevenue)}
-          </p>
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-kabut/60">
-            <i className="bi bi-cash-stack text-telaga-400" aria-hidden="true" />
+        {/* Kartu 1: Total Pendapatan */}
+        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-fajar/10 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
+                {t("metricTotalRevenue")}
+              </span>
+              <p className="mt-2 text-2xl sm:text-3xl font-heading font-extrabold text-fajar">
+                {formatRupiah(metrics.totalRevenue)}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner">
+              <i className="bi bi-cash-stack text-lg" aria-hidden="true" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-kabut/65">
+            <i className="bi bi-shield-check text-telaga-400 text-[11px]" aria-hidden="true" />
             <span>{t("metricRevenueDesc")}</span>
           </div>
         </div>
 
-        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 relative overflow-hidden">
-          <span className="text-xs font-semibold text-kabut/70 uppercase tracking-wider block">
-            {t("metricPaidOrders")}
-          </span>
-          <p className="mt-2 text-2xl sm:text-3xl font-heading font-bold text-kabut">
-            {metrics.paidOrdersCount.toLocaleString("id-ID")}
-          </p>
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-kabut/60">
-            <i className="bi bi-receipt text-telaga-400" aria-hidden="true" />
+        {/* Kartu 2: Pesanan Terbayar */}
+        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-telaga-950/60 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
+                {t("metricPaidOrders")}
+              </span>
+              <p className="mt-2 text-2xl sm:text-3xl font-heading font-extrabold text-kabut">
+                {metrics.paidOrdersCount.toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-telaga-900 border border-telaga-700/60 text-telaga-300 shadow-inner">
+              <i className="bi bi-receipt text-lg" aria-hidden="true" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-kabut/65">
+            <i className="bi bi-check2-circle text-telaga-400 text-[11px]" aria-hidden="true" />
             <span>{t("metricPaidOrdersDesc")}</span>
           </div>
         </div>
 
-        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 relative overflow-hidden">
-          <span className="text-xs font-semibold text-kabut/70 uppercase tracking-wider block">
-            {t("metricValidTickets")}
-          </span>
-          <p className="mt-2 text-2xl sm:text-3xl font-heading font-bold text-kabut">
-            {metrics.validTicketsCount.toLocaleString("id-ID")}
-          </p>
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-kabut/60">
-            <i className="bi bi-ticket-perforated text-telaga-400" aria-hidden="true" />
+        {/* Kartu 3: Tiket Valid */}
+        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-cyan-950/40 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-cyan-400 before:to-blue-500 hover:border-cyan-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
+                {t("metricValidTickets")}
+              </span>
+              <p className="mt-2 text-2xl sm:text-3xl font-heading font-extrabold text-cyan-200">
+                {metrics.validTicketsCount.toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-950 border border-cyan-700/50 text-cyan-300 shadow-inner">
+              <i className="bi bi-ticket-perforated text-lg" aria-hidden="true" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-kabut/65">
+            <i className="bi bi-qr-code text-cyan-400 text-[11px]" aria-hidden="true" />
             <span>{t("metricValidTicketsDesc")}</span>
           </div>
         </div>
 
-        <div className="surface-solid-dark p-6 rounded-2xl border border-telaga-700/60 relative overflow-hidden">
-          <span className="text-xs font-semibold text-kabut/70 uppercase tracking-wider block">
-            {t("metricScansToday")}
-          </span>
-          <p className="mt-2 text-2xl sm:text-3xl font-heading font-bold text-telaga-300">
-            {metrics.scansTodayCount.toLocaleString("id-ID")}
-          </p>
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-kabut/60">
-            <i className="bi bi-qr-code-scan text-fajar" aria-hidden="true" />
+        {/* Kartu 4: Pemindaian Hari Ini */}
+        <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-emerald-950/50 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-telaga-300 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider block">
+                {t("metricScansToday")}
+              </span>
+              <p className="mt-2 text-2xl sm:text-3xl font-heading font-extrabold text-emerald-300">
+                {metrics.scansTodayCount.toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-950 border border-emerald-700/50 text-emerald-300 shadow-inner">
+              <i className="bi bi-qr-code-scan text-lg" aria-hidden="true" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-kabut/65">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
             <span>{t("metricScansTodayDesc")}</span>
           </div>
         </div>

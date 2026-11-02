@@ -27,10 +27,17 @@ export interface PublicReviewItemDto {
   photos: PublicReviewPhotoDto[];
 }
 
+export interface RatingDistributionItem {
+  stars: number;
+  count: number;
+  percentage: number;
+}
+
 export interface PublicReviewsResponse {
   filter: ReviewDestinationFilter;
   totalPublishedCount: number;
   averageRating: number | null;
+  ratingDistribution: RatingDistributionItem[];
   reviews: PublicReviewItemDto[];
 }
 
@@ -49,7 +56,7 @@ export async function getPublicReviewsData(params: {
   locale: SupportedLocale;
   limit?: number;
 }): Promise<PublicReviewsResponse> {
-  const limit = Math.min(30, Math.max(1, params.limit ?? 12));
+  const limit = Math.min(100, Math.max(1, params.limit ?? 50));
 
   const whereClause =
     params.filter === "all"
@@ -59,11 +66,16 @@ export async function getPublicReviewsData(params: {
           destinationSlugs: { has: params.filter },
         };
 
-  const [aggregate, rows] = await Promise.all([
+  const [aggregate, ratingCounts, rows] = await Promise.all([
     db.review.aggregate({
       where: whereClause,
       _count: { _all: true },
       _avg: { rating: true },
+    }),
+    db.review.groupBy({
+      by: ["rating"],
+      where: whereClause,
+      _count: { _all: true },
     }),
     db.review.findMany({
       where: whereClause,
@@ -87,6 +99,19 @@ export async function getPublicReviewsData(params: {
     totalPublishedCount > 0 && typeof aggregate._avg.rating === "number"
       ? Math.round(aggregate._avg.rating * 10) / 10
       : null;
+
+  // Bangun distribusi bintang 5 hingga 1
+  const countMap = new Map<number, number>();
+  for (const item of ratingCounts) {
+    countMap.set(item.rating, item._count._all);
+  }
+
+  const ratingDistribution: RatingDistributionItem[] = [5, 4, 3, 2, 1].map((stars) => {
+    const count = countMap.get(stars) ?? 0;
+    const percentage =
+      totalPublishedCount > 0 ? Math.round((count / totalPublishedCount) * 100) : 0;
+    return { stars, count, percentage };
+  });
 
   const reviews: PublicReviewItemDto[] = rows.map((row) => ({
     id: row.id,
@@ -115,6 +140,7 @@ export async function getPublicReviewsData(params: {
     filter: params.filter,
     totalPublishedCount,
     averageRating,
+    ratingDistribution,
     reviews,
   };
 }

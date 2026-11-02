@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { OrderStatus, TicketStatus } from "@prisma/client";
 import { AnimatePresence, motion } from "motion/react";
@@ -26,6 +27,15 @@ import { PerforatedTicketCard } from "@/components/dashboard/member/PerforatedTi
 import { ReviewModal } from "@/components/dashboard/member/ReviewModal";
 import { RefundModal } from "@/components/dashboard/member/RefundModal";
 import { MemberProfileTab } from "@/components/dashboard/member/MemberProfileTab";
+import type { PublicReviewItemDto } from "@/server/reviews/public-reviews";
+
+const MotionReviewModal = dynamic(
+  () =>
+    import("@/components/public/ReviewsMotionPrimitives").then(
+      (mod) => mod.MotionReviewModal
+    ),
+  { ssr: false }
+);
 
 export type MemberDashboardTab = "overview" | "buy" | "wallet" | "orders" | "profile";
 
@@ -120,6 +130,33 @@ export function MemberDashboardClient({
     }
     return walletTickets;
   }, [ticketFilter, walletTickets]);
+
+  // Ulasan Komunitas Acak Otomatis di Dashboard Member
+  const [communityReviews, setCommunityReviews] = useState<PublicReviewItemDto[]>([]);
+  const [selectedReviewModal, setSelectedReviewModal] = useState<PublicReviewItemDto | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadCommunityReviews() {
+      try {
+        const res = await fetch("/api/public/reviews?limit=12");
+        if (res.ok) {
+          const payload = (await res.json()) as { reviews: PublicReviewItemDto[] };
+          if (!ignore && payload.reviews) {
+            // Acak otomatis ulasan
+            const shuffled = [...payload.reviews].sort(() => 0.5 - Math.random());
+            setCommunityReviews(shuffled);
+          }
+        }
+      } catch {
+        // Abaikan
+      }
+    }
+    loadCommunityReviews();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // State Wizard 3 Langkah (Pos 1 -> Pos 2 -> Pos 3)
   const initialFocusOrder = useMemo(() => {
@@ -865,43 +902,84 @@ export function MemberDashboardClient({
       {/* TAB 1: RINGKASAN */}
       {activeTab === "overview" ? (
         <div className="space-y-6">
+          {/* 3 KARTU STATISTIK KONTEMPORER */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="surface-solid-dark p-5">
-              <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
-                {t("activeTicketsStat")}
-              </p>
-              <p className="mt-2 font-heading text-3xl font-extrabold text-fajar">
-                {activeTickets.length}
-              </p>
+            {/* Kartu 1: Tiket Aktif */}
+            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-amber-500 hover:border-fajar/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                    {t("activeTicketsStat")}
+                  </p>
+                  <p className="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-fajar">
+                    {activeTickets.length}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner">
+                  <i className="bi bi-ticket-perforated-fill text-xl" aria-hidden="true" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
+                <i className="bi bi-check-circle-fill text-fajar text-[10px]" aria-hidden="true" />
+                <span>{activeTickets.length > 0 ? "Siap dipindai di gerbang masuk" : "Belum ada tiket aktif"}</span>
+              </div>
             </div>
 
-            <div className="surface-solid-dark p-5">
-              <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
-                {t("nearestVisitStat")}
-              </p>
-              <p className="mt-2 font-heading text-xl font-bold text-kabut">
-                {nearestVisitYmd
-                  ? formatVisitDateDisplay(nearestVisitYmd, locale)
-                  : t("noUpcomingVisit")}
-              </p>
+            {/* Kartu 2: Kunjungan Terdekat */}
+            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-telaga-400 before:to-emerald-500 hover:border-telaga-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                    {t("nearestVisitStat")}
+                  </p>
+                  <p className="mt-3 font-heading text-xl sm:text-2xl font-bold text-kabut truncate">
+                    {nearestVisitYmd
+                      ? formatVisitDateDisplay(nearestVisitYmd, locale)
+                      : t("noUpcomingVisit")}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-300 shadow-inner">
+                  <i className="bi bi-calendar-event-fill text-xl" aria-hidden="true" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
+                <i className="bi bi-geo-alt-fill text-telaga-400 text-[10px]" aria-hidden="true" />
+                <span>Kawasan Wisata Desa Cupang</span>
+              </div>
             </div>
 
-            <div className="surface-solid-dark p-5">
-              <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
-                {t("totalOrdersStat")}
-              </p>
-              <p className="mt-2 font-heading text-3xl font-extrabold text-telaga-200">
-                {orders.length}
-              </p>
+            {/* Kartu 3: Total Transaksi Pesanan */}
+            <div className="relative overflow-hidden surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/80 via-obsidian/90 to-obsidian before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-emerald-400 before:to-cyan-500 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold tracking-wider text-kabut/75 uppercase">
+                    {t("totalOrdersStat")}
+                  </p>
+                  <p className="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-telaga-200">
+                    {orders.length}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 shadow-inner">
+                  <i className="bi bi-receipt-cutoff text-xl" aria-hidden="true" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-kabut/70">
+                <i className="bi bi-shield-check text-emerald-400 text-[10px]" aria-hidden="true" />
+                <span>Pembayaran resmi & terenkripsi</span>
+              </div>
             </div>
           </div>
 
-          {/* Tindakan Cepat */}
-          <section className="surface-solid-dark p-5 sm:p-6">
-            <h2 className="font-heading text-lg font-bold text-kabut">
-              {t("quickActionsHeading")}
-            </h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+          {/* Tindakan Cepat (Tombol Elegan & Responsif) */}
+          <section className="surface-solid-dark p-6 sm:p-7 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/60 to-obsidian space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-lg font-bold text-kabut flex items-center gap-2">
+                <i className="bi bi-lightning-charge-fill text-fajar" aria-hidden="true" />
+                <span>{t("quickActionsHeading")}</span>
+              </h2>
+              <span className="text-xs text-kabut/60 hidden sm:inline">Pintasan Layanan Mandiri</span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
               <button
                 type="button"
                 onClick={() => {
@@ -909,49 +987,126 @@ export function MemberDashboardClient({
                   setActiveCheckoutOrder(null);
                   selectTab("buy");
                 }}
-                className="flex flex-col items-start rounded-2xl border border-kabut/15 bg-obsidian/70 p-4 text-left transition-colors hover:border-fajar"
+                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-fajar hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-fajar/15 text-fajar">
-                  <i className="bi bi-bag-plus-fill text-lg" aria-hidden="true" />
-                </span>
-                <p className="mt-3 font-heading text-base font-bold text-kabut">
-                  {t("quickBuyTitle")}
-                </p>
-                <p className="mt-1 text-xs text-kabut/75">{t("quickBuyDesc")}</p>
+                <div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-fajar/15 border border-fajar/30 text-fajar shadow-inner group-hover:scale-110 transition-transform">
+                    <i className="bi bi-bag-plus-fill text-xl" aria-hidden="true" />
+                  </span>
+                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-fajar transition-colors">
+                    {t("quickBuyTitle")}
+                  </p>
+                  <p className="mt-1 text-xs text-kabut/75 leading-relaxed">{t("quickBuyDesc")}</p>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-fajar">
+                  <span>Mulai Pembelian</span>
+                  <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => selectTab("wallet")}
-                className="flex flex-col items-start rounded-2xl border border-kabut/15 bg-obsidian/70 p-4 text-left transition-colors hover:border-telaga-300"
+                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-telaga-300 hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-telaga-950 text-telaga-200">
-                  <i className="bi bi-qr-code-scan text-lg" aria-hidden="true" />
-                </span>
-                <p className="mt-3 font-heading text-base font-bold text-kabut">
-                  {t("quickWalletTitle")}
-                </p>
-                <p className="mt-1 text-xs text-kabut/75">
-                  {t("quickWalletDesc")}
-                </p>
+                <div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-telaga-950 border border-telaga-700/60 text-telaga-200 shadow-inner group-hover:scale-110 transition-transform">
+                    <i className="bi bi-qr-code-scan text-xl" aria-hidden="true" />
+                  </span>
+                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-telaga-300 transition-colors">
+                    {t("quickWalletTitle")}
+                  </p>
+                  <p className="mt-1 text-xs text-kabut/75 leading-relaxed">
+                    {t("quickWalletDesc")}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-telaga-300">
+                  <span>Buka E-Ticket</span>
+                  <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
 
               <Link
                 href="/jalur"
-                className="flex flex-col items-start rounded-2xl border border-kabut/15 bg-obsidian/70 p-4 text-left transition-colors hover:border-fajar"
+                className="group relative flex flex-col justify-between rounded-2xl border border-telaga-700/60 bg-obsidian/80 p-5 text-left transition-all duration-300 hover:border-emerald-400 hover:bg-obsidian hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-hutan border border-telaga-700 text-fajar">
-                  <i className="bi bi-signpost-split-fill text-lg" aria-hidden="true" />
-                </span>
-                <p className="mt-3 font-heading text-base font-bold text-kabut">
-                  {t("quickTrailTitle")}
-                </p>
-                <p className="mt-1 text-xs text-kabut/75">
-                  {t("quickTrailDesc")}
-                </p>
+                <div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-hutan border border-emerald-600/40 text-emerald-400 shadow-inner group-hover:scale-110 transition-transform">
+                    <i className="bi bi-signpost-split-fill text-xl" aria-hidden="true" />
+                  </span>
+                  <p className="mt-4 font-heading text-base font-bold text-kabut group-hover:text-emerald-300 transition-colors">
+                    {t("quickTrailTitle")}
+                  </p>
+                  <p className="mt-1 text-xs text-kabut/75 leading-relaxed">
+                    {t("quickTrailDesc")}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-400">
+                  <span>Lihat Peta Jalur</span>
+                  <i className="bi bi-arrow-right text-[11px] group-hover:translate-x-1 transition-transform" />
+                </div>
               </Link>
             </div>
           </section>
+
+          {/* Cuplikan Ulasan Komunitas (Acak Otomatis dengan Bintang & Foto) */}
+          {communityReviews.length > 0 ? (
+            <section className="surface-solid-dark p-6 rounded-3xl border border-telaga-700/60 shadow-xl bg-gradient-to-br from-hutan/50 to-obsidian space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-telaga-800/80 pb-3.5">
+                <div>
+                  <h2 className="font-heading text-base sm:text-lg font-bold text-kabut flex items-center gap-2">
+                    <i className="bi bi-chat-heart-fill text-fajar" aria-hidden="true" />
+                    <span>Ulasan Pengunjung Wisata</span>
+                  </h2>
+                  <p className="text-xs text-kabut/70 mt-0.5">
+                    Pengalaman nyata dari wisatawan pemegang e-ticket resmi (ditampilkan acak)
+                  </p>
+                </div>
+                <a
+                  href="/#ulasan-pengunjung"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-fajar hover:underline self-start sm:self-auto"
+                >
+                  <span>Lihat Semua Ulasan & Bintang</span>
+                  <i className="bi bi-arrow-up-right text-[10px]" aria-hidden="true" />
+                </a>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {communityReviews.slice(0, 3).map((rev) => (
+                  <div
+                    key={rev.id}
+                    onClick={() => setSelectedReviewModal(rev)}
+                    className="p-4 rounded-2xl bg-obsidian/80 border border-telaga-800 hover:border-telaga-500 hover:shadow-lg transition cursor-pointer flex flex-col justify-between space-y-3"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-fajar/20 text-fajar font-bold text-[10px]">
+                            {rev.authorInitials}
+                          </span>
+                          <span className="text-xs font-bold text-kabut truncate max-w-[120px]">
+                            {rev.authorName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-fajar">
+                          <i className="bi bi-star-fill text-[10px]" aria-hidden="true" />
+                          <span>{rev.rating}.0</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-kabut/85 line-clamp-3">
+                        &ldquo;{rev.comment}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-kabut/60 pt-2 border-t border-telaga-900">
+                      <span>{rev.createdAtDisplay}</span>
+                      <span className="text-fajar font-semibold">Klik untuk detail</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {/* Cuplikan Tiket Terbaru */}
           {walletTickets.length > 0 ? (
@@ -2154,6 +2309,15 @@ export function MemberDashboardClient({
           onSuccess={() => {
             router.refresh();
           }}
+        />
+      ) : null}
+
+      {/* MODAL INTERAKTIF DETAIL ULASAN KOMUNITAS */}
+      {selectedReviewModal ? (
+        <MotionReviewModal
+          review={selectedReviewModal}
+          initialPhotoIndex={0}
+          onClose={() => setSelectedReviewModal(null)}
         />
       ) : null}
     </div>

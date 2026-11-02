@@ -58,8 +58,24 @@ export function SuperAdminDashboardClient({
 
   return (
     <div className="space-y-6 sm:space-y-8" data-testid="super-admin-dashboard-client">
+      {/* STATUS BANNER SUPER ADMIN */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-2 text-xs text-kabut/80">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="font-mono text-[11px] text-emerald-400 font-bold uppercase tracking-wider">
+            Portal Kontrol Super Admin — Audit Keamanan Aktif
+          </span>
+        </div>
+        <span className="text-[11px] text-kabut/60 font-mono hidden sm:inline">
+          Protokol Privasi & Enkripsi Maksimal
+        </span>
+      </div>
+
       {/* TAB NAVIGATION BAR */}
-      <div className="surface-solid-dark p-2 sm:p-2.5 rounded-2xl border border-telaga-700/60 shadow-lg">
+      <div className="surface-solid-dark p-2.5 sm:p-3 rounded-3xl border border-telaga-700/60 shadow-2xl bg-gradient-to-r from-hutan/90 via-obsidian/95 to-obsidian">
         {/* Kontrol Mobile: Judul Menu & Sakelar Tampilan Susun ke Bawah */}
         <div className="flex items-center justify-between gap-2 mb-2 px-1 sm:hidden">
           <span className="text-[11px] font-bold text-kabut/70 uppercase tracking-wider flex items-center gap-1.5">

@@ -618,11 +618,11 @@ export function StaffDashboardClient({
       </div>
 
       {/* Header Petugas, Destinasi, dan Pemilih Gerbang */}
-      <section className="rounded-3xl border-2 border-kabut/25 bg-obsidian p-5 sm:p-7">
+      <section className="relative overflow-hidden surface-solid-dark rounded-3xl border border-telaga-700/60 bg-gradient-to-br from-hutan/90 via-obsidian/95 to-obsidian p-6 sm:p-7 shadow-2xl before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-fajar before:to-telaga-400">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-telaga-400 bg-telaga-950 px-3 py-1 text-xs font-extrabold text-telaga-200 uppercase">
-              <i className="bi bi-shield-fill-check" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-telaga-400/80 bg-telaga-950 px-3 py-1 text-xs font-extrabold text-telaga-200 uppercase shadow-inner">
+              <i className="bi bi-shield-fill-check text-fajar" aria-hidden="true" />
               <span>{t("eyebrow")} — {staff.destinationName}</span>
             </span>
             <h1 className="mt-2 font-heading text-2xl font-extrabold text-kabut sm:text-3xl">
@@ -630,21 +630,25 @@ export function StaffDashboardClient({
             </h1>
             <p className="mt-1 text-xs text-kabut/80">
               {t("staffLabel")}{" "}
-              <strong className="text-fajar">{staff.name}</strong> ({staff.jobTitle})
+              <strong className="text-fajar font-bold">{staff.name}</strong> ({staff.jobTitle})
             </p>
           </div>
 
           {/* Penghitung Pengunjung Masuk Hari Ini di Gerbang Terpilih */}
-          <div className="rounded-2xl border-2 border-fajar bg-hutan p-4 text-center sm:text-right">
-            <p className="text-xs font-extrabold tracking-wider text-kabut uppercase">
-              {t("todayAdmittedCount")}
-            </p>
+          <div className="relative overflow-hidden rounded-2xl border border-fajar/50 bg-gradient-to-br from-fajar/10 via-obsidian/90 to-obsidian p-4 text-center sm:text-right shadow-lg">
+            <div className="flex items-center justify-center sm:justify-end gap-2 text-xs font-bold tracking-wider text-kabut/80 uppercase">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>{t("todayAdmittedCount")}</span>
+            </div>
             <p
               data-testid="staff-today-admitted-count"
-              className="mt-0.5 font-heading text-3xl font-black text-fajar"
+              className="mt-1 font-heading text-3xl sm:text-4xl font-black text-fajar"
             >
               {todayAdmittedCount}{" "}
-              <span className="text-sm font-semibold text-kabut">
+              <span className="text-sm font-semibold text-kabut/75">
                 {t("todayAdmittedUnit")}
               </span>
             </p>
@@ -652,9 +656,10 @@ export function StaffDashboardClient({
         </div>
 
         {/* Pemilih Gerbang Jaga (Hanya Gerbang yang Ditugaskan) */}
-        <div className="mt-6 border-t-2 border-kabut/20 pt-4">
-          <p className="text-xs font-extrabold tracking-wider text-fajar uppercase">
-            {t("gateSelectLabel")}
+        <div className="mt-6 border-t border-telaga-800/80 pt-4">
+          <p className="text-xs font-extrabold tracking-wider text-fajar uppercase flex items-center gap-2">
+            <i className="bi bi-geo-alt-fill text-xs" aria-hidden="true" />
+            <span>{t("gateSelectLabel")}</span>
           </p>
           <div className="mt-2.5 flex flex-wrap gap-3">
             {[GateType.GERBANG_BATU_LAWANG, GateType.PINTU_GUNUNG_BENDERA].map((gate) => {
@@ -675,12 +680,12 @@ export function StaffDashboardClient({
                   disabled={!isAssigned}
                   onClick={() => handleSelectGate(gate)}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-2xl border-2 px-5 py-3 text-sm font-extrabold transition-all",
+                    "inline-flex items-center gap-2 rounded-2xl border-2 px-5 py-3 text-sm font-extrabold transition-all cursor-pointer",
                     isSelected
-                      ? "border-fajar bg-fajar text-obsidian shadow-lg"
+                      ? "border-fajar bg-fajar text-obsidian shadow-lg shadow-fajar/20 scale-102"
                       : isAssigned
-                        ? "border-kabut/30 bg-hutan text-kabut hover:border-fajar"
-                        : "border-kabut/10 bg-obsidian/40 text-kabut/40 cursor-not-allowed"
+                        ? "border-telaga-700/80 bg-obsidian/80 text-kabut hover:border-fajar hover:bg-obsidian"
+                        : "border-kabut/10 bg-obsidian/30 text-kabut/40 cursor-not-allowed"
                   )}
                 >
                   <i
@@ -705,7 +710,7 @@ export function StaffDashboardClient({
         </div>
 
         {/* Tab Navigasi Staf */}
-        <div className="mt-6 flex flex-wrap gap-2 border-t-2 border-kabut/15 pt-4">
+        <div className="mt-6 flex flex-wrap gap-2 border-t border-telaga-800/80 pt-4">
           {[
             { id: "scanner" as const, label: t("tabScanner"), icon: "bi-qr-code-scan" },
             { id: "history" as const, label: t("tabHistory"), icon: "bi-clock-history" },
@@ -721,10 +726,10 @@ export function StaffDashboardClient({
                 data-testid={`staff-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-xs font-black uppercase transition-colors sm:text-sm",
+                  "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold uppercase transition-all cursor-pointer sm:text-sm",
                   isCurrent
-                    ? "border-fajar bg-fajar text-obsidian"
-                    : "border-kabut/20 bg-hutan/80 text-kabut hover:border-kabut/50"
+                    ? "bg-fajar text-obsidian shadow-md shadow-fajar/25 font-black"
+                    : "bg-obsidian/60 border border-telaga-800/60 text-kabut hover:border-telaga-600 hover:text-white"
                 )}
               >
                 <i className={cn("bi", tab.icon)} aria-hidden="true" />
@@ -738,15 +743,16 @@ export function StaffDashboardClient({
       {/* TAB 1: PEMINDAI KAMERA (FORMAT DANA) & INPUT MANUAL KONTROL PENUH */}
       {activeTab === "scanner" ? (
         <section className="space-y-6">
-          <div className="rounded-3xl border-2 border-kabut/25 bg-obsidian p-5 sm:p-7">
+          <div className="surface-solid-dark rounded-3xl border border-telaga-700/60 bg-gradient-to-br from-hutan/80 via-obsidian/95 to-obsidian p-6 sm:p-7 shadow-2xl">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <h2 className="font-heading text-xl font-black text-kabut sm:text-2xl">
-                  {t("tabScanner")}
+                <h2 className="font-heading text-xl font-black text-kabut sm:text-2xl flex items-center gap-2">
+                  <i className="bi bi-qr-code-scan text-fajar" aria-hidden="true" />
+                  <span>{t("tabScanner")}</span>
                 </h2>
                 <p className="mt-1 text-xs text-kabut/80">
                   {t("guardingGateLabel")}{" "}
-                  <strong className="text-fajar">
+                  <strong className="text-fajar font-bold">
                     {selectedGate === GateType.GERBANG_BATU_LAWANG
                       ? t("gateBatuLawang")
                       : t("gateGunungBendera")}
@@ -759,7 +765,7 @@ export function StaffDashboardClient({
                 data-testid="toggle-camera-btn"
                 onClick={cameraActive ? stopCamera : () => void startCamera()}
                 className={cn(
-                  "btn-ui py-3.5 px-6 text-sm font-black shadow-lg",
+                  "btn-ui py-3.5 px-6 text-sm font-black shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer",
                   cameraActive ? "btn-kabut" : "btn-fajar"
                 )}
               >
@@ -779,7 +785,7 @@ export function StaffDashboardClient({
             </div>
 
             {/* Banner Panduan Singkat Mode Kamera DANA */}
-            <div className="mt-6 rounded-2xl border-2 border-fajar/30 bg-hutan/90 p-5">
+            <div className="mt-6 rounded-2xl border border-fajar/40 bg-gradient-to-r from-fajar/15 via-obsidian/90 to-obsidian p-5 shadow-inner">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-fajar">
@@ -796,7 +802,7 @@ export function StaffDashboardClient({
                 <button
                   type="button"
                   onClick={() => void startCamera()}
-                  className="btn-ui btn-fajar py-3 px-5 text-xs font-black self-start sm:self-auto shrink-0 shadow-md"
+                  className="btn-ui btn-fajar py-3 px-5 text-xs font-black self-start sm:self-auto shrink-0 shadow-lg hover:scale-105 transition-all cursor-pointer"
                 >
                   <i className="bi bi-camera-fill mr-2" aria-hidden="true" />
                   <span>Pindai Sekarang</span>
