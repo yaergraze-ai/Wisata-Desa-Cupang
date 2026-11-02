@@ -22,6 +22,7 @@ import { writeAuditLog } from "@/server/audit/audit";
 export type ScanReasonCode =
   | "OK"
   | "INVALID_TOKEN"
+  | "QRIS_PAYMENT_SCANNED"
   | "UNAUTHORIZED_GATE"
   | "TICKET_INACTIVE"
   | "WRONG_DATE"
@@ -324,26 +325,36 @@ export async function scanTicketAtGate(input: ScanInput): Promise<ScanOutcome> {
     : null;
 
   if (!ticket) {
+    const isQris =
+      raw.startsWith("00020101") ||
+      raw.includes("ID.CO.QRIS") ||
+      raw.includes("midtrans.com") ||
+      raw.toLowerCase().includes("qris");
+    const reasonCode: ScanReasonCode = isQris
+      ? "QRIS_PAYMENT_SCANNED"
+      : "INVALID_TOKEN";
+
     // GateScan mensyaratkan ticketId, maka percobaan token tak dikenal dicatat ke AuditLog (KEP-10)
     await writeAuditLog({
       actorId: input.staffUserId,
       actorRole: input.staffRole,
-      action: "GATE_SCAN_INVALID_TOKEN",
+      action: isQris ? "GATE_SCAN_QRIS_INSTEAD_OF_TICKET" : "GATE_SCAN_INVALID_TOKEN",
       entity: "GateScan",
       headers: input.headers,
       metadata: {
         gate: input.gate,
         inputLength: raw.length,
-        inputPrefix: raw.slice(0, 4),
+        inputPrefix: raw.slice(0, 8),
+        isQris,
       },
     }).catch(() => undefined);
     return baseOutcome({
       result: ScanResult.REJECTED,
-      reason: "INVALID_TOKEN",
+      reason: reasonCode,
       scannedAtIso: now.toISOString(),
       scanId: null,
       ticket: null,
-      detail: null,
+      detail: isQris ? { isQris: "true" } : null,
     });
   }
 

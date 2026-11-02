@@ -569,6 +569,7 @@
     "scanResultRejected": "SCAN REJECTED",
     "reason_OK": "Valid ticket. Admit visitor group.",
     "reason_INVALID_TOKEN": "QR token or ticket code is invalid / not found in the system.",
+    "reason_QRIS_PAYMENT_SCANNED": "You scanned a QRIS Payment code, NOT an Entry Ticket! Please open 'My Tickets' in the order account to view the official Entry Ticket.",
     "reason_UNAUTHORIZED_GATE": "You are not assigned to scan tickets at this gate.",
     "reason_TICKET_INACTIVE": "Ticket is inactive (order pending, cancelled, or already refunded).",
     "reason_WRONG_DATE": "Visit date is not today (WIB)! This ticket is scheduled for {visitDate}.",

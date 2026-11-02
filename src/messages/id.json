@@ -569,6 +569,7 @@
     "scanResultRejected": "SCAN DITOLAK",
     "reason_OK": "Tiket sah. Izinkan rombongan pengunjung masuk.",
     "reason_INVALID_TOKEN": "Kode QR atau nomor tiket tidak valid / tidak terdaftar di sistem.",
+    "reason_QRIS_PAYMENT_SCANNED": "Yang Anda pindai adalah QRIS Pembayaran, BUKAN Tiket Masuk! Silakan buka menu 'Tiket Saya' di akun pemesan untuk melihat Tiket Masuk resmi.",
     "reason_UNAUTHORIZED_GATE": "Anda tidak ditugaskan untuk memindai di gerbang ini.",
     "reason_TICKET_INACTIVE": "Tiket tidak aktif (status pesanan belum lunas, dibatalkan, atau telah di-refund).",
     "reason_WRONG_DATE": "Tanggal kunjungan bukan hari ini (WIB)! Tiket ini terdaftar untuk tanggal {visitDate}.",

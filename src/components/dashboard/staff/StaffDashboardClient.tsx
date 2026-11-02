@@ -106,6 +106,7 @@ export function StaffDashboardClient({
   const [isManualInputVisible, setIsManualInputVisible] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [isSubmittingScan, setIsSubmittingScan] = useState(false);
+  const [isResettingScan, setIsResettingScan] = useState(false);
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
 
   // Search state
@@ -300,6 +301,33 @@ export function StaffDashboardClient({
     // Beri tenggang waktu 1.5 detik agar petugas sempat mengarahkan kamera ke pengunjung berikutnya
     lastScannedTimeRef.current = Date.now() - 1000;
   }, []);
+
+  const handleResetTicketScan = useCallback(
+    async (ticketId: string, publicCode: string) => {
+      setIsResettingScan(true);
+      try {
+        const res = await fetch("/api/staff/scan/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticketId, publicCode }),
+        });
+        const data = (await res.json()) as { message?: string; error?: string };
+        if (res.ok) {
+          toast.success(
+            data.message || "Status scan tiket berhasil direset! Tiket siap dipindai kembali."
+          );
+          dismissOutcome();
+        } else {
+          toast.error(data.error || "Gagal mereset status scan tiket.");
+        }
+      } catch {
+        toast.error("Gagal menghubungi server untuk reset tiket.");
+      } finally {
+        setIsResettingScan(false);
+      }
+    },
+    [dismissOutcome]
+  );
 
   useEffect(() => {
     scanFrameRef.current = scanFrame;
@@ -557,6 +585,8 @@ export function StaffDashboardClient({
         return t("reason_OK");
       case "INVALID_TOKEN":
         return t("reason_INVALID_TOKEN");
+      case "QRIS_PAYMENT_SCANNED":
+        return t("reason_QRIS_PAYMENT_SCANNED");
       case "UNAUTHORIZED_GATE":
         return t("reason_UNAUTHORIZED_GATE");
       case "TICKET_INACTIVE":
@@ -1029,114 +1059,228 @@ export function StaffDashboardClient({
         </div>
       ) : null}
 
-      {/* OVERLAY HASIL PINDAI LAYAR PENUH HIJAU/MERAH DENGAN ADMIT COUNT KONFIRMASI (§6.D.1) */}
+      {/* MODAL HASIL PINDAI DIGITAL BOARDING PASS E-TICKET (DESAIN PREMIUM KONTEMPORER) */}
       {scanOutcome ? (
         <div
           data-testid="scan-overlay-result"
-          onClick={dismissOutcome}
-          className={cn(
-            "fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md",
-            scanOutcome.result === ScanResult.ACCEPTED
-              ? "bg-[#062419]/95 text-[#E8F1EC] border-8 border-[#2F8F83]"
-              : "bg-[#2E0808]/95 text-[#FEE2E2] border-8 border-red-600"
-          )}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200 select-none"
         >
-          <div className="max-w-xl space-y-4">
-            <span
+          <div
+            className={cn(
+              "relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl transition-all border-2",
+              scanOutcome.result === ScanResult.ACCEPTED
+                ? "bg-[#0a1713] border-emerald-500/70 shadow-[0_0_60px_rgba(16,185,129,0.35)]"
+                : "bg-[#180a0d] border-rose-500/70 shadow-[0_0_60px_rgba(244,63,94,0.35)]"
+            )}
+          >
+            {/* Header Tiket Atas */}
+            <div
               className={cn(
-                "inline-flex h-24 w-24 items-center justify-center rounded-full text-5xl shadow-2xl",
+                "p-6 pb-5 text-center relative",
                 scanOutcome.result === ScanResult.ACCEPTED
-                  ? "bg-[#2F8F83] text-obsidian"
-                  : "bg-red-600 text-white"
+                  ? "bg-gradient-to-b from-emerald-600/30 via-emerald-950/20 to-transparent"
+                  : "bg-gradient-to-b from-rose-600/30 via-rose-950/20 to-transparent"
               )}
             >
-              <i
-                className={cn(
-                  "bi",
-                  scanOutcome.result === ScanResult.ACCEPTED
-                    ? "bi-check-lg"
-                    : "bi-x-lg"
-                )}
-                aria-hidden="true"
-              />
-            </span>
-
-            <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl">
-              {scanOutcome.result === ScanResult.ACCEPTED
-                ? t("scanResultAccepted")
-                : t("scanResultRejected")}
-            </h2>
-
-            <p className="text-base font-bold sm:text-lg">
-              {getReasonText(scanOutcome.reason, scanOutcome.detail)}
-            </p>
-
-            {scanOutcome.ticket ? (
+              {/* Lingkaran Ikon Melayang dengan Glow Halus */}
               <div
                 className={cn(
-                  "mt-4 rounded-2xl border-2 p-5 text-left text-sm",
+                  "mx-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-xl",
                   scanOutcome.result === ScanResult.ACCEPTED
-                    ? "border-[#2F8F83] bg-black/40"
-                    : "border-red-400 bg-black/40"
+                    ? "bg-gradient-to-tr from-emerald-500 to-teal-400 text-obsidian shadow-[0_0_25px_rgba(16,185,129,0.5)]"
+                    : "bg-gradient-to-tr from-rose-600 to-red-500 text-white shadow-[0_0_25px_rgba(244,63,94,0.5)]"
                 )}
               >
-                {/* Konfirmasi Jumlah Pengunjung Rombongan Sangat Jelas */}
-                <div className="rounded-xl border-2 border-fajar bg-hutan p-3 text-center">
-                  <p className="text-xs font-extrabold uppercase text-kabut">
-                    {t("admitGroupConfirm")}
-                  </p>
-                  <p
-                    data-testid="scan-confirm-admit-count"
-                    className="font-heading text-4xl font-black text-fajar"
-                  >
-                    {scanOutcome.ticket.admitCount}{" "}
-                    <span className="text-base font-bold text-kabut">
-                      {t("todayAdmittedUnit")}
-                    </span>
-                  </p>
-                </div>
-
-                <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <dt className="text-kabut/75">{t("ticketCodeLabel")}</dt>
-                    <dd className="font-mono text-sm font-extrabold text-kabut">
-                      {scanOutcome.ticket.publicCode}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-kabut/75">{t("visitorLabel")}</dt>
-                    <dd className="font-bold text-kabut truncate">
-                      {scanOutcome.ticket.visitorName}
-                    </dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-kabut/75">{t("productLabel")}</dt>
-                    <dd className="font-bold text-fajar">
-                      {scanOutcome.ticket.productName}
-                    </dd>
-                  </div>
-                </dl>
+                <i
+                  className={cn(
+                    "bi",
+                    scanOutcome.result === ScanResult.ACCEPTED
+                      ? "bi-check-lg"
+                      : "bi-x-lg"
+                  )}
+                  aria-hidden="true"
+                />
               </div>
-            ) : null}
 
-            <div className="pt-4">
-              <button
-                type="button"
-                data-testid="next-scan-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dismissOutcome();
-                }}
-                className="btn-ui btn-fajar py-3 px-8 text-sm font-black shadow-xl"
+              {/* Status Badge Pill */}
+              <div className="mt-3.5">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black tracking-wider uppercase border",
+                    scanOutcome.result === ScanResult.ACCEPTED
+                      ? "bg-emerald-950/90 text-emerald-300 border-emerald-400/50"
+                      : "bg-rose-950/90 text-rose-300 border-rose-400/50"
+                  )}
+                >
+                  <i
+                    className={cn(
+                      "bi",
+                      scanOutcome.result === ScanResult.ACCEPTED
+                        ? "bi-shield-check"
+                        : "bi-exclamation-triangle-fill"
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {scanOutcome.result === ScanResult.ACCEPTED
+                      ? t("scanResultAccepted")
+                      : t("scanResultRejected")}
+                  </span>
+                </span>
+              </div>
+
+              <h2 className="mt-2 font-heading text-2xl font-black text-white tracking-tight">
+                {scanOutcome.result === ScanResult.ACCEPTED
+                  ? "Akses Masuk Diizinkan"
+                  : "Pindaian Ditolak"}
+              </h2>
+
+              <p
+                className={cn(
+                  "mt-1.5 text-xs font-semibold px-2 leading-relaxed",
+                  scanOutcome.result === ScanResult.ACCEPTED
+                    ? "text-emerald-200/90"
+                    : "text-rose-200/90"
+                )}
               >
-                <i className="bi bi-qr-code-scan mr-2" aria-hidden="true" />
-                <span>{t("scannerNextScanBtn") || "Lanjut Pindai Berikutnya"}</span>
-              </button>
+                {getReasonText(scanOutcome.reason, scanOutcome.detail)}
+              </p>
             </div>
 
-            <p className="pt-2 text-xs font-bold text-kabut/80 uppercase">
-              {t("dismissOverlayBtn")}
-            </p>
+            {/* Perforated Stub Divider (Robekan Khas Tiket Boarding Pass) */}
+            <div className="relative flex items-center justify-between px-3">
+              <div className="h-6 w-6 -ml-6 rounded-full bg-black/90 border border-kabut/20 shadow-inner" />
+              <div className="flex-1 border-b-2 border-dashed border-kabut/25 mx-2" />
+              <div className="h-6 w-6 -mr-6 rounded-full bg-black/90 border border-kabut/20 shadow-inner" />
+            </div>
+
+            {/* Isi Tiket: Rombongan & Rincian Tiket */}
+            <div className="p-6 pt-4 space-y-4">
+              {scanOutcome.ticket ? (
+                <>
+                  {/* Hero Kotak Kapasitas Rombongan */}
+                  <div className="rounded-2xl border-2 border-fajar/60 bg-gradient-to-br from-amber-500/15 via-obsidian to-amber-600/10 p-4 text-center shadow-lg">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-fajar">
+                      {t("admitGroupConfirm")}
+                    </p>
+                    <div className="mt-1 flex items-center justify-center gap-2">
+                      <i className="bi bi-people-fill text-2xl text-fajar" aria-hidden="true" />
+                      <p
+                        data-testid="scan-confirm-admit-count"
+                        className="font-heading text-4xl font-black text-white"
+                      >
+                        {scanOutcome.ticket.admitCount}
+                      </p>
+                      <span className="text-base font-bold text-kabut">
+                        {t("todayAdmittedUnit")}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold text-kabut/75">
+                      {scanOutcome.result === ScanResult.ACCEPTED
+                        ? "Silakan persilakan seluruh anggota rombongan masuk bersamaan."
+                        : "Tiket tidak dapat digunakan untuk akses masuk."}
+                    </p>
+                  </div>
+
+                  {/* Ringkasan Data Tiket */}
+                  <div className="rounded-2xl border border-kabut/20 bg-hutan/80 p-4 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between border-b border-kabut/10 pb-2">
+                      <span className="text-kabut/70 flex items-center gap-1.5">
+                        <i className="bi bi-qr-code text-fajar" aria-hidden="true" />
+                        {t("ticketCodeLabel")}
+                      </span>
+                      <span className="font-mono text-sm font-extrabold text-white">
+                        {scanOutcome.ticket.publicCode}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-kabut/10 pb-2">
+                      <span className="text-kabut/70 flex items-center gap-1.5">
+                        <i className="bi bi-person-fill text-telaga-300" aria-hidden="true" />
+                        {t("visitorLabel")}
+                      </span>
+                      <span className="font-bold text-kabut truncate max-w-[200px]">
+                        {scanOutcome.ticket.visitorName}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-kabut/70 flex items-center gap-1.5">
+                        <i className="bi bi-ticket-detailed-fill text-fajar" aria-hidden="true" />
+                        {t("productLabel")}
+                      </span>
+                      <span className="font-bold text-fajar">
+                        {scanOutcome.ticket.productName}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Bila bukan tiket (misal QRIS pembayaran atau token tak dikenal) */
+                <div className="rounded-2xl border border-amber-500/40 bg-amber-950/40 p-4 text-center space-y-2">
+                  <i className="bi bi-info-circle-fill text-2xl text-amber-400" aria-hidden="true" />
+                  <p className="text-xs font-bold text-amber-200 leading-relaxed">
+                    {scanOutcome.reason === "QRIS_PAYMENT_SCANNED"
+                      ? "Perhatian: Yang Anda pindai adalah barcode pembayaran QRIS. Untuk tiket masuk gerbang, pastikan membuka menu 'Tiket Saya' di akun pemesan setelah pembayaran lunas."
+                      : "Barcode yang dipindai tidak terdaftar sebagai tiket masuk resmi Desa Cupang."}
+                  </p>
+                </div>
+              )}
+
+              {/* Tombol Aksi Utama */}
+              <div className="pt-2 space-y-2.5">
+                <button
+                  type="button"
+                  data-testid="next-scan-btn"
+                  onClick={dismissOutcome}
+                  className="btn-ui btn-fajar w-full py-3.5 text-sm font-black shadow-xl flex items-center justify-center gap-2"
+                >
+                  <i className="bi bi-camera-fill text-base" aria-hidden="true" />
+                  <span>{t("scannerNextScanBtn") || "Lanjut Pindai Berikutnya"}</span>
+                </button>
+
+                {/* Tombol Reset Uji Coba (Khusus jika ditolak karena ALREADY_SCANNED_AT_GATE) */}
+                {scanOutcome.reason === "ALREADY_SCANNED_AT_GATE" && scanOutcome.ticket ? (
+                  <button
+                    type="button"
+                    disabled={isResettingScan}
+                    onClick={() =>
+                      handleResetTicketScan(
+                        scanOutcome.ticket!.id,
+                        scanOutcome.ticket!.publicCode
+                      )
+                    }
+                    className="w-full rounded-xl border border-amber-500/50 bg-amber-950/60 py-2.5 px-4 text-xs font-bold text-amber-200 hover:bg-amber-900 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <i
+                      className={cn(
+                        "bi",
+                        isResettingScan
+                          ? "bi-arrow-repeat animate-spin"
+                          : "bi-arrow-counterclockwise"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {isResettingScan
+                        ? "Mereset Tiket..."
+                        : "Reset Scan Tiket Ini (Mode Uji Coba)"}
+                    </span>
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissOutcome();
+                    stopCamera();
+                  }}
+                  className="w-full py-2 text-center text-xs font-bold text-kabut/60 hover:text-kabut transition-colors"
+                >
+                  Tutup Pemindai Kamera
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
