@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { SignOutButton } from "@/components/dashboard/SignOutButton";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
@@ -42,6 +43,7 @@ export function DashboardSidebar({
   onSelectTab,
   title = "Wisata Desa Cupang",
 }: DashboardSidebarProps) {
+  const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
 
@@ -71,6 +73,7 @@ export function DashboardSidebar({
 
   const tLabels = {
     navMenu: isEn ? "Navigation" : "Menu Navigasi",
+    roleConsoles: isEn ? "Role Consoles" : "Konsol Peran",
     tourShortcuts: isEn ? "Explore Park" : "Pintasan Wisata",
     publicHome: isEn ? "Public Home" : "Beranda Publik",
     trailMap: isEn ? "Trail & Elevation Map" : "Peta Jalur & Elevasi",
@@ -90,19 +93,75 @@ export function DashboardSidebar({
   const roleConfig = {
     [Role.SUPER_ADMIN]: {
       label: "Super Admin",
+      badgeClass: "border-purple-500/50 bg-purple-500/15 text-purple-300 font-bold",
     },
     [Role.ADMIN]: {
       label: "Admin",
+      badgeClass: "border-fajar/50 bg-fajar/15 text-fajar font-bold",
     },
     [Role.STAFF]: {
       label: tLabels.staff,
+      badgeClass: "border-cyan-500/50 bg-cyan-500/15 text-cyan-300 font-bold",
     },
     [Role.MEMBER]: {
       label: "Member",
+      badgeClass: "border-emerald-500/50 bg-emerald-500/15 text-emerald-300 font-bold",
     },
   }[role] ?? {
     label: tLabels.user,
+    badgeClass: "border-white/10 bg-white/5 text-kabut/75 font-medium",
   };
+
+  const roleConsoles: Array<{
+    href: string;
+    label: string;
+    icon: string;
+    isActive: boolean;
+    badge?: string;
+  }> = [];
+
+  if (role === Role.SUPER_ADMIN) {
+    roleConsoles.push({
+      href: `/${locale}/dashboard/super-admin`,
+      label: "Super Admin",
+      icon: "bi-shield-shaded",
+      isActive: pathname.includes("/dashboard/super-admin"),
+      badge: "ROOT",
+    });
+  }
+
+  if (role === Role.SUPER_ADMIN || role === Role.ADMIN) {
+    roleConsoles.push({
+      href: `/${locale}/dashboard/admin`,
+      label: "Admin Wisata",
+      icon: "bi-gear-wide-connected",
+      isActive: pathname.includes("/dashboard/admin"),
+    });
+  }
+
+  if (role === Role.SUPER_ADMIN || role === Role.ADMIN || role === Role.STAFF) {
+    roleConsoles.push({
+      href: `/${locale}/dashboard/staff`,
+      label: isEn ? "Staff Scanner" : "Petugas Gerbang",
+      icon: "bi-qr-code-scan",
+      isActive: pathname.includes("/dashboard/staff"),
+    });
+  }
+
+  if (role !== Role.MEMBER) {
+    const isMemberViewActive =
+      !pathname.includes("/dashboard/super-admin") &&
+      !pathname.includes("/dashboard/admin") &&
+      !pathname.includes("/dashboard/staff") &&
+      pathname.includes("/dashboard");
+
+    roleConsoles.push({
+      href: `/${locale}/dashboard?view=member`,
+      label: isEn ? "Tourist Mode" : "Mode Wisatawan",
+      icon: "bi-person-badge",
+      isActive: isMemberViewActive,
+    });
+  }
 
   const initials =
     userAvatarInitials ||
@@ -170,7 +229,9 @@ export function DashboardSidebar({
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-white/5">
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium border border-white/10 bg-white/5 text-kabut/75">
+            <span
+              className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide border shadow-xs ${roleConfig.badgeClass}`}
+            >
               {roleConfig.label}
             </span>
 
@@ -193,6 +254,50 @@ export function DashboardSidebar({
             )}
           </div>
         </div>
+
+        {/* KONSOL PERAN (KHUSUS ROLE STAF / ADMIN / SUPER ADMIN) */}
+        {roleConsoles.length > 0 ? (
+          <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.02] p-2">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-kabut/45">
+                {tLabels.roleConsoles}
+              </p>
+              <span className="text-[9px] font-mono text-kabut/40 font-medium">
+                {roleConsoles.length} Konsol
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {roleConsoles.map((c) => (
+                <Link
+                  key={c.href}
+                  href={c.href}
+                  className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                    c.isActive
+                      ? "bg-fajar/20 text-fajar border border-fajar/40 shadow-xs"
+                      : "text-kabut/70 hover:bg-white/[0.06] hover:text-white border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <i
+                      className={`bi ${c.icon} text-xs ${
+                        c.isActive ? "text-fajar" : "text-kabut/50"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{c.label}</span>
+                  </div>
+                  {c.isActive ? (
+                    <span className="flex h-2 w-2 rounded-full bg-fajar shadow-[0_0_8px_rgba(235,130,60,0.8)]" />
+                  ) : c.badge ? (
+                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-white/5 text-kabut/60 border border-white/10">
+                      {c.badge}
+                    </span>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* DAFTAR MENU UTAMA DASHBOARD */}
         <div className="space-y-1">

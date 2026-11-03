@@ -59,7 +59,7 @@ export function SuperAdminDashboardClient({
     >
       {/* SIDEBAR NAV DARI KIRI (DESKTOP PERSISTENT + MOBILE DRAWER) */}
       <DashboardSidebar
-        role={Role.SUPER_ADMIN}
+        role={authCtx?.user.role ?? Role.SUPER_ADMIN}
         userName={authCtx?.user.name ?? "Super Administrator"}
         userEmail={authCtx?.user.email ?? "root@desacupang.id"}
         userAvatarImage={authCtx?.user.image}

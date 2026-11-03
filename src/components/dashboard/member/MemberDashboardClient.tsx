@@ -805,7 +805,7 @@ export function MemberDashboardClient({
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
       <DashboardSidebar
-        role={Role.MEMBER}
+        role={authCtx?.user.role ?? Role.MEMBER}
         userName={userName}
         userEmail={userEmail}
         userAvatarImage={authCtx?.user.image}
@@ -814,7 +814,15 @@ export function MemberDashboardClient({
         tabs={sidebarTabs}
         activeTab={activeTab}
         onSelectTab={(tabId) => selectTab(tabId as MemberDashboardTab)}
-        title="Dashboard Wisatawan"
+        title={
+          authCtx?.user.role === Role.SUPER_ADMIN
+            ? "Super Admin • Mode Wisatawan"
+            : authCtx?.user.role === Role.ADMIN
+            ? "Admin • Mode Wisatawan"
+            : authCtx?.user.role === Role.STAFF
+            ? "Petugas • Mode Wisatawan"
+            : "Dashboard Wisatawan"
+        }
       />
       <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Header Halaman Aktif */}

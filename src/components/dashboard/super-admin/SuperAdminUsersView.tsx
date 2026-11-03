@@ -96,6 +96,11 @@ export function SuperAdminUsersView() {
   async function handleChangeRole(targetUserId: string, newRole: Role) {
     setActionError(null);
     setActionSuccess(null);
+    const previousUsers = [...users];
+    // Pembaruan optimistik seketika pada state lokal agar dropdown & badge tidak mental
+    setUsers((prev) =>
+      prev.map((u) => (u.id === targetUserId ? { ...u, role: newRole } : u))
+    );
     try {
       const res = await fetch("/api/super-admin/users", {
         method: "PATCH",
@@ -109,6 +114,7 @@ export function SuperAdminUsersView() {
       setActionSuccess("Peran pengguna berhasil diperbarui.");
       await loadUsers(page, roleFilter, search);
     } catch (err: unknown) {
+      setUsers(previousUsers);
       setActionError(err instanceof Error ? err.message : "Gagal mengubah peran akun.");
     }
   }

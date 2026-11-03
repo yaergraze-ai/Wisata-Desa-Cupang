@@ -145,7 +145,18 @@ export async function updateUserRoleWithLastAdminGuard(
           },
         });
       }
+    } else if (!existingProfile.isActive) {
+      await db.staffProfile.update({
+        where: { id: existingProfile.id },
+        data: { isActive: true },
+      });
     }
+  } else {
+    // Jika role diubah dari STAFF ke role lain, nonaktifkan status keaktifan petugas
+    await db.staffProfile.updateMany({
+      where: { userId: targetUserId, isActive: true },
+      data: { isActive: false },
+    });
   }
 
   await writeAuditLog({
@@ -403,7 +414,17 @@ export async function superAdminUpdateUserProfile(
           },
         });
       }
+    } else if (!existingProfile.isActive) {
+      await db.staffProfile.update({
+        where: { id: existingProfile.id },
+        data: { isActive: true },
+      });
     }
+  } else if (data.role) {
+    await db.staffProfile.updateMany({
+      where: { userId: targetUserId, isActive: true },
+      data: { isActive: false },
+    });
   }
 
   await writeAuditLog({

@@ -79,7 +79,7 @@ export function AdminDashboardClient({
     >
       {/* SIDEBAR NAV DARI KIRI (DESKTOP PERSISTENT + MOBILE DRAWER) */}
       <DashboardSidebar
-        role={Role.ADMIN}
+        role={authCtx.user.role}
         userName={authCtx.user.name}
         userEmail={authCtx.user.email}
         userAvatarImage={authCtx.user.image}

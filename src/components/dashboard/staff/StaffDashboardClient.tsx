@@ -663,7 +663,7 @@ export function StaffDashboardClient({
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
       <DashboardSidebar
-        role={Role.STAFF}
+        role={authCtx?.user.role ?? Role.STAFF}
         userName={staff.name}
         userEmail={staff.email || "petugas@desacupang.id"}
         userAvatarImage={authCtx?.user.image}

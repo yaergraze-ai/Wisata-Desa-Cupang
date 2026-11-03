@@ -1,7 +1,8 @@
+import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { getTodayWibDateString } from "@/lib/datetime-wib";
-import { requirePageRole } from "@/server/auth/guards";
+import { getRoleHomePath, requirePageRole } from "@/server/auth/guards";
 import { calculateServerOrderQuote } from "@/server/pricing/quote-service";
 import { getMemberDashboardSnapshot } from "@/server/orders/order-service";
 import {
@@ -46,6 +47,20 @@ export default async function MemberDashboardPage({
     allowedRoles: [Role.MEMBER, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
     currentPath,
   });
+
+  // Jika akun memiliki peran staf/admin/super-admin dan tidak secara eksplisit membuka mode wisatawan:
+  // Alihkan otomatis ke dashboard peran resminya agar pembaruan peran langsung aktif seketika.
+  const isExplicitMemberView =
+    rawQuery.view === "member" ||
+    Boolean(rawQuery.pkg) ||
+    Boolean(rawQuery.order) ||
+    rawQuery.tab === "buy" ||
+    rawQuery.tab === "wallet" ||
+    rawQuery.tab === "orders";
+
+  if (authCtx.user.role !== Role.MEMBER && !isExplicitMemberView) {
+    redirect(`/${locale}${getRoleHomePath(authCtx.user.role)}`);
+  }
 
   const rawTab = typeof rawQuery.tab === "string" ? rawQuery.tab : undefined;
   const rawPkg = typeof rawQuery.pkg === "string" ? rawQuery.pkg : undefined;
