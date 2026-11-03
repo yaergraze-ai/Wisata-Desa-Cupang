@@ -82,7 +82,19 @@ export default async function LocaleLayout({
         />
         <style
           dangerouslySetInnerHTML={{
-            __html: `html.wdc-intro-dismissed #wdc-cinematic-intro { display: none !important; }`,
+            __html: `
+              html.wdc-intro-dismissed #wdc-cinematic-intro { display: none !important; }
+              html:not(.wdc-intro-dismissed) { overflow: hidden; }
+              #wdc-cinematic-intro {
+                position: fixed;
+                inset: 0;
+                z-index: 99999;
+                background: radial-gradient(circle at 50% 38%, #14281e 0%, #08120c 60%, #030604 100%);
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+              }
+            `,
           }}
         />
         <link

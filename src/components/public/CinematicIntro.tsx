@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import gsap from "gsap";
 
 export function CinematicIntro() {
   const [isDismissed, setIsDismissed] = useState<boolean>(() => {
@@ -23,8 +24,9 @@ export function CinematicIntro() {
       return false;
     }
   });
+
   const [altitude, setAltitude] = useState(0);
-  const [statusText, setStatusText] = useState("Menghubungkan sensor koordinat...");
+  const [statusText, setStatusText] = useState("Inisialisasi sensor koordinat Desa Cupang...");
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
 
@@ -35,6 +37,7 @@ export function CinematicIntro() {
   const meterRef = useRef<HTMLDivElement>(null);
   const progressLineRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<SVGSVGElement>(null);
+  const needleRef = useRef<SVGPathElement>(null);
 
   const handleFinish = useCallback(() => {
     try {
@@ -43,6 +46,7 @@ export function CinematicIntro() {
       localStorage.setItem("wdc_cinematic_intro_seen", "true");
       sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
       document.documentElement.classList.add("wdc-intro-dismissed");
+      document.documentElement.style.overflow = "";
     } catch {
       // ignore
     }
@@ -52,21 +56,17 @@ export function CinematicIntro() {
       return;
     }
 
-    // Animasi curtain exit halus ke atas dengan GSAP dinamis
-    void import("gsap").then(({ default: gsap }) => {
-      if (!containerRef.current) {
+    gsap.to(containerRef.current, {
+      yPercent: -100,
+      opacity: 0,
+      duration: 0.85,
+      ease: "power4.inOut",
+      onComplete: () => {
         setIsDismissed(true);
-        return;
-      }
-      gsap.to(containerRef.current, {
-        yPercent: -100,
-        opacity: 0,
-        duration: 0.85,
-        ease: "power4.inOut",
-        onComplete: () => {
-          setIsDismissed(true);
-        },
-      });
+        if (typeof document !== "undefined") {
+          document.documentElement.style.overflow = "";
+        }
+      },
     });
   }, []);
 
@@ -88,11 +88,8 @@ export function CinematicIntro() {
         return;
       }
 
-      // Segera kunci status seen agar saat refresh atau navigasi ulang, intro tidak akan pernah muncul lagi
-      const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
-      document.cookie = `wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax${isHttps ? "; Secure" : ""}`;
-      localStorage.setItem("wdc_cinematic_intro_seen", "true");
-      sessionStorage.setItem("wdc_cinematic_intro_seen", "true");
+      // Kunci overflow pada dokumen saat intro berjalan
+      document.documentElement.style.overflow = "hidden";
     } catch {
       // ignore
     }
@@ -103,6 +100,8 @@ export function CinematicIntro() {
           document.cookie = "wdc_intro_seen=; path=/; max-age=0";
           localStorage.removeItem("wdc_cinematic_intro_seen");
           sessionStorage.removeItem("wdc_cinematic_intro_seen");
+          document.documentElement.classList.remove("wdc-intro-dismissed");
+          document.documentElement.style.overflow = "";
         } catch {
           // ignore
         }
@@ -111,97 +110,108 @@ export function CinematicIntro() {
     }
   }, []);
 
-  // Jalankan animasi sinematik lengkap sampai tuntas dengan GSAP lazy-loaded
+  // Timeline animasi sinematik utama GSAP
   useEffect(() => {
-    if (isDismissed) return;
+    if (isDismissed || !containerRef.current) return;
 
     let isCancelled = false;
 
-    void import("gsap").then(({ default: gsap }) => {
-      if (isCancelled || !containerRef.current) return;
+    // 1. Reset posisi awal elemen
+    gsap.set(emblemRef.current, { scale: 0.7, opacity: 0 });
+    gsap.set([titleRef.current, subtitleRef.current, meterRef.current], {
+      y: 24,
+      opacity: 0,
+    });
 
-      // 1. Reset posisi elemen
-      gsap.set(emblemRef.current, { scale: 0.8, opacity: 0 });
-      gsap.set([titleRef.current, subtitleRef.current, meterRef.current], {
-        y: 20,
-        opacity: 0,
+    // 2. Cincin koordinat berputar perlahan
+    if (ringRef.current) {
+      gsap.to(ringRef.current, {
+        rotation: 360,
+        duration: 20,
+        repeat: -1,
+        ease: "none",
+        transformOrigin: "center center",
       });
+    }
 
-      // 2. Timeline Pembuka Sinematik
-      const tl = gsap.timeline();
+    // Jarum kompas bergetar presisi
+    if (needleRef.current) {
+      gsap.to(needleRef.current, {
+        rotation: 8,
+        duration: 1.2,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+        transformOrigin: "center center",
+      });
+    }
 
-      tl.to(emblemRef.current, {
-        scale: 1,
-        opacity: 1,
-        duration: 0.7,
-        ease: "back.out(1.6)",
-      })
-        .to(
-          [titleRef.current, subtitleRef.current],
-          {
-            y: 0,
-            opacity: 1,
-            stagger: 0.12,
-            duration: 0.65,
-            ease: "power3.out",
-          },
-          "-=0.3"
-        )
-        .to(
-          meterRef.current,
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.5,
-            ease: "power2.out",
-          },
-          "-=0.2"
-        );
+    // 3. Timeline Pembuka Sinematik
+    const tl = gsap.timeline();
 
-      // Cincin koordinat berputar perlahan
-      if (ringRef.current) {
-        gsap.to(ringRef.current, {
-          rotation: 360,
-          duration: 25,
-          repeat: -1,
-          ease: "none",
-        });
-      }
+    tl.to(emblemRef.current, {
+      scale: 1,
+      opacity: 1,
+      duration: 0.7,
+      ease: "back.out(1.7)",
+    })
+      .to(
+        [titleRef.current, subtitleRef.current],
+        {
+          y: 0,
+          opacity: 1,
+          stagger: 0.12,
+          duration: 0.65,
+          ease: "power3.out",
+        },
+        "-=0.3"
+      )
+      .to(
+        meterRef.current,
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out",
+        },
+        "-=0.2"
+      );
 
-      // Animasi Ketinggian 0 mdpl -> 520 mdpl (2.6s ritme stabil & megah)
-      const counterObj = { val: 0, p: 0 };
-      gsap.to(counterObj, {
-        val: 520,
-        p: 100,
-        duration: 2.6,
-        ease: "power2.inOut",
-        onUpdate: () => {
-          if (isCancelled) return;
-          const currentVal = Math.round(counterObj.val);
-          setAltitude(currentVal);
-          setProgress(Math.round(counterObj.p));
+    // 4. Simulasi Ketinggian 0 mdpl -> 520 mdpl (2.6s ritme stabil)
+    const counterObj = { val: 0, p: 0 };
+    gsap.to(counterObj, {
+      val: 520,
+      p: 100,
+      duration: 2.6,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (isCancelled) return;
+        const currentVal = Math.round(counterObj.val);
+        setAltitude(currentVal);
+        setProgress(Math.round(counterObj.p));
 
-          if (currentVal < 180) {
-            setStatusText("Memindai Tebing Purba Batu Lawang...");
-          } else if (currentVal < 420) {
-            setStatusText("Mengkalibrasi Pos Pendakian Gunung Bendera...");
-          } else {
-            setStatusText("Elevasi 520 mdpl Tercapai • Selamat Datang di Desa Cupang!");
+        if (currentVal < 120) {
+          setStatusText("Memindai Gerbang Tebing Purba Batu Lawang...");
+        } else if (currentVal < 280) {
+          setStatusText("Mendaki Jalur Hutan Batu Karst Cupang...");
+        } else if (currentVal < 450) {
+          setStatusText("Menembus Kabut Pos 3 Punggung Bukit...");
+        } else {
+          setStatusText("Elevasi 520 mdpl Puncak Tercapai • Kawasan Siap Dijelajahi!");
+        }
+      },
+      onComplete: () => {
+        if (isCancelled) return;
+        setIsComplete(true);
+        setStatusText("Elevasi 520 mdpl Puncak Tercapai • Kawasan Siap Dijelajahi!");
+
+        // Berikan waktu sejenak agar pengunjung dapat menikmati pemandangan elevasi puncak, lalu buka halaman
+        setTimeout(() => {
+          if (!isCancelled) {
+            handleFinish();
           }
-        },
-        onComplete: () => {
-          if (isCancelled) return;
-          setIsComplete(true);
-          setStatusText("Elevasi 520 mdpl Selesai • Kawasan Siap Dijelajahi");
-
-          // Jeda 1.8 detik saat selesai agar pengunjung dapat menyerap seluruh intro, lalu transisi halus
-          setTimeout(() => {
-            if (!isCancelled) {
-              handleFinish();
-            }
-          }, 1800);
-        },
-      });
+        }, 1200);
+      },
     });
 
     return () => {
@@ -219,12 +229,12 @@ export function CinematicIntro() {
         role="dialog"
         aria-modal="true"
         aria-label="Animasi Pembuka Wisata Desa Cupang"
-        className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-obsidian text-kabut overflow-hidden select-none px-4 py-8 sm:py-12"
+        className="fixed inset-0 z-[99999] flex flex-col items-center justify-between text-kabut overflow-hidden select-none px-4 py-8 sm:py-12"
         style={{
-          background: "radial-gradient(circle at 50% 40%, #15241c 0%, #0a110d 65%, #050806 100%)",
+          background: "radial-gradient(circle at 50% 38%, #14281e 0%, #08120c 60%, #030604 100%)",
         }}
       >
-        {/* Anti-Flash Synchronous Parser Guard: Sembunyikan seketika sebelum frame digambar jika sudah pernah dilihat */}
+        {/* Anti-Flash Synchronous Guard Script */}
         <script
           dangerouslySetInnerHTML={{
             __html: `try{if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){var el=document.getElementById('wdc-cinematic-intro');if(el){el.style.display='none';el.setAttribute('aria-hidden','true');}}}catch(e){}`,
@@ -247,7 +257,7 @@ export function CinematicIntro() {
         {/* Bagian Atas: Tombol Lewati & Badge Resmi */}
         <div className="relative z-10 w-full max-w-4xl flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-full border border-telaga-700/60 bg-hutan-900/80 px-3 py-1 text-xs font-semibold text-telaga-300 backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-fajar" />
+            <span className="h-2 w-2 rounded-full bg-fajar animate-ping" />
             <span>PEMERINTAH DESA CUPANG • GEMPOL</span>
           </div>
 
@@ -255,7 +265,7 @@ export function CinematicIntro() {
             type="button"
             onClick={handleFinish}
             aria-label="Lewati animasi intro"
-            className="btn-ui btn-glass min-h-[40px] px-3.5 py-1.5 text-xs font-semibold text-kabut/80 hover:text-fajar transition-colors"
+            className="btn-ui btn-glass min-h-[40px] px-3.5 py-1.5 text-xs font-semibold text-kabut/80 hover:text-fajar transition-colors cursor-pointer"
           >
             <span>Lewati</span>
             <i className="bi bi-chevron-double-right text-fajar text-xs" aria-hidden="true" />
@@ -275,6 +285,13 @@ export function CinematicIntro() {
               <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 5" />
               <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(242,166,90,0.3)" strokeWidth="1" />
               <path d="M100 5 L100 15 M100 185 L100 195 M5 100 L15 100 M185 100 L195 100" stroke="#f2a65a" strokeWidth="2" />
+              {/* Jarum Kompas */}
+              <path
+                ref={needleRef}
+                d="M100 35 L106 100 L94 100 Z"
+                fill="#eb823c"
+                opacity="0.9"
+              />
             </svg>
 
             {/* Ikon Pusat */}
@@ -346,7 +363,7 @@ export function CinematicIntro() {
           <button
             type="button"
             onClick={handleFinish}
-            className={`btn-ui btn-fajar w-full max-w-xs shadow-lg shadow-fajar/25 text-xs font-bold py-2.5 transition-all ${
+            className={`btn-ui btn-fajar w-full max-w-xs shadow-lg shadow-fajar/25 text-xs font-bold py-2.5 transition-all cursor-pointer ${
               isComplete ? "scale-105 ring-2 ring-fajar" : ""
             }`}
           >
@@ -358,23 +375,6 @@ export function CinematicIntro() {
           </p>
         </div>
       </div>
-
-      {/* Script sinkron pasca-elemen: Menyembunyikan intro seketika sebelum frame pertama jika sudah pernah dilihat */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            try {
-              var cookieSeen = document.cookie.indexOf("wdc_intro_seen=true") !== -1;
-              var localSeen = localStorage.getItem("wdc_cinematic_intro_seen") === "true";
-              var sessionSeen = sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
-              if (cookieSeen || localSeen || sessionSeen) {
-                var el = document.getElementById("wdc-cinematic-intro");
-                if (el) el.style.display = "none";
-              }
-            } catch(e) {}
-          `,
-        }}
-      />
     </>
   );
 }
