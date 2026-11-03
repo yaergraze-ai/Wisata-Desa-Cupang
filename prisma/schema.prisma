@@ -325,6 +325,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+  @@index([tariffId])
 }
 
 model Ticket {
@@ -351,6 +352,7 @@ model Ticket {
 
   @@index([visitDate, status])
   @@index([orderId])
+  @@index([productId])
 }
 
 model GateScan {
@@ -405,6 +407,7 @@ model Review {
 
   @@index([status, createdAt])
   @@index([userId])
+  @@index([repliedById])
 }
 
 model ReviewReaction {
@@ -456,6 +459,8 @@ model RefundRequest {
 
   @@index([status, createdAt])
   @@index([orderId])
+  @@index([requestedById])
+  @@index([decidedById])
 }
 
 model StaffProfile {
@@ -493,6 +498,7 @@ model LeaveRequest {
   createdAt      DateTime     @default(now())
 
   @@index([destinationId, createdAt])
+  @@index([staffProfileId])
 }
 
 model Notification {
@@ -547,6 +553,8 @@ model MediaAsset {
   createdAt    DateTime @default(now())
 
   slots MediaSlot[]
+
+  @@index([uploadedById])
 }
 
 model MediaSlot {
@@ -558,6 +566,8 @@ model MediaSlot {
   labelEn     String
   updatedAt   DateTime   @updatedAt
   updatedById String?
+
+  @@index([assetId])
 }
 
 model ContactMessage {
