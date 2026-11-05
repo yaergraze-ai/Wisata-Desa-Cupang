@@ -1,0 +1,16 @@
+flowchart TD
+  MULAI([Mulai]) --> INFO["Wisatawan membuka informasi Batu Lawang atau Gunung Bendera"]
+  INFO --> PILIH["Pilih jenis tiket, tanggal, dan jumlah"]
+  PILIH --> CEK{"Kuota tersedia?"}
+  CEK -- Tidak --> TOLAK["Tampilkan informasi kuota habis"] --> SELESAI([Selesai])
+  CEK -- Ya --> RES["Simpan pesanan PENDING dan cadangkan kuota"]
+  RES --> BYR["Wisatawan melakukan pembayaran melalui Midtrans"]
+  BYR --> NOTIF["Sistem memverifikasi notifikasi pembayaran"]
+  NOTIF --> SUKSES{"Pembayaran berhasil?"}
+  SUKSES -- Tidak --> GAGAL["Tampilkan status gagal / kedaluwarsa; lepas kuota sesuai aturan"] --> SELESAI
+  SUKSES -- Ya --> TIKET["Terbitkan e-tiket dengan QR unik"]
+  TIKET --> DATANG["Wisatawan datang dan menunjukkan QR"]
+  DATANG --> PINDAI["Petugas memindai QR"]
+  PINDAI --> VALID{"Tanggal, gerbang, status, penggunaan sesuai?"}
+  VALID -- Tidak --> DITOLAK["Catat pemeriksaan ditolak"] --> SELESAI
+  VALID -- Ya --> DITERIMA["Catat tiket diterima"] --> SELESAI
