@@ -1,0 +1,40 @@
+name: Build APBO Proposal PDF
+on:
+  push:
+    branches:
+      - proposal-apbo-word-20261105
+    paths:
+      - '.github/workflows/build-apbo-pdf.yml'
+      - 'tools/build_apbo_pdf.py'
+      - 'Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_Naskah_Bersih.docx'
+
+permissions:
+  contents: write
+
+jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout document branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare PDF converter
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libreoffice-writer fonts-liberation >/dev/null
+          python -m pip install --quiet python-docx
+      - name: Convert complete proposal to PDF
+        run: python tools/build_apbo_pdf.py
+      - name: Commit the PDF to the document branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_Lengkap.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "Save complete APBO PDF including references [skip ci]"
+            git push
+          fi
