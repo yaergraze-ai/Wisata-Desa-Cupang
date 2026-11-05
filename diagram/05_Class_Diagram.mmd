@@ -1,0 +1,68 @@
+classDiagram
+  class Pengguna {
+    +String id
+    +String nama
+    +String email
+    +Role peran
+  }
+  class Destinasi {
+    +String id
+    +String nama
+    +String deskripsi
+    +String lokasi
+  }
+  class FotoDestinasi {
+    +String id
+    +String urlFoto
+    +String keterangan
+  }
+  class ProdukTiket {
+    +String id
+    +String nama
+    +String kode
+    +String izinGerbang
+  }
+  class TarifTiket {
+    +Decimal hargaDasar
+    +Decimal biayaTambahan
+    +Date berlakuMulai
+  }
+  class KuotaHarian {
+    +Date tanggal
+    +int kapasitas
+    +int terpesan
+  }
+  class Pesanan {
+    +String nomor
+    +Date tanggalKunjung
+    +Status status
+    +Decimal total
+  }
+  class ItemPesanan {
+    +int jumlah
+    +Decimal hargaSatuan
+  }
+  class Pembayaran {
+    +String id
+    +String referensi
+    +Status status
+  }
+  class Tiket {
+    +String kodePublik
+    +Date tanggal
+    +Status status
+  }
+  class PemindaianGerbang {
+    +DateTime waktu
+    +String gerbang
+    +String hasil
+  }
+  Pengguna "1" --> "0..*" Pesanan : membuat
+  Destinasi "1" --> "0..*" FotoDestinasi : memiliki
+  Destinasi "1" --> "0..*" KuotaHarian : kuota
+  ProdukTiket "1" --> "0..*" TarifTiket : tarif
+  Pesanan "1" *-- "1..*" ItemPesanan : rincian
+  ItemPesanan "0..*" --> "1" ProdukTiket : produk
+  Pesanan "1" --> "0..1" Pembayaran : pembayaran
+  Pesanan "1" --> "0..*" Tiket : menghasilkan
+  Tiket "1" --> "0..*" PemindaianGerbang : digunakan
