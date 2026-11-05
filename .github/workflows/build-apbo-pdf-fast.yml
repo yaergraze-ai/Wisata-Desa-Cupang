@@ -1,0 +1,30 @@
+name: Build Complete APBO PDF (Fast)
+on:
+  push:
+    branches: [proposal-apbo-word-20261105]
+    paths: ['.github/workflows/build-apbo-pdf-fast.yml']
+permissions:
+  contents: write
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare Python PDF tools
+        run: python -m pip install --quiet python-docx reportlab pillow
+      - name: Compile proposal PDF
+        run: python tools/build_apbo_pdf_reportlab.py
+      - name: Save completed PDF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_Lengkap.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "PDF proposal APBO lengkap - BAB I-III dan pustaka [skip ci]"
+            git pull --rebase origin proposal-apbo-word-20261105
+            git push
+          fi
