@@ -1,0 +1,17 @@
+flowchart LR
+  W["Wisatawan (Member)"]
+  P["Petugas Gerbang"]
+  A["Admin"]
+  S["Super Admin"]
+  M["Layanan Pembayaran (Midtrans)"]
+  SISTEM(("P0 Sistem Informasi Wisata Desa Cupang"))
+  W -->|"Pilihan destinasi, tiket, tanggal, jumlah, data pemesan"| SISTEM
+  SISTEM -->|"Informasi wisata, kuota, status pesanan, e-tiket"| W
+  P -->|"Kode QR, lokasi gerbang, identitas petugas"| SISTEM
+  SISTEM -->|"Hasil validasi tiket dan riwayat pemeriksaan"| P
+  A -->|"Foto, informasi destinasi, tarif dan kuota"| SISTEM
+  SISTEM -->|"Data pesanan, ringkasan transaksi dan laporan"| A
+  S -->|"Pengguna, peran dan konfigurasi"| SISTEM
+  SISTEM -->|"Status perubahan dan audit"| S
+  SISTEM -->|"Permintaan transaksi dan nominal"| M
+  M -->|"Notifikasi status pembayaran"| SISTEM
