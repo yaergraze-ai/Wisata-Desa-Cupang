@@ -1,0 +1,34 @@
+flowchart LR
+  W["Wisatawan / Member"]
+  P["Petugas Gerbang"]
+  A["Admin"]
+  S["Super Admin"]
+  M["Midtrans"]
+  subgraph SISTEM["Sistem Informasi Wisata Desa Cupang"]
+    L(["Lihat informasi dan galeri"])
+    PS(["Pesan tiket"])
+    Q(["Periksa kuota"])
+    HT(["Hitung total"])
+    BY(["Bayar pesanan"])
+    E(["Lihat e-tiket"])
+    V(["Validasi QR"])
+    C(["Catat hasil scan"])
+    K(["Kelola destinasi, foto, tarif, kuota"])
+    R(["Lihat laporan"])
+    U(["Kelola pengguna dan hak akses"])
+    T(["Konfirmasi pembayaran"])
+    TER(["Terbitkan e-tiket"])
+  end
+  W --- L
+  W --- PS
+  W --- BY
+  W --- E
+  PS -. "include" .-> Q
+  PS -. "include" .-> HT
+  M --- T
+  T -. "jika berhasil" .-> TER
+  P --- V
+  V -. "include" .-> C
+  A --- K
+  A --- R
+  S --- U
