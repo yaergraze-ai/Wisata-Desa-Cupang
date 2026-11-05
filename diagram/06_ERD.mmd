@@ -1,0 +1,78 @@
+erDiagram
+  PENGGUNA ||--o{ PESANAN : membuat
+  DESTINASI ||--o{ FOTO_DESTINASI : memiliki
+  DESTINASI ||--o{ KUOTA_HARIAN : memiliki
+  PRODUK_TIKET ||--o{ TARIF_TIKET : memiliki
+  PESANAN ||--|{ ITEM_PESANAN : terdiri
+  PRODUK_TIKET ||--o{ ITEM_PESANAN : dipesan
+  PESANAN ||--o| PEMBAYARAN : memiliki
+  PESANAN ||--o{ TIKET : menerbitkan
+  TIKET ||--o{ PEMINDAIAN_GERBANG : dicatat
+  PENGGUNA {
+    string id PK
+    string nama
+    string email
+    string peran
+  }
+  DESTINASI {
+    string id PK
+    string nama
+    string deskripsi
+    string lokasi
+  }
+  FOTO_DESTINASI {
+    string id PK
+    string destinasi_id FK
+    string url
+    string keterangan
+  }
+  PRODUK_TIKET {
+    string id PK
+    string nama
+    string izin_gerbang
+  }
+  TARIF_TIKET {
+    string id PK
+    string produk_id FK
+    decimal harga_dasar
+    date berlaku_mulai
+  }
+  KUOTA_HARIAN {
+    string id PK
+    string destinasi_id FK
+    date tanggal
+    int kapasitas
+  }
+  PESANAN {
+    string id PK
+    string pengguna_id FK
+    date tanggal_kunjung
+    string status
+    decimal total
+  }
+  ITEM_PESANAN {
+    string id PK
+    string pesanan_id FK
+    string produk_id FK
+    int jumlah
+    decimal harga_satuan
+  }
+  PEMBAYARAN {
+    string id PK
+    string pesanan_id FK
+    string status
+    string referensi
+  }
+  TIKET {
+    string id PK
+    string pesanan_id FK
+    string kode_publik
+    string status
+  }
+  PEMINDAIAN_GERBANG {
+    string id PK
+    string tiket_id FK
+    string gerbang
+    datetime waktu
+    string hasil
+  }
