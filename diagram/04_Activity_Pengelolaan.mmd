@@ -1,0 +1,15 @@
+flowchart TD
+  MULAI([Mulai]) --> LOGIN["Admin / Super Admin masuk"]
+  LOGIN --> AKSES{"Hak akses sesuai?"}
+  AKSES -- Tidak --> DITOLAK["Tolak akses"] --> SELESAI([Selesai])
+  AKSES -- Ya --> OPSI{"Pilih tindakan"}
+  OPSI -->|"Konten wisata"| KONTEN["Tambah/ubah foto, deskripsi, dan fasilitas"]
+  OPSI -->|"Tiket dan kuota"| TIKET["Atur produk, tarif aktif, kapasitas"]
+  OPSI -->|"Pengguna (Super Admin)"| USER["Atur akun petugas dan peran"]
+  OPSI -->|"Laporan"| LAP["Tampilkan rekap pesanan dan kunjungan"]
+  KONTEN --> VALID["Validasi data serta simpan perubahan"]
+  TIKET --> VALID
+  USER --> VALID
+  VALID --> AUDIT["Catat siapa yang mengubah dan waktunya"]
+  AUDIT --> SELESAI
+  LAP --> SELESAI
