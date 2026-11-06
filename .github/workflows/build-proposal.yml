@@ -1,0 +1,48 @@
+name: Build complete APBO proposal
+on:
+  push:
+    branches: [proposal-apbo-word-20261105]
+    paths:
+      - ".github/workflows/build-proposal.yml"
+      - "scripts/build_proposal_complete.py"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-proposal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install diagram and document libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y graphviz libreoffice-writer
+          python -m pip install --disable-pip-version-check python-docx pillow graphviz
+      - name: Create Word with diagrams and bibliography
+        run: python scripts/build_proposal_complete.py
+      - name: Export PDF
+        run: |
+          libreoffice -env:UserInstallation=file:///tmp/lo_apbo_$GITHUB_RUN_ID --headless --convert-to pdf --outdir . "Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.docx"
+          test -s "Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.pdf"
+      - name: Verify files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from docx import Document
+          p=Path("Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.docx")
+          d=Document(p)
+          assert len(d.inline_shapes)>=6
+          assert Path("Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.pdf").stat().st_size>50000
+          print("Files verified:",p.stat().st_size,len(d.inline_shapes))
+          PY
+      - name: Commit completed proposal to document branch
+        run: |
+          git config user.name "APBO Document Builder"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.docx" "Proposal_APBO_Wisata_Desa_Cupang_Kana_Nurhana_FINAL.pdf" diagram_final/*.png
+          git commit -m "Build final APBO proposal with diagrams and references" || exit 0
+          git push
