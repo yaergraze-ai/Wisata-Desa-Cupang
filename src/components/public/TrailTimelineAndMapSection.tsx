@@ -382,7 +382,7 @@ export function TrailTimelineAndMapSection({
 
           <div
             style={{ touchAction: "pan-x pan-y", WebkitOverflowScrolling: "touch" }}
-            className="flex items-center gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex w-full sm:w-auto min-w-0 max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             {stages.map((stg, i) => {
               const elev = i === 0 ? "210 mdpl" : i === 1 ? "290 mdpl" : i === 2 ? "410 mdpl" : "520 mdpl";
@@ -453,10 +453,10 @@ export function TrailTimelineAndMapSection({
                 stageIdx === 0
                   ? "Elevasi Dasar 210 mdpl"
                   : stageIdx === 1
-                  ? "↗ Tanjakan +80m (290 mdpl)"
+                  ? "Tanjakan +80m (290 mdpl)"
                   : stageIdx === 2
-                  ? "↗ Tanjakan +120m (410 mdpl)"
-                  : "👑 Puncak Tertinggi 520 mdpl (+110m)";
+                  ? "Tanjakan +120m (410 mdpl)"
+                  : "Puncak Tertinggi 520 mdpl (+110m)";
 
               return (
                 <article
@@ -483,7 +483,11 @@ export function TrailTimelineAndMapSection({
                         : "border-telaga bg-obsidian text-kabut"
                     )}
                   >
-                    {isSummit ? "👑" : stageIdx + 1}
+                    {isSummit ? (
+                      <i className="bi bi-flag-fill text-xs" aria-hidden="true" />
+                    ) : (
+                      stageIdx + 1
+                    )}
                   </span>
 
                   {/* KONTEN TAHAP DENGAN ASIMETRIS / ZIG-ZAG */}

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   ...(process.env.NEXT_STANDALONE === "true" ? { output: "standalone" } : {}),
   poweredByHeader: false,
   reactStrictMode: true,
+  devIndicators: false,
   agentRules: false,
   turbopack: {
     root: path.resolve(__dirname),
@@ -18,6 +19,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/webp"],
+    qualities: [72, 75, 78, 85],
     remotePatterns: [
       {
         protocol: "https",

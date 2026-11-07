@@ -45,18 +45,19 @@ function getCircularOffset(index: number, active: number, total: number): number
   return diff;
 }
 
-function getCardTransform(offset: number, isMobile: boolean) {
+function getCardTransform(offset: number, isMobile: boolean, dragDeltaX: number) {
   const abs = Math.abs(offset);
-  const stepX = isMobile ? 34 : 56;
-  const stepZ = isMobile ? -50 : -95;
-  const rotY = isMobile ? -7 : -11;
+  const stepX = isMobile ? 25 : 54;
+  const stepZ = isMobile ? -44 : -92;
+  const rotY = isMobile ? -6 : -11;
 
   if (abs === 0) {
+    const clampedDrag = Math.max(-95, Math.min(95, dragDeltaX));
     return {
-      x: 0,
+      x: clampedDrag * 0.65,
       y: 0,
       z: 0,
-      rotateY: 0,
+      rotateY: clampedDrag * 0.08,
       scale: 1,
       opacity: 1,
       zIndex: 30,
@@ -65,8 +66,8 @@ function getCardTransform(offset: number, isMobile: boolean) {
 
   if (abs === 1) {
     return {
-      x: offset * stepX,
-      y: isMobile ? 8 : 14,
+      x: offset * stepX + dragDeltaX * 0.18,
+      y: isMobile ? 7 : 14,
       z: stepZ,
       rotateY: offset * rotY,
       scale: isMobile ? 0.9 : 0.91,
@@ -76,12 +77,12 @@ function getCardTransform(offset: number, isMobile: boolean) {
   }
 
   return {
-    x: offset * (stepX * 1.48),
-    y: isMobile ? 16 : 28,
-    z: stepZ * 1.75,
-    rotateY: offset * (rotY * 1.3),
+    x: offset * (stepX * 1.42) + dragDeltaX * 0.08,
+    y: isMobile ? 14 : 26,
+    z: stepZ * 1.7,
+    rotateY: offset * (rotY * 1.25),
     scale: isMobile ? 0.8 : 0.82,
-    opacity: 0.42,
+    opacity: 0.4,
     zIndex: 10,
   };
 }
@@ -101,18 +102,40 @@ export function HeroGallery({
   const [selectedPackage, setSelectedPackage] = useState<
     "REGULER_BL" | "TIKET_PUTIH"
   >("TIKET_PUTIH");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [dragDeltaX, setDragDeltaX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [loadedBgMap, setLoadedBgMap] = useState<Record<string, boolean>>({});
   const [loadedCardMap, setLoadedCardMap] = useState<Record<string, boolean>>({});
 
   const heroSectionRef = useRef<HTMLElement | null>(null);
   const bgImageWrapRef = useRef<HTMLDivElement | null>(null);
-  const displayHeadlineRef = useRef<HTMLHeadingElement | null>(null);
-  const subheadlineRef = useRef<HTMLParagraphElement | null>(null);
   const cardStageRef = useRef<HTMLDivElement | null>(null);
-  const dragProxyRef = useRef<HTMLDivElement | null>(null);
-  const cardElsRef = useRef<Array<HTMLElement | null>>([]);
-  const activeIndexRef = useRef(0);
-  const gsapRef = useRef<typeof import("gsap").gsap | null>(null);
+  const gestureRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    lastX: number;
+    lockedAxis: "x" | "y" | null;
+    swallowedClick: boolean;
+  }>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lockedAxis: null,
+    swallowedClick: false,
+  });
+
+  // Pantau ukuran layar mobile vs desktop agar offset kartu 3D selalu proporsional dan tidak keluar layar
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => setIsMobileViewport(mq.matches);
+    syncViewport();
+    mq.addEventListener("change", syncViewport);
+    return () => mq.removeEventListener("change", syncViewport);
+  }, []);
 
   const batuLawang = useMemo(
     () => destinations.find((d) => d.slug === "batu-lawang") ?? destinations[0],
@@ -278,54 +301,86 @@ export function HeroGallery({
   const activeCard = (cards[activeIndex] ?? cards[0])!;
   const isActiveBgLoaded = Boolean(loadedBgMap[activeCard.id]);
 
-  const animateCardsToIndex = useCallback(
-    (targetIdx: number, immediate = false) => {
+  const goToCard = useCallback(
+    (targetIdx: number) => {
       const total = cards.length;
       if (total === 0) return;
       const normalized = ((targetIdx % total) + total) % total;
-      activeIndexRef.current = normalized;
       setActiveIndex(normalized);
+      setDragDeltaX(0);
+      setIsDragging(false);
 
       const targetCard = cards[normalized];
       if (targetCard?.linkedPackage) {
         setSelectedPackage(targetCard.linkedPackage);
       }
-
-      const gsap = gsapRef.current;
-      if (!gsap) return;
-
-      const isMobile =
-        typeof window !== "undefined" &&
-        window.matchMedia("(max-width: 767px)").matches;
-
-      cardElsRef.current.forEach((el, idx) => {
-        if (!el) return;
-        const offset = getCircularOffset(idx, normalized, total);
-        const tf = getCardTransform(offset, isMobile);
-
-        gsap.to(el, {
-          x: tf.x,
-          y: tf.y,
-          z: tf.z,
-          rotationY: tf.rotateY,
-          scale: tf.scale,
-          opacity: tf.opacity,
-          zIndex: tf.zIndex,
-          duration: immediate ? 0 : 0.62,
-          ease: "power3.out",
-          overwrite: "auto",
-        });
-      });
     },
     [cards]
   );
 
-  const goToCard = useCallback(
-    (nextIdx: number) => {
-      animateCardsToIndex(nextIdx, false);
-    },
-    [animateCardsToIndex]
-  );
+  // Gesture geser kiri/kanan pada tumpukan kartu 3D yang tidak pernah mengganggu scroll vertikal ke bawah
+  const beginGesture = (clientX: number, clientY: number) => {
+    gestureRef.current = {
+      active: true,
+      startX: clientX,
+      startY: clientY,
+      lastX: clientX,
+      lockedAxis: null,
+      swallowedClick: false,
+    };
+  };
+
+  const moveGesture = (clientX: number, clientY: number) => {
+    const g = gestureRef.current;
+    if (!g.active) return;
+
+    const dx = clientX - g.startX;
+    const dy = clientY - g.startY;
+
+    if (!g.lockedAxis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      g.lockedAxis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    }
+
+    if (g.lockedAxis === "y") {
+      // Pengguna sedang scroll ke bawah/atas; lepaskan drag kartu sepenuhnya
+      g.active = false;
+      setIsDragging(false);
+      setDragDeltaX(0);
+      return;
+    }
+
+    g.lastX = clientX;
+    if (Math.abs(dx) > 10) {
+      g.swallowedClick = true;
+    }
+    setIsDragging(true);
+    setDragDeltaX(dx);
+  };
+
+  const endGesture = () => {
+    const g = gestureRef.current;
+    if (!g.active) {
+      setIsDragging(false);
+      setDragDeltaX(0);
+      return;
+    }
+
+    const dx = g.lastX - g.startX;
+    const wasHorizontal = g.lockedAxis === "x";
+    g.active = false;
+    g.lockedAxis = null;
+    setIsDragging(false);
+    setDragDeltaX(0);
+
+    if (wasHorizontal && Math.abs(dx) > 32) {
+      if (dx < 0) {
+        goToCard(activeIndex + 1);
+      } else {
+        goToCard(activeIndex - 1);
+      }
+    }
+  };
 
   const scrollToCalculatorWithPackage = useCallback(
     (pkg: "REGULER_BL" | "TIKET_PUTIH") => {
@@ -343,89 +398,28 @@ export function HeroGallery({
     []
   );
 
-  // Inisialisasi GSAP: SplitText/stagger, ScrollTrigger paralaks, dan Draggable 3D
+  // Paralaks ringan latar belakang saat scroll (hanya desktop atau bila gerakan diizinkan)
   useEffect(() => {
     let cancelled = false;
     let cleanupCtx: (() => void) | undefined;
-    let cleanupMm: (() => void) | undefined;
-    let idleHandle: number | null = null;
-    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-    const initHeroGsap = async () => {
-      const [gsapMod, scrollTriggerMod, draggableMod, splitTextMod] =
-        await Promise.all([
-          import("gsap"),
-          import("gsap/ScrollTrigger"),
-          import("gsap/Draggable"),
-          import("gsap/SplitText").catch(() => null),
-        ]);
+    if (
+      typeof window === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      window.matchMedia("(max-width: 767px)").matches
+    ) {
+      return;
+    }
 
-      if (cancelled || !heroSectionRef.current) return;
-
-      const gsap = gsapMod.gsap;
-      const ScrollTrigger = scrollTriggerMod.ScrollTrigger;
-      const Draggable = draggableMod.Draggable;
-      const SplitText = splitTextMod?.SplitText;
-
-      if (SplitText) {
-        gsap.registerPlugin(ScrollTrigger, Draggable, SplitText);
-      } else {
-        gsap.registerPlugin(ScrollTrigger, Draggable);
-      }
-
-      gsapRef.current = gsap;
-
-      const prefersReduced = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      const ctx = gsap.context(() => {
-        animateCardsToIndex(activeIndexRef.current, true);
-
-        if (prefersReduced) {
+    void Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
+      .then(([gsapMod, stMod]) => {
+        if (cancelled || !heroSectionRef.current || !bgImageWrapRef.current)
           return;
-        }
+        const gsap = gsapMod.gsap;
+        const ScrollTrigger = stMod.ScrollTrigger;
+        gsap.registerPlugin(ScrollTrigger);
 
-        if (displayHeadlineRef.current) {
-          if (SplitText) {
-            const split = new SplitText(displayHeadlineRef.current, {
-              type: "chars,words",
-            });
-            gsap.fromTo(
-              split.chars,
-              { opacity: 0, y: 12 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.36,
-                stagger: 0.007,
-                ease: "power3.out",
-              }
-            );
-          } else {
-            gsap.fromTo(
-              displayHeadlineRef.current,
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }
-            );
-          }
-        }
-
-        if (subheadlineRef.current) {
-          gsap.fromTo(
-            subheadlineRef.current,
-            { opacity: 0, y: 12 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.55,
-              delay: 0.14,
-              ease: "power2.out",
-            }
-          );
-        }
-
-        if (bgImageWrapRef.current && heroSectionRef.current) {
+        const ctx = gsap.context(() => {
           gsap.to(bgImageWrapRef.current, {
             yPercent: 7,
             ease: "none",
@@ -436,78 +430,17 @@ export function HeroGallery({
               scrub: true,
             },
           });
-        }
-      }, heroSectionRef);
+        }, heroSectionRef);
 
-      const mm = gsap.matchMedia();
-      mm.add(
-        {
-          isDesktop: "(min-width: 768px)",
-          isMobile: "(max-width: 767px)",
-        },
-        () => {
-          animateCardsToIndex(activeIndexRef.current, true);
-
-          if (!dragProxyRef.current || !cardStageRef.current) return;
-
-          const dragInstance = Draggable.create(dragProxyRef.current, {
-            trigger: cardStageRef.current,
-            type: "x",
-            MinimumMovement: 10,
-            onDragEnd: function () {
-              const dx = this.endX - this.startX;
-              gsap.set(this.target, { x: 0 });
-              if (dx < -35) {
-                animateCardsToIndex(activeIndexRef.current + 1, false);
-              } else if (dx > 35) {
-                animateCardsToIndex(activeIndexRef.current - 1, false);
-              }
-            },
-          });
-
-          return () => {
-            dragInstance.forEach((d) => d.kill());
-          };
-        }
-      );
-
-      cleanupCtx = () => ctx.revert();
-      cleanupMm = () => mm.revert();
-    };
-
-    const win = window as Window & {
-      requestIdleCallback?: (
-        cb: () => void,
-        opts?: { timeout: number }
-      ) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-
-    if (typeof win.requestIdleCallback === "function") {
-      idleHandle = win.requestIdleCallback(
-        () => {
-          void initHeroGsap();
-        },
-        { timeout: 1200 }
-      );
-    } else {
-      timeoutHandle = setTimeout(() => {
-        void initHeroGsap();
-      }, 180);
-    }
+        cleanupCtx = () => ctx.revert();
+      })
+      .catch(() => {});
 
     return () => {
       cancelled = true;
-      if (idleHandle !== null && typeof win.cancelIdleCallback === "function") {
-        win.cancelIdleCallback(idleHandle);
-      }
-      if (timeoutHandle !== null) {
-        clearTimeout(timeoutHandle);
-      }
-      cleanupMm?.();
       cleanupCtx?.();
     };
-  }, [animateCardsToIndex]);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "ArrowRight") {
@@ -566,7 +499,7 @@ export function HeroGallery({
                 priority={idx === 0}
                 fetchPriority={idx === 0 ? "high" : "auto"}
                 sizes="(max-width: 768px) 100vw, 85vw"
-                quality={idx === 0 ? 78 : 72}
+                quality={75}
                 onLoad={() =>
                   setLoadedBgMap((prev) =>
                     prev[card.id] ? prev : { ...prev, [card.id]: true }
@@ -606,7 +539,10 @@ export function HeroGallery({
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-fajar/40 bg-obsidian/85 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold tracking-wide text-fajar shadow-[0_4px_20px_rgba(242,166,90,0.18)] backdrop-blur-md">
                 <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full bg-fajar/20 text-fajar">
-                  <i className="bi bi-geo-alt-fill text-[10px] sm:text-xs" aria-hidden="true" />
+                  <i
+                    className="bi bi-geo-alt-fill text-[10px] sm:text-xs"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span>{tHero("eyebrow")}</span>
               </div>
@@ -625,53 +561,70 @@ export function HeroGallery({
               <p className="font-heading text-[11px] sm:text-sm font-extrabold tracking-[0.28em] text-telaga-400 uppercase">
                 {tHero("displayTitle")}
               </p>
-              <h1
-                ref={displayHeadlineRef}
-                className="font-heading text-2xl font-extrabold tracking-tight text-kabut sm:text-4xl lg:text-[3.35rem] leading-[1.15] lg:leading-[1.08]"
-              >
+              <h1 className="font-heading text-2xl font-extrabold tracking-tight text-kabut sm:text-4xl lg:text-[3.35rem] leading-[1.15] lg:leading-[1.08]">
                 {tHero("headline")}
               </h1>
             </div>
           </div>
 
           {/* BLOK 2 (Mobile: Tepat di Bawah Nama Wisata, Desktop: Kolom Kanan Penuh) — Tumpukan 5 Kartu Foto 3D Bernama */}
-          <div className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-3 flex flex-col items-center self-center">
+          <div className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-3 flex flex-col items-center self-center w-full">
             <div
               ref={cardStageRef}
-              className="relative h-[320px] sm:h-[420px] w-full max-w-[350px] sm:max-w-[390px] flex items-center justify-center select-none touch-pan-y"
-              style={{ perspective: "1200px" }}
+              onTouchStart={(e) => {
+                const t = e.touches[0];
+                if (t) beginGesture(t.clientX, t.clientY);
+              }}
+              onTouchMove={(e) => {
+                const t = e.touches[0];
+                if (t) moveGesture(t.clientX, t.clientY);
+              }}
+              onTouchEnd={endGesture}
+              onTouchCancel={endGesture}
+              onMouseDown={(e) => {
+                if (e.button === 0) beginGesture(e.clientX, e.clientY);
+              }}
+              onMouseMove={(e) => {
+                moveGesture(e.clientX, e.clientY);
+              }}
+              onMouseUp={endGesture}
+              onMouseLeave={endGesture}
+              className="relative h-[312px] sm:h-[420px] w-full max-w-[330px] sm:max-w-[390px] flex items-center justify-center select-none cursor-grab active:cursor-grabbing"
+              style={{
+                perspective: "1200px",
+                touchAction: "pan-y",
+              }}
             >
-              {/* Proxy elemen tak terlihat untuk GSAP Draggable */}
-              <div
-                ref={dragProxyRef}
-                className="pointer-events-none absolute inset-0"
-                aria-hidden="true"
-              />
-
               {cards.map((card, idx) => {
                 const isCurrent = idx === activeIndex;
-                const initialOffset = getCircularOffset(
-                  idx,
-                  activeIndex,
-                  cards.length
+                const offset = getCircularOffset(idx, activeIndex, cards.length);
+                const tf = getCardTransform(
+                  offset,
+                  isMobileViewport,
+                  dragDeltaX
                 );
-                const initialTf = getCardTransform(initialOffset, false);
                 const isCardLoaded = Boolean(loadedCardMap[card.id]);
 
                 return (
                   <article
                     key={card.id}
-                    ref={(el) => {
-                      cardElsRef.current[idx] = el;
+                    onClick={() => {
+                      if (gestureRef.current.swallowedClick) {
+                        gestureRef.current.swallowedClick = false;
+                        return;
+                      }
+                      goToCard(idx);
                     }}
-                    onClick={() => goToCard(idx)}
                     style={{
-                      transform: `translate3d(${initialTf.x}px, ${initialTf.y}px, ${initialTf.z}px) rotateY(${initialTf.rotateY}deg) scale(${initialTf.scale})`,
-                      opacity: initialTf.opacity,
-                      zIndex: initialTf.zIndex,
+                      transform: `translate3d(${tf.x}px, ${tf.y}px, ${tf.z}px) rotateY(${tf.rotateY}deg) scale(${tf.scale})`,
+                      opacity: tf.opacity,
+                      zIndex: tf.zIndex,
+                      transition: isDragging
+                        ? "none"
+                        : "transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                     className={cn(
-                      "group absolute w-[246px] sm:w-[310px] h-[308px] sm:h-[395px] rounded-[24px] overflow-hidden cursor-pointer border transition-shadow duration-300",
+                      "group absolute w-[236px] sm:w-[310px] h-[298px] sm:h-[395px] rounded-[24px] overflow-hidden cursor-pointer border will-change-[transform,opacity]",
                       isCurrent
                         ? "border-fajar/85 shadow-[0_26px_64px_rgba(0,0,0,0.82)] ring-2 ring-fajar/35"
                         : "border-white/20 shadow-[0_14px_34px_rgba(0,0,0,0.6)] hover:border-white/40"
@@ -692,26 +645,30 @@ export function HeroGallery({
                       src={card.media.url}
                       alt={card.media.alt || card.title}
                       fill
-                      sizes="(max-width: 640px) 246px, 310px"
-                      quality={72}
+                      draggable={false}
+                      sizes="(max-width: 640px) 236px, 310px"
+                      quality={75}
                       onLoad={() =>
                         setLoadedCardMap((prev) =>
                           prev[card.id] ? prev : { ...prev, [card.id]: true }
                         )
                       }
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105 pointer-events-none"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-obsidian/15" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-obsidian/15 pointer-events-none" />
 
                     {/* Baris Atas Kartu: Ikon Berkilau + Nama Spot Jelas */}
-                    <div className="absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between gap-2">
+                    <div className="absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between gap-2 pointer-events-none">
                       <span
                         className={cn(
                           "inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-300 group-hover:scale-110",
                           card.accentBadgeClass
                         )}
                       >
-                        <i className={cn("bi text-sm sm:text-base", card.icon)} aria-hidden="true" />
+                        <i
+                          className={cn("bi text-sm sm:text-base", card.icon)}
+                          aria-hidden="true"
+                        />
                       </span>
 
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-obsidian/85 backdrop-blur-md border border-white/20 px-2.5 py-1 sm:px-3 text-[11px] font-extrabold text-kabut shadow-md">
@@ -721,7 +678,7 @@ export function HeroGallery({
                     </div>
 
                     {/* Konten Bawah Kartu */}
-                    <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 pointer-events-none">
                       <span className="inline-block rounded-md bg-obsidian/80 border border-white/15 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-fajar uppercase">
                         {card.badge}
                       </span>
@@ -755,7 +712,7 @@ export function HeroGallery({
                     className={cn(
                       "group inline-flex min-h-[38px] items-center gap-1.5 sm:gap-2 rounded-full border px-3 py-1.5 sm:px-3.5 text-xs font-bold transition-all duration-300 cursor-pointer",
                       isCurrent
-                        ? "border-fajar bg-fajar text-obsidian shadow-[0_6px_20px_rgba(242,166,90,0.35)] scale-105"
+                        ? "border-fajar bg-fajar text-obsidian shadow-[0_6px_18px_rgba(242,166,90,0.3)] scale-105"
                         : "border-white/15 bg-obsidian/85 text-kabut/85 hover:border-fajar/45 hover:text-kabut backdrop-blur-md"
                     )}
                   >
@@ -780,7 +737,10 @@ export function HeroGallery({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-fajar/20 border border-fajar/40 text-fajar shadow-sm">
-                    <i className="bi bi-shield-fill-check text-sm" aria-hidden="true" />
+                    <i
+                      className="bi bi-shield-fill-check text-sm"
+                      aria-hidden="true"
+                    />
                   </span>
                   <span className="text-xs font-extrabold tracking-wider text-fajar uppercase">
                     {tHero("panelBadge")}
@@ -816,7 +776,10 @@ export function HeroGallery({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-telaga/20 border border-telaga-400/35 text-telaga-200 transition-transform group-hover:scale-105">
-                          <i className="bi bi-compass-fill text-xs" aria-hidden="true" />
+                          <i
+                            className="bi bi-compass-fill text-xs"
+                            aria-hidden="true"
+                          />
                         </span>
                         <div>
                           <span className="inline-block text-[11px] font-bold tracking-wider uppercase text-telaga-400">
@@ -953,7 +916,10 @@ export function HeroGallery({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                   <p className="text-xs text-kabut/90 text-center sm:text-left">
                     {tHero("basePlusParking", {
-                      base: formatRupiah(selectedProductSummary.basePrice, locale),
+                      base: formatRupiah(
+                        selectedProductSummary.basePrice,
+                        locale
+                      ),
                       parking: formatRupiah(
                         selectedProductSummary.parkingFee,
                         locale
@@ -962,10 +928,15 @@ export function HeroGallery({
                   </p>
                   <button
                     type="button"
-                    onClick={() => scrollToCalculatorWithPackage(selectedPackage)}
+                    onClick={() =>
+                      scrollToCalculatorWithPackage(selectedPackage)
+                    }
                     className="btn-ui btn-fajar w-full sm:w-auto justify-center text-xs px-4 py-3 sm:py-2.5 min-h-[44px] shadow-[0_10px_24px_rgba(242,166,90,0.25)]"
                   >
-                    <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
+                    <i
+                      className="bi bi-ticket-perforated-fill"
+                      aria-hidden="true"
+                    />
                     <span>
                       {tHero("panelSingleCta", {
                         packageName: selectedProductSummary.name,
@@ -979,10 +950,7 @@ export function HeroGallery({
 
           {/* BLOK 4 (Mobile: Di Bawah Panel Tiket, Desktop: Kiri Baris 2) — Deskripsi, Statistik Fakta & Navigasi Cepat */}
           <div className="order-4 lg:order-3 lg:col-span-7 space-y-4">
-            <p
-              ref={subheadlineRef}
-              className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-xs sm:text-base leading-relaxed text-kabut/90"
-            >
+            <p className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-xs sm:text-base leading-relaxed text-kabut/90">
               {tHero("subheadline")}
             </p>
 
@@ -990,7 +958,10 @@ export function HeroGallery({
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs font-semibold text-kabut">
               <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
-                  <i className="bi bi-clock-history text-xs" aria-hidden="true" />
+                  <i
+                    className="bi bi-clock-history text-xs"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span>
                   {batuLawang?.openTime ?? "06:00"}–
@@ -999,7 +970,10 @@ export function HeroGallery({
               </span>
               <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-telaga-400/50">
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-telaga/20 border border-telaga-400/35 text-telaga-200 transition-transform group-hover:scale-110">
-                  <i className="bi bi-signpost-split-fill text-xs" aria-hidden="true" />
+                  <i
+                    className="bi bi-signpost-split-fill text-xs"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span>
                   {tHero("trailLengthStat", {
@@ -1010,7 +984,10 @@ export function HeroGallery({
               </span>
               <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
-                  <i className="bi bi-brightness-high-fill text-xs" aria-hidden="true" />
+                  <i
+                    className="bi bi-brightness-high-fill text-xs"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span>
                   {tHero("elevationUnit", { value: summitElevation })} (
@@ -1027,7 +1004,10 @@ export function HeroGallery({
                 className="group btn-ui btn-fajar w-full sm:w-auto justify-center text-sm sm:text-base px-6 py-3.5 shadow-[0_10px_28px_rgba(242,166,90,0.28)]"
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-obsidian/20 text-obsidian transition-transform group-hover:rotate-6 group-hover:scale-110">
-                  <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
+                  <i
+                    className="bi bi-ticket-perforated-fill"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span>{tHero("ctaPrimary")}</span>
               </button>

@@ -23,7 +23,9 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // 1. Sinkronisasi tab awal berdasarkan path dan hash
+    const isHomePage =
+      pathname === "/" || pathname === "/id" || pathname === "/en";
+
     function syncFromHashOrPath() {
       if (pathname.includes("/jalur")) {
         setActiveTab("map");
@@ -41,17 +43,14 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         setActiveTab("tickets");
       } else if (h === "#peta-jalur") {
         setActiveTab("map");
-      } else {
-        if (window.scrollY < 180) {
-          setActiveTab("home");
-        }
+      } else if (window.scrollY < 160) {
+        setActiveTab("home");
       }
     }
 
     syncFromHashOrPath();
     window.addEventListener("hashchange", syncFromHashOrPath);
 
-    // 2. Scroll Spy deterministik berbasis getBoundingClientRect
     let ticking = false;
     function onScroll() {
       if (isScrollingProgrammatically.current) return;
@@ -59,26 +58,21 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         window.requestAnimationFrame(() => {
           ticking = false;
           if (isScrollingProgrammatically.current) return;
+          if (!isHomePage) return;
 
-          // Jika halaman bukan beranda utama (misal di /jalur), jangan timpa tab
-          if (pathname !== "/" && pathname !== "/en") return;
-
-          // Jika berada di dekat bagian atas layar
-          if (window.scrollY < 180) {
+          if (window.scrollY < 160) {
             setActiveTab("home");
             return;
           }
 
-          // Cek posisi tiap section dari bawah ke atas sesuai urutan halaman
           const sections: { id: string; tab: NavTab }[] = [
             { id: "peta-jalur", tab: "map" },
             { id: "jalur-aturan", tab: "trail" },
-            { id: "galeri-wisata", tab: "tickets" },
             { id: "kalkulator-tiket", tab: "tickets" },
             { id: "pilihan-tiket", tab: "tickets" },
           ];
 
-          const anchorY = window.innerHeight * 0.4;
+          const anchorY = window.innerHeight * 0.42;
           for (const s of sections) {
             const el = document.getElementById(s.id);
             if (el) {
@@ -90,69 +84,84 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             }
           }
 
-          // Fallback jika berada di area hero atas
           setActiveTab("home");
         });
         ticking = true;
       }
     }
 
+    // Jika pengguna menyentuh layar untuk scroll manual, lepaskan kunci programmatic scroll
+    function onUserTouchOrWheel() {
+      if (isScrollingProgrammatically.current) {
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+          isScrollingProgrammatically.current = false;
+        }, 180);
+      }
+    }
+
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchmove", onUserTouchOrWheel, { passive: true });
+    window.addEventListener("wheel", onUserTouchOrWheel, { passive: true });
 
     return () => {
       window.removeEventListener("hashchange", syncFromHashOrPath);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchmove", onUserTouchOrWheel);
+      window.removeEventListener("wheel", onUserTouchOrWheel);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
   }, [pathname]);
 
   const handleMobileNavClick =
     (tab: NavTab, targetId?: string, fallbackUrl?: string) =>
-      (e: React.MouseEvent) => {
-        // 1. Langsung ubah warna tombol seketika saat disentuh/diklik
-        setActiveTab(tab);
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.currentTarget.blur();
+      setActiveTab(tab);
 
-        if (tab === "home") {
-          const isHomePage = pathname === "/" || pathname === "/en";
-          if (isHomePage) {
-            e.preventDefault();
-            isScrollingProgrammatically.current = true;
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            window.history.replaceState(null, "", " ");
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            scrollTimeoutRef.current = setTimeout(() => {
-              isScrollingProgrammatically.current = false;
-            }, 900);
-            return;
-          } else {
-            router.push("/");
-            return;
-          }
+      const isHomePage =
+        pathname === "/" || pathname === "/id" || pathname === "/en";
+
+      if (tab === "home") {
+        if (isHomePage) {
+          e.preventDefault();
+          isScrollingProgrammatically.current = true;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          window.history.replaceState(null, "", window.location.pathname);
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => {
+            isScrollingProgrammatically.current = false;
+          }, 1500);
+          return;
+        } else {
+          router.push("/");
+          return;
         }
+      }
 
-        if (targetId) {
-          const el = document.getElementById(targetId);
-          if (el) {
-            e.preventDefault();
-            isScrollingProgrammatically.current = true;
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-            window.history.replaceState(null, "", `#${targetId}`);
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+          e.preventDefault();
+          isScrollingProgrammatically.current = true;
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.history.replaceState(null, "", `#${targetId}`);
 
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            scrollTimeoutRef.current = setTimeout(() => {
-              isScrollingProgrammatically.current = false;
-            }, 900);
-            return;
-          } else if (fallbackUrl) {
-            router.push(fallbackUrl);
-            return;
-          }
-        }
-
-        if (fallbackUrl) {
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => {
+            isScrollingProgrammatically.current = false;
+          }, 1500);
+          return;
+        } else if (fallbackUrl) {
           router.push(fallbackUrl);
+          return;
         }
-      };
+      }
+
+      if (fallbackUrl) {
+        router.push(fallbackUrl);
+      }
+    };
 
   return (
     <>
@@ -164,10 +173,16 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
       </a>
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 min-h-[44px] shrink-0">
-            <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-fajar backdrop-blur-md shadow-sm">
-              <i className="bi bi-compass text-lg" aria-hidden="true" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3 px-3.5 py-2.5 sm:px-6 lg:px-8">
+          <Link
+            href="/"
+            className="flex items-center gap-2 sm:gap-3 min-h-[44px] shrink-0"
+          >
+            <span className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-fajar backdrop-blur-md shadow-sm">
+              <i
+                className="bi bi-compass text-base sm:text-lg"
+                aria-hidden="true"
+              />
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fajar shadow-[0_0_10px_#f2a65a] animate-pulse" />
             </span>
             <div className="leading-tight shrink-0">
@@ -257,7 +272,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#kalkulator-tiket"
               aria-label={tNav("buyTicket")}
-              className="btn-ui btn-glass-fajar min-w-[44px] px-3 sm:px-4 whitespace-nowrap"
+              className="btn-ui btn-glass-fajar min-w-[42px] px-2.5 sm:px-4 whitespace-nowrap"
             >
               <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
               <span className="hidden sm:inline">{tNav("buyTicket")}</span>
@@ -266,90 +281,126 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         </div>
       </header>
 
-      {/* Tab Bar Bawah Khusus Ponsel (§6.A) — Selalu Terkunci di Bawah Layar Viewport */}
+      {/* Tab Bar Bawah Khusus Ponsel (§6.A) — Selalu Terkunci di Bawah Layar Viewport & Bebas Fokus Ganda */}
       <nav
         aria-label={tNav("mobileNavAria")}
         className="fixed inset-x-0 bottom-0 z-50 border-t border-white/15 bg-obsidian/95 backdrop-blur-2xl lg:hidden pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(0,0,0,0.75)]"
       >
-        <ul className="mx-auto grid max-w-md grid-cols-5 px-1 py-1.5 gap-1">
+        <ul className="mx-auto grid max-w-md grid-cols-5 px-1.5 py-1.5 gap-1">
           <li>
             <a
               href="#beranda"
               onClick={handleMobileNavClick("home", "beranda", "/")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "home"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline-none ${
+                activeTab === "home"
+                  ? "bg-fajar/15 border border-fajar/45 font-bold text-fajar shadow-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
+              }`}
             >
               <i
-                className={`${activeTab === "home" ? "bi bi-house-door-fill" : "bi bi-house-door"
-                  } text-lg leading-none`}
+                className={`${
+                  activeTab === "home"
+                    ? "bi bi-house-door-fill"
+                    : "bi bi-house-door"
+                } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("home")}</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+                {tNav("home")}
+              </span>
             </a>
           </li>
           <li>
             <a
               href="#pilihan-tiket"
-              onClick={handleMobileNavClick("tickets", "pilihan-tiket", "/#pilihan-tiket")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "tickets"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+              onClick={handleMobileNavClick(
+                "tickets",
+                "pilihan-tiket",
+                "/#pilihan-tiket"
+              )}
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline-none ${
+                activeTab === "tickets"
+                  ? "bg-fajar/15 border border-fajar/45 font-bold text-fajar shadow-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
+              }`}
             >
               <i
-                className={`${activeTab === "tickets"
+                className={`${
+                  activeTab === "tickets"
                     ? "bi bi-ticket-perforated-fill"
                     : "bi bi-ticket-perforated"
-                  } text-lg leading-none`}
+                } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("tickets")}</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+                {tNav("tickets")}
+              </span>
             </a>
           </li>
           <li>
             <a
               href="#jalur-aturan"
-              onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "trail"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+              onClick={handleMobileNavClick(
+                "trail",
+                "jalur-aturan",
+                "/#jalur-aturan"
+              )}
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline-none ${
+                activeTab === "trail"
+                  ? "bg-fajar/15 border border-fajar/45 font-bold text-fajar shadow-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
+              }`}
             >
               <i
-                className={`${activeTab === "trail" ? "bi bi-signpost-split-fill" : "bi bi-signpost-split"
-                  } text-lg leading-none`}
+                className={`${
+                  activeTab === "trail"
+                    ? "bi bi-signpost-split-fill"
+                    : "bi bi-signpost-split"
+                } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("trail")}</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+                {tNav("trail")}
+              </span>
             </a>
           </li>
           <li>
             <a
               href="#peta-jalur"
-              onClick={handleMobileNavClick("map", "peta-jalur", "/#peta-jalur")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "map"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+              onClick={handleMobileNavClick(
+                "map",
+                "peta-jalur",
+                "/#peta-jalur"
+              )}
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline-none ${
+                activeTab === "map"
+                  ? "bg-fajar/15 border border-fajar/45 font-bold text-fajar shadow-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
+              }`}
             >
               <i
-                className={`${activeTab === "map" ? "bi bi-geo-alt-fill" : "bi bi-geo-alt"
-                  } text-lg leading-none`}
+                className={`${
+                  activeTab === "map" ? "bi bi-geo-alt-fill" : "bi bi-geo-alt"
+                } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("map")}</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+                {tNav("map")}
+              </span>
             </a>
           </li>
           <li>
             <Link
               href={user ? user.dashboardPath : "/masuk"}
-              onClick={() => setActiveTab("account")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "account"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                setActiveTab("account");
+              }}
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline-none ${
+                activeTab === "account"
+                  ? "bg-fajar/15 border border-fajar/45 font-bold text-fajar shadow-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
+              }`}
             >
               {user?.image ? (
                 <Image
@@ -362,14 +413,15 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 />
               ) : (
                 <i
-                  className={`${user
+                  className={`${
+                    user
                       ? activeTab === "account"
                         ? "bi bi-person-check-fill"
                         : "bi bi-person-check"
                       : activeTab === "account"
-                        ? "bi bi-person-circle"
-                        : "bi bi-person"
-                    } text-lg leading-none`}
+                      ? "bi bi-person-circle"
+                      : "bi bi-person"
+                  } text-lg leading-none`}
                   aria-hidden="true"
                 />
               )}

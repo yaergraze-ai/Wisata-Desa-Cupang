@@ -190,10 +190,13 @@ export function TouristSpotGallerySection({
     const cardsEls = track.querySelectorAll<HTMLElement>("[data-gallery-card]");
     const target = cardsEls[idx];
     if (target) {
-      target.scrollIntoView({
+      const targetLeft = Math.max(
+        0,
+        target.offsetLeft - (track.clientWidth - target.offsetWidth) / 2
+      );
+      track.scrollTo({
+        left: targetLeft,
         behavior: "smooth",
-        inline: "center",
-        block: "nearest",
       });
       setActiveSlideIndex(idx);
     }
@@ -397,7 +400,7 @@ export function TouristSpotGallerySection({
             el.scrollLeft = state.scrollLeft - dx * 1.15;
           }
         }}
-        className="flex items-center gap-2.5 overflow-x-auto overscroll-x-contain pb-1 select-none cursor-grab active:cursor-grabbing -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-center gap-2.5 overflow-x-auto overscroll-x-contain py-2.5 select-none cursor-grab active:cursor-grabbing -mx-4 px-4 sm:mx-0 sm:px-1 after:content-[''] after:shrink-0 after:w-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
@@ -410,13 +413,22 @@ export function TouristSpotGallerySection({
                   catDragStateRef.current.moved = false;
                   return;
                 }
+                e.currentTarget.blur();
                 setActiveCategory(cat.id);
                 setActiveSlideIndex(0);
-                e.currentTarget.scrollIntoView({
-                  behavior: "smooth",
-                  inline: "center",
-                  block: "nearest",
-                });
+                const container = categoryScrollRef.current;
+                if (container) {
+                  const btn = e.currentTarget;
+                  const targetLeft = Math.max(
+                    0,
+                    btn.offsetLeft -
+                      (container.clientWidth - btn.offsetWidth) / 2
+                  );
+                  container.scrollTo({
+                    left: targetLeft,
+                    behavior: "smooth",
+                  });
+                }
                 if (galleryTrackRef.current) {
                   galleryTrackRef.current.scrollTo({
                     left: 0,
@@ -425,9 +437,9 @@ export function TouristSpotGallerySection({
                 }
               }}
               className={cn(
-                "group min-h-[42px] inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border",
+                "group min-h-[42px] inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border focus:outline-none focus-visible:outline-none",
                 isActive
-                  ? "bg-fajar text-obsidian border-fajar shadow-[0_8px_24px_rgba(242,166,90,0.3)]"
+                  ? "bg-fajar text-obsidian border-fajar shadow-[0_4px_14px_rgba(242,166,90,0.28)]"
                   : "surface-solid-dark border-white/15 text-kabut/85 hover:text-kabut hover:border-fajar/45"
               )}
             >
@@ -489,7 +501,7 @@ export function TouristSpotGallerySection({
                 el.scrollLeft = state.scrollLeft - dx * 1.15;
               }
             }}
-            className="flex gap-4 sm:gap-5 overflow-x-auto overscroll-x-contain snap-x snap-proximity select-none cursor-grab active:cursor-grabbing pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden animate-page-smooth-in"
+            className="flex gap-4 sm:gap-5 overflow-x-auto overscroll-x-contain select-none cursor-grab active:cursor-grabbing py-2 -mx-4 px-4 sm:mx-0 sm:px-1 after:content-[''] after:shrink-0 after:w-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden animate-page-smooth-in"
           >
             {filteredItems.map((item) => {
               const isLoaded = Boolean(loadedMap[item.id]);
@@ -497,7 +509,7 @@ export function TouristSpotGallerySection({
                 <article
                   key={item.id}
                   data-gallery-card="true"
-                  className="group surface-solid-dark w-[82vw] max-w-[325px] sm:w-[340px] lg:w-[375px] shrink-0 snap-center sm:snap-start overflow-hidden rounded-2xl border border-white/10 hover:border-fajar/45 transition-all duration-300 flex flex-col justify-between shadow-[0_18px_42px_rgba(0,0,0,0.55)]"
+                  className="group surface-solid-dark w-[82vw] max-w-[325px] sm:w-[340px] lg:w-[375px] shrink-0 overflow-hidden rounded-2xl border border-white/10 hover:border-fajar/45 transition-all duration-300 flex flex-col justify-between shadow-[0_18px_42px_rgba(0,0,0,0.55)]"
                 >
                   {/* IMAGE WRAPPER WITH SHADOW SKELETON */}
                   <div
@@ -691,7 +703,7 @@ export function TouristSpotGallerySection({
                   }
                 }
               }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-obsidian/95 backdrop-blur-xl overscroll-none touch-none select-none"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-obsidian/95 backdrop-blur-xl overscroll-none select-none"
             >
               <div
                 onClick={(e) => e.stopPropagation()}

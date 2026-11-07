@@ -25,11 +25,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.setAttribute("data-theme", "dark");
 
       const cookieSeen = document.cookie.includes("wdc_intro_seen=true");
-      const localSeen = localStorage.getItem("wdc_cinematic_intro_seen") === "true";
-      const sessionSeen = sessionStorage.getItem("wdc_cinematic_intro_seen") === "true";
-      if (cookieSeen || localSeen || sessionSeen) {
+      const sessionSeen = sessionStorage.getItem("wdc_intro_done") === "1";
+      if (cookieSeen || sessionSeen) {
         document.documentElement.classList.add("wdc-intro-dismissed");
-        document.documentElement.style.overflow = "";
+        document.documentElement.style.removeProperty("overflow");
+        document.body.style.removeProperty("overflow");
         if (!cookieSeen) {
           const isHttps = window.location.protocol === "https:";
           document.cookie = `wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax${isHttps ? "; Secure" : ""}`;
@@ -38,7 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
-  });
+  }, []);
 
   return (
     <ThemeContext.Provider

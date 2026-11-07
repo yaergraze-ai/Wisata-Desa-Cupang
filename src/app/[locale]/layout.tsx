@@ -91,14 +91,12 @@ export default async function LocaleLayout({
           dangerouslySetInnerHTML={{
             __html: `
               html.wdc-intro-dismissed #wdc-cinematic-intro { display: none !important; }
-              html:not(.wdc-intro-dismissed):has(#wdc-cinematic-intro) { overflow: hidden; }
               #wdc-cinematic-intro {
                 position: fixed;
                 inset: 0;
                 z-index: 99999;
-                background: radial-gradient(circle at 50% 38%, #14281e 0%, #08120c 60%, #030604 100%);
                 width: 100vw;
-                height: 100vh;
+                height: 100dvh;
                 overflow: hidden;
               }
             `,
@@ -112,7 +110,7 @@ export default async function LocaleLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative transition-colors duration-200">
+      <body className="bg-obsidian text-kabut antialiased selection:bg-fajar selection:text-hutan-950 min-h-dvh relative overflow-x-clip transition-colors duration-200">
         <AmbientBackground />
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
