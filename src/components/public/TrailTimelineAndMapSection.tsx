@@ -380,10 +380,13 @@ export function TrailTimelineAndMapSection({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto py-1">
+          <div
+            style={{ touchAction: "pan-x pan-y", WebkitOverflowScrolling: "touch" }}
+            className="flex items-center gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
             {stages.map((stg, i) => {
               const elev = i === 0 ? "210 mdpl" : i === 1 ? "290 mdpl" : i === 2 ? "410 mdpl" : "520 mdpl";
-              const tag = i === 0 ? "Pintu" : i === 1 ? "Kanopi" : i === 2 ? "Punggung" : "Puncak 👑";
+              const tag = i === 0 ? "Pintu" : i === 1 ? "Kanopi" : i === 2 ? "Punggung" : "Puncak";
               const isSelected = stg.points.some((p) => p.code === focusedCode);
               return (
                 <button

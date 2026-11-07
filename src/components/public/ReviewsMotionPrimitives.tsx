@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
@@ -33,6 +33,7 @@ export function MotionReviewModal({
   const [photoIndex, setPhotoIndex] = useState<number>(initialPhotoIndex);
   const [imgError, setImgError] = useState(false);
   const [prevReviewId, setPrevReviewId] = useState(review?.id);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   if (review?.id !== prevReviewId) {
     setPrevReviewId(review?.id);
@@ -123,8 +124,39 @@ export function MotionReviewModal({
             {/* KOLOM KIRI: Galeri Foto Interaktif (Bila Ada Foto) */}
             {photos.length > 0 ? (
               <div className="relative flex flex-col justify-between bg-obsidian/95 lg:w-[58%] shrink-0 min-h-[280px] sm:min-h-[380px] lg:min-h-[480px]">
-                {/* Area Tampilan Foto Utama */}
-                <div className="relative flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-4">
+                {/* Area Tampilan Foto Utama (Bisa Digeser Kiri / Kanan) */}
+                <div
+                  onTouchStart={(e) => {
+                    const t = e.touches[0];
+                    if (t) swipeStartRef.current = { x: t.clientX, y: t.clientY };
+                  }}
+                  onTouchEnd={(e) => {
+                    if (!swipeStartRef.current) return;
+                    const t = e.changedTouches[0];
+                    if (!t) return;
+                    const dx = t.clientX - swipeStartRef.current.x;
+                    const dy = t.clientY - swipeStartRef.current.y;
+                    swipeStartRef.current = null;
+                    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                      if (dx < 0) handleNextPhoto();
+                      else handlePrevPhoto();
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    swipeStartRef.current = { x: e.clientX, y: e.clientY };
+                  }}
+                  onMouseUp={(e) => {
+                    if (!swipeStartRef.current) return;
+                    const dx = e.clientX - swipeStartRef.current.x;
+                    const dy = e.clientY - swipeStartRef.current.y;
+                    swipeStartRef.current = null;
+                    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                      if (dx < 0) handleNextPhoto();
+                      else handlePrevPhoto();
+                    }
+                  }}
+                  className="relative flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-4 cursor-grab active:cursor-grabbing select-none"
+                >
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentPhoto?.id ?? photoIndex}
@@ -153,28 +185,6 @@ export function MotionReviewModal({
                       )}
                     </motion.div>
                   </AnimatePresence>
-
-                  {/* Tombol Navigasi Kiri / Kanan Jika Multi Foto */}
-                  {photos.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handlePrevPhoto}
-                        aria-label="Foto sebelumnya"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-obsidian/75 border border-kabut/20 text-kabut backdrop-blur-sm transition-all hover:bg-fajar hover:text-obsidian hover:scale-110 active:scale-95 cursor-pointer shadow-lg z-10"
-                      >
-                        <i className="bi bi-chevron-left text-sm" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleNextPhoto}
-                        aria-label="Foto selanjutnya"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-obsidian/75 border border-kabut/20 text-kabut backdrop-blur-sm transition-all hover:bg-fajar hover:text-obsidian hover:scale-110 active:scale-95 cursor-pointer shadow-lg z-10"
-                      >
-                        <i className="bi bi-chevron-right text-sm" aria-hidden="true" />
-                      </button>
-                    </>
-                  ) : null}
                 </div>
 
                 {/* Footer Galeri: Indikator & Thumbnail Foto */}

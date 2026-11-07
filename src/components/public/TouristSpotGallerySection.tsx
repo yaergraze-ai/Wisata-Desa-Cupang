@@ -36,22 +36,24 @@ export function TouristSpotGallerySection({
   const [modalImageLoaded, setModalImageLoaded] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
-  // Refs untuk fitur geser (drag/swipe) pada tab kategori & kartu foto
+  // Refs untuk fitur geser mulus (tanpa mengganggu scroll vertikal halaman)
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   const galleryTrackRef = useRef<HTMLDivElement | null>(null);
   const catDragStateRef = useRef({
     isDown: false,
     startX: 0,
+    startY: 0,
     scrollLeft: 0,
     moved: false,
   });
   const trackDragStateRef = useRef({
     isDown: false,
     startX: 0,
+    startY: 0,
     scrollLeft: 0,
     moved: false,
   });
-  const lightboxTouchStartXRef = useRef<number | null>(null);
+  const lightboxSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Upload modal state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -124,6 +126,20 @@ export function TouristSpotGallerySection({
     [filteredItems, selectedPhoto]
   );
 
+  // Pastikan status drag mouse selalu di-reset saat tombol mouse dilepas di mana saja
+  useEffect(() => {
+    function handleGlobalMouseUp() {
+      catDragStateRef.current.isDown = false;
+      trackDragStateRef.current.isDown = false;
+    }
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    window.addEventListener("blur", handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener("mouseup", handleGlobalMouseUp);
+      window.removeEventListener("blur", handleGlobalMouseUp);
+    };
+  }, []);
+
   // Kunci scroll halaman utama saat foto dibuka (Lightbox) atau modal unggah aktif
   useEffect(() => {
     const isAnyModalOpen = Boolean(selectedPhoto) || isUploadOpen;
@@ -168,14 +184,6 @@ export function TouristSpotGallerySection({
     return isEn ? "Activity" : "Aktivitas";
   }
 
-  function scrollGalleryByCard(direction: -1 | 1) {
-    const track = galleryTrackRef.current;
-    if (!track) return;
-    const firstCard = track.querySelector<HTMLElement>("[data-gallery-card]");
-    const step = (firstCard?.offsetWidth ?? 320) + 20;
-    track.scrollBy({ left: direction * step, behavior: "smooth" });
-  }
-
   function scrollToSlideIndex(idx: number) {
     const track = galleryTrackRef.current;
     if (!track) return;
@@ -197,10 +205,7 @@ export function TouristSpotGallerySection({
     const firstCard = track.querySelector<HTMLElement>("[data-gallery-card]");
     const cardWidth = (firstCard?.offsetWidth ?? 320) + 20;
     const idx = Math.round(track.scrollLeft / Math.max(1, cardWidth));
-    const clamped = Math.max(
-      0,
-      Math.min(filteredItems.length - 1, idx)
-    );
+    const clamped = Math.max(0, Math.min(filteredItems.length - 1, idx));
     if (clamped !== activeSlideIndex) {
       setActiveSlideIndex(clamped);
     }
@@ -315,9 +320,9 @@ export function TouristSpotGallerySection({
   return (
     <section
       id="galeri-wisata"
-      className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-24 space-y-7 sm:space-y-9"
+      className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-24 space-y-6 sm:space-y-8"
     >
-      {/* HEADER SECTION */}
+      {/* HEADER SECTION (Tanpa Tombol Panah < atau >, Cukup Geser/Swipe) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2.5 rounded-full border border-telaga-400/35 bg-telaga/15 px-3.5 py-1.5 text-xs font-bold text-kabut uppercase tracking-widest shadow-[0_6px_20px_rgba(47,143,131,0.2)]">
@@ -345,79 +350,54 @@ export function TouristSpotGallerySection({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 shrink-0">
-          {/* Tombol Geser Kiri / Kanan untuk Carousel Foto */}
-          {filteredItems.length > 1 ? (
-            <div className="inline-flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollGalleryByCard(-1)}
-                aria-label={isEn ? "Previous spot photo" : "Geser foto sebelumnya"}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-obsidian/90 text-kabut hover:border-fajar/55 hover:text-fajar transition-all shadow-md cursor-pointer"
-              >
-                <i className="bi bi-chevron-left text-sm" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollGalleryByCard(1)}
-                aria-label={isEn ? "Next spot photo" : "Geser foto selanjutnya"}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-obsidian/90 text-kabut hover:border-fajar/55 hover:text-fajar transition-all shadow-md cursor-pointer"
-              >
-                <i className="bi bi-chevron-right text-sm" aria-hidden="true" />
-              </button>
-            </div>
-          ) : null}
-
-          {/* Action Button for Staff / Admin */}
-          {canManage ? (
-            <button
-              type="button"
-              onClick={() => setIsUploadOpen(true)}
-              className="btn-ui btn-fajar shadow-lg shadow-fajar/20"
-            >
-              <i
-                className="bi bi-cloud-arrow-up-fill text-base"
-                aria-hidden="true"
-              />
-              <span>
-                {isEn ? "Upload New Spot Photo" : "Unggah Foto Spot Baru"}
-              </span>
-            </button>
-          ) : null}
-        </div>
+        {/* Action Button for Staff / Admin */}
+        {canManage ? (
+          <button
+            type="button"
+            onClick={() => setIsUploadOpen(true)}
+            className="btn-ui btn-fajar self-start md:self-auto shrink-0 shadow-lg shadow-fajar/20"
+          >
+            <i
+              className="bi bi-cloud-arrow-up-fill text-base"
+              aria-hidden="true"
+            />
+            <span>
+              {isEn ? "Upload New Spot Photo" : "Unggah Foto Spot Baru"}
+            </span>
+          </button>
+        ) : null}
       </div>
 
-      {/* CATEGORY FILTER TABS — Bisa Digeser (Touch Swipe & Mouse Drag) */}
+      {/* CATEGORY FILTER TABS — Bebas Geser Kanan/Kiri Tanpa Mengganggu Scroll Bawah */}
       <div
         ref={categoryScrollRef}
+        style={{
+          touchAction: "pan-x pan-y",
+          WebkitOverflowScrolling: "touch",
+        }}
         onMouseDown={(e) => {
           const el = categoryScrollRef.current;
-          if (!el) return;
+          if (!el || e.button !== 0) return;
           catDragStateRef.current = {
             isDown: true,
-            startX: e.pageX - el.offsetLeft,
+            startX: e.clientX,
+            startY: e.clientY,
             scrollLeft: el.scrollLeft,
             moved: false,
           };
         }}
-        onMouseLeave={() => {
-          catDragStateRef.current.isDown = false;
-        }}
-        onMouseUp={() => {
-          catDragStateRef.current.isDown = false;
-        }}
         onMouseMove={(e) => {
           const el = categoryScrollRef.current;
-          if (!el || !catDragStateRef.current.isDown) return;
-          const x = e.pageX - el.offsetLeft;
-          const walk = x - catDragStateRef.current.startX;
-          if (Math.abs(walk) > 5) {
-            catDragStateRef.current.moved = true;
-            e.preventDefault();
-            el.scrollLeft = catDragStateRef.current.scrollLeft - walk * 1.25;
+          const state = catDragStateRef.current;
+          if (!el || !state.isDown) return;
+          const dx = e.clientX - state.startX;
+          const dy = e.clientY - state.startY;
+          if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) {
+            state.moved = true;
+            el.scrollLeft = state.scrollLeft - dx * 1.15;
           }
         }}
-        className="flex items-center gap-2.5 overflow-x-auto pb-2 touch-pan-x select-none cursor-grab active:cursor-grabbing custom-scroll -mx-4 px-4 sm:mx-0 sm:px-0"
+        className="flex items-center gap-2.5 overflow-x-auto overscroll-x-contain pb-1 select-none cursor-grab active:cursor-grabbing -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
@@ -445,9 +425,9 @@ export function TouristSpotGallerySection({
                 }
               }}
               className={cn(
-                "group min-h-[44px] inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border",
+                "group min-h-[42px] inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border",
                 isActive
-                  ? "bg-fajar text-obsidian border-fajar shadow-[0_8px_24px_rgba(242,166,90,0.3)] scale-[1.02]"
+                  ? "bg-fajar text-obsidian border-fajar shadow-[0_8px_24px_rgba(242,166,90,0.3)]"
                   : "surface-solid-dark border-white/15 text-kabut/85 hover:text-kabut hover:border-fajar/45"
               )}
             >
@@ -465,7 +445,7 @@ export function TouristSpotGallerySection({
         })}
       </div>
 
-      {/* SWIPEABLE / DRAGGABLE PHOTO CAROUSEL */}
+      {/* SWIPEABLE / DRAGGABLE PHOTO CAROUSEL — Mendukung Scroll Vertikal & Geser Horizontal Secara Independen */}
       {filteredItems.length === 0 ? (
         <div className="surface-solid-dark p-12 text-center rounded-2xl shadow-[0_18px_44px_rgba(0,0,0,0.55)]">
           <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-fajar/35 bg-fajar/15 text-fajar shadow-md">
@@ -483,35 +463,33 @@ export function TouristSpotGallerySection({
             key={activeCategory}
             ref={galleryTrackRef}
             onScroll={handleTrackScroll}
+            style={{
+              touchAction: "pan-x pan-y",
+              WebkitOverflowScrolling: "touch",
+            }}
             onMouseDown={(e) => {
               const el = galleryTrackRef.current;
-              if (!el) return;
+              if (!el || e.button !== 0) return;
               trackDragStateRef.current = {
                 isDown: true,
-                startX: e.pageX - el.offsetLeft,
+                startX: e.clientX,
+                startY: e.clientY,
                 scrollLeft: el.scrollLeft,
                 moved: false,
               };
             }}
-            onMouseLeave={() => {
-              trackDragStateRef.current.isDown = false;
-            }}
-            onMouseUp={() => {
-              trackDragStateRef.current.isDown = false;
-            }}
             onMouseMove={(e) => {
               const el = galleryTrackRef.current;
-              if (!el || !trackDragStateRef.current.isDown) return;
-              const x = e.pageX - el.offsetLeft;
-              const walk = x - trackDragStateRef.current.startX;
-              if (Math.abs(walk) > 8) {
-                trackDragStateRef.current.moved = true;
-                e.preventDefault();
-                el.scrollLeft =
-                  trackDragStateRef.current.scrollLeft - walk * 1.2;
+              const state = trackDragStateRef.current;
+              if (!el || !state.isDown) return;
+              const dx = e.clientX - state.startX;
+              const dy = e.clientY - state.startY;
+              if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+                state.moved = true;
+                el.scrollLeft = state.scrollLeft - dx * 1.15;
               }
             }}
-            className="flex gap-5 overflow-x-auto snap-x snap-mandatory touch-pan-x select-none cursor-grab active:cursor-grabbing pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 custom-scroll animate-page-smooth-in"
+            className="flex gap-4 sm:gap-5 overflow-x-auto overscroll-x-contain snap-x snap-proximity select-none cursor-grab active:cursor-grabbing pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden animate-page-smooth-in"
           >
             {filteredItems.map((item) => {
               const isLoaded = Boolean(loadedMap[item.id]);
@@ -519,7 +497,7 @@ export function TouristSpotGallerySection({
                 <article
                   key={item.id}
                   data-gallery-card="true"
-                  className="group surface-solid-dark w-[84vw] max-w-[335px] sm:w-[340px] lg:w-[375px] shrink-0 snap-center sm:snap-start overflow-hidden rounded-2xl border border-white/10 hover:border-fajar/45 transition-all duration-300 flex flex-col justify-between shadow-[0_18px_42px_rgba(0,0,0,0.55)]"
+                  className="group surface-solid-dark w-[82vw] max-w-[325px] sm:w-[340px] lg:w-[375px] shrink-0 snap-center sm:snap-start overflow-hidden rounded-2xl border border-white/10 hover:border-fajar/45 transition-all duration-300 flex flex-col justify-between shadow-[0_18px_42px_rgba(0,0,0,0.55)]"
                 >
                   {/* IMAGE WRAPPER WITH SHADOW SKELETON */}
                   <div
@@ -549,7 +527,7 @@ export function TouristSpotGallerySection({
                       alt={item.title}
                       fill
                       draggable={false}
-                      sizes="(max-width: 640px) 84vw, (max-width: 1024px) 340px, 375px"
+                      sizes="(max-width: 640px) 82vw, (max-width: 1024px) 340px, 375px"
                       onLoad={() =>
                         setLoadedMap((prev) =>
                           prev[item.id] ? prev : { ...prev, [item.id]: true }
@@ -665,7 +643,7 @@ export function TouristSpotGallerySection({
         </div>
       )}
 
-      {/* LIGHTBOX MODAL — Dirender via Portal ke document.body & Mengunci Scroll Halaman */}
+      {/* LIGHTBOX MODAL — Dirender via Portal ke document.body, Mengunci Scroll Halaman, & Mendukung Geser/Swipe */}
       {selectedPhoto && typeof document !== "undefined"
         ? createPortal(
             <div
@@ -674,27 +652,50 @@ export function TouristSpotGallerySection({
               aria-label={selectedPhoto.title}
               onClick={() => setSelectedPhoto(null)}
               onTouchStart={(e) => {
-                lightboxTouchStartXRef.current =
-                  e.touches[0]?.clientX ?? null;
+                const t = e.touches[0];
+                if (t) {
+                  lightboxSwipeStartRef.current = {
+                    x: t.clientX,
+                    y: t.clientY,
+                  };
+                }
               }}
               onTouchEnd={(e) => {
-                const startX = lightboxTouchStartXRef.current;
-                const endX = e.changedTouches[0]?.clientX ?? null;
-                lightboxTouchStartXRef.current = null;
-                if (startX !== null && endX !== null) {
-                  const dx = endX - startX;
-                  if (dx < -45) {
-                    goToRelativePhoto(1);
-                  } else if (dx > 45) {
-                    goToRelativePhoto(-1);
+                const start = lightboxSwipeStartRef.current;
+                const t = e.changedTouches[0];
+                lightboxSwipeStartRef.current = null;
+                if (start && t) {
+                  const dx = t.clientX - start.x;
+                  const dy = t.clientY - start.y;
+                  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                    if (dx < 0) goToRelativePhoto(1);
+                    else goToRelativePhoto(-1);
                   }
                 }
               }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-obsidian/95 backdrop-blur-xl overscroll-none touch-none"
+              onMouseDown={(e) => {
+                lightboxSwipeStartRef.current = {
+                  x: e.clientX,
+                  y: e.clientY,
+                };
+              }}
+              onMouseUp={(e) => {
+                const start = lightboxSwipeStartRef.current;
+                lightboxSwipeStartRef.current = null;
+                if (start) {
+                  const dx = e.clientX - start.x;
+                  const dy = e.clientY - start.y;
+                  if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+                    if (dx < 0) goToRelativePhoto(1);
+                    else goToRelativePhoto(-1);
+                  }
+                }
+              }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-obsidian/95 backdrop-blur-xl overscroll-none touch-none select-none"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="surface-solid-dark max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden rounded-2xl border border-white/20 shadow-[0_28px_80px_rgba(0,0,0,0.95)] relative"
+                className="surface-solid-dark max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden rounded-2xl border border-white/20 shadow-[0_28px_80px_rgba(0,0,0,0.95)] relative cursor-grab active:cursor-grabbing"
               >
                 {/* TOP BAR LIGHTBOX: Counter + Close Button */}
                 <div className="absolute top-3.5 left-3.5 right-3.5 z-20 flex items-center justify-between pointer-events-none">
@@ -722,7 +723,7 @@ export function TouristSpotGallerySection({
                   </button>
                 </div>
 
-                {/* IMAGE VIEWPORT + PREV/NEXT SLIDE CONTROLS */}
+                {/* IMAGE VIEWPORT — Cukup Geser/Swipe Kiri atau Kanan Tanpa Tombol < > */}
                 <div className="relative aspect-4/3 sm:aspect-16/10 w-full bg-obsidian shrink-0">
                   {!modalImageLoaded ? (
                     <div
@@ -734,42 +735,36 @@ export function TouristSpotGallerySection({
                     src={selectedPhoto.imageUrl}
                     alt={selectedPhoto.title}
                     fill
+                    draggable={false}
                     onLoad={() => setModalImageLoaded(true)}
-                    className="object-contain select-none"
+                    className="object-contain select-none pointer-events-none"
                   />
-
-                  {filteredItems.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => goToRelativePhoto(-1)}
-                        aria-label={
-                          isEn ? "Previous photo" : "Foto sebelumnya"
-                        }
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-obsidian/80 border border-white/20 text-kabut hover:bg-fajar hover:text-obsidian transition-all shadow-lg cursor-pointer"
-                      >
-                        <i
-                          className="bi bi-chevron-left text-sm"
-                          aria-hidden="true"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => goToRelativePhoto(1)}
-                        aria-label={isEn ? "Next photo" : "Foto selanjutnya"}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-obsidian/80 border border-white/20 text-kabut hover:bg-fajar hover:text-obsidian transition-all shadow-lg cursor-pointer"
-                      >
-                        <i
-                          className="bi bi-chevron-right text-sm"
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </>
-                  ) : null}
                 </div>
 
-                {/* PHOTO DETAILS FOOTER */}
+                {/* PHOTO DETAILS FOOTER + INDIKATOR TITIK GESER */}
                 <div className="p-4 sm:p-6 space-y-2.5 bg-obsidian/95 overflow-y-auto">
+                  {filteredItems.length > 1 ? (
+                    <div className="flex items-center justify-center gap-1.5 pb-1">
+                      {filteredItems.map((it, idx) => (
+                        <button
+                          key={it.id}
+                          type="button"
+                          onClick={() => {
+                            setModalImageLoaded(false);
+                            setSelectedPhoto(it);
+                          }}
+                          aria-label={it.title}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                            idx === selectedPhotoIndex
+                              ? "w-6 bg-fajar"
+                              : "w-1.5 bg-white/25 hover:bg-white/45"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-heading text-lg sm:text-xl font-bold text-white">
                       {selectedPhoto.title}
