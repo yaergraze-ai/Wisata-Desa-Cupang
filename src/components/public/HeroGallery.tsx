@@ -948,8 +948,8 @@ export function HeroGallery({
             </div>
           </div>
 
-          {/* BLOK 4 (Mobile: Di Bawah Panel Tiket, Desktop: Kiri Baris 2) — Deskripsi, Statistik Fakta & Navigasi Cepat */}
-          <div className="order-4 lg:order-3 lg:col-span-7 space-y-4">
+          {/* BLOK 4 (Khusus Desktop: Kiri Baris 2) — Deskripsi, Statistik Fakta & Navigasi Cepat */}
+          <div className="hidden lg:block lg:order-3 lg:col-span-7 space-y-4">
             <p className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-xs sm:text-base leading-relaxed text-kabut/90">
               {tHero("subheadline")}
             </p>

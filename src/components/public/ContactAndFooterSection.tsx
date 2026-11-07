@@ -98,7 +98,7 @@ export async function ContactAndFooterSection({
       </section>
 
       {/* Footer Lanskap dengan Slot Media "footer" & Pengalih Bahasa (§6.A & §6.J) */}
-      <footer className="relative overflow-hidden border-t border-kabut/15 bg-hutan-950 pt-14 pb-24 lg:pb-14">
+      <footer className="relative overflow-hidden border-t border-kabut/15 bg-hutan-950 pt-14 pb-28 lg:pb-14">
         {footerMedia ? (
           <Image
             src={footerMedia.url}

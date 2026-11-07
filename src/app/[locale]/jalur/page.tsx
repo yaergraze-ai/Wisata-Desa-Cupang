@@ -57,7 +57,7 @@ export default async function TrailNavigatorPage({
     "kontak@wisatacirebon.id";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-obsidian text-kabut">
+    <div className="flex min-h-dvh flex-col bg-obsidian text-kabut pb-24 lg:pb-0">
       <MobileNotificationPrompt />
       <PublicNavbar
         user={

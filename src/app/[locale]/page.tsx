@@ -95,7 +95,7 @@ export default async function HomePage({
     : null;
 
   return (
-    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour pb-20 lg:pb-0">
+    <div className="min-h-dvh flex flex-col bg-obsidian bg-topo-contour">
       {!hasSeenIntro ? <CinematicIntro /> : null}
       <MobileNotificationPrompt />
       <PublicNavbar user={navbarUser} />

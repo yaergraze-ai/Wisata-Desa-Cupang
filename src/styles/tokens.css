@@ -143,7 +143,7 @@
   body {
     background-color: var(--color-obsidian);
     color: var(--color-kabut);
-    overflow-x: hidden;
+    overflow-x: clip;
     min-height: 100dvh;
   }
 

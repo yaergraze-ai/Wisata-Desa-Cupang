@@ -4,7 +4,7 @@
  * Menggunakan strategi Network-First untuk kode/aset aplikasi agar pembaruan langsung terlihat di ponsel.
  */
 
-const SHELL_CACHE_NAME = "wisata-cirebon-shell-v5";
+const SHELL_CACHE_NAME = "wisata-cirebon-shell-v6";
 const MAP_CACHE_NAME = "wisata_cirebon_map_cache";
 
 const PRECACHE_URLS = [
