@@ -53,7 +53,7 @@ export default async function OfflineFallbackPage({
             href="/"
             className="btn-ui btn-glass py-3 text-xs font-bold"
           >
-            <i className="bi bi-arrow-left" aria-hidden="true" />
+
             <span>{tLegal("backHome")}</span>
           </Link>
         </div>

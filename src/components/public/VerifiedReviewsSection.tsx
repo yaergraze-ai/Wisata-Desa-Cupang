@@ -309,7 +309,36 @@ export function VerifiedReviewsSection({
       ) : null}
 
       {/* DAFTAR KARTU ULASAN */}
-      <div className={cn("transition-opacity duration-300", isLoading ? "opacity-60" : "opacity-100")}>
+      {isLoading ? (
+        <div
+          aria-busy="true"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-pulse"
+        >
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="rounded-3xl border border-telaga-700/60 bg-gradient-to-br from-hutan/80 to-obsidian p-5 space-y-4 shadow-[0_22px_54px_rgba(0,0,0,0.72)]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-fajar/20 border border-fajar/35 shadow-sm" />
+                  <div className="space-y-1.5">
+                    <div className="h-4 w-28 rounded-md bg-white/15" />
+                    <div className="h-3 w-20 rounded-md bg-white/10" />
+                  </div>
+                </div>
+                <div className="h-6 w-14 rounded-full bg-fajar/20 border border-fajar/35" />
+              </div>
+              <div className="h-32 w-full rounded-2xl bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 shadow-inner" />
+              <div className="space-y-2">
+                <div className="h-3.5 w-full rounded-md bg-white/10" />
+                <div className="h-3.5 w-4/5 rounded-md bg-white/10" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <div className={cn("transition-opacity duration-300", isLoading ? "hidden" : "opacity-100")}>
         {displayedReviews.length === 0 ? (
           <div className="surface-solid-dark p-8 text-center rounded-3xl border border-telaga-800">
             <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-obsidian border border-telaga-700 text-fajar">

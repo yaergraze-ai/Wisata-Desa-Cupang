@@ -101,7 +101,7 @@ export default async function PrivacyPolicyPage({
 
         <div className="pt-4 border-t border-telaga-700/60 flex flex-wrap items-center justify-between gap-4">
           <Link href="/" className="btn-ui btn-fajar">
-            <i className="bi bi-arrow-left" aria-hidden="true" />
+
             <span>{tLegal("backHome")}</span>
           </Link>
           <Link href="/syarat-ketentuan" className="text-xs font-semibold text-telaga-200 hover:text-white underline underline-offset-4">

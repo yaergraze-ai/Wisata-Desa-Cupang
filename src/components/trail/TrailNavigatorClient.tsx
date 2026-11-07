@@ -795,7 +795,7 @@ ${trackPointsXml}
             )}
 
             <Link href="/" className="btn-ui btn-glass py-2.5 text-xs font-bold">
-              <i className="bi bi-arrow-left" aria-hidden="true" />
+
               <span>{tLegal("backHome")}</span>
             </Link>
           </div>

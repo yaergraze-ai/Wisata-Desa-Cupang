@@ -42,8 +42,8 @@ export async function AuthShell({
               <LocaleSwitcher />
             </Suspense>
             <Link href="/" className="btn-ui btn-glass whitespace-nowrap shrink-0 px-3 py-2 text-xs sm:text-sm">
-              <i className="bi bi-arrow-left" aria-hidden="true" />
-              <span className="hidden sm:inline">{tAuth("backToHome")}</span>
+
+              <span>{tAuth("backToHome")}</span>
             </Link>
           </div>
         </div>

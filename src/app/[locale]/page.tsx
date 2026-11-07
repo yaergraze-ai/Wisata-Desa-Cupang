@@ -32,18 +32,27 @@ export default async function HomePage({
   const { locale: rawLocale } = await params;
   const locale: AppLocale = rawLocale === "en" ? "en" : "id";
 
-  const [tHero, tHome, tFac, catalog, authCtx, staffStatus, reviewsData, galleryItems, cookieStore] =
-    await Promise.all([
-      getTranslations({ locale, namespace: "Hero" }),
-      getTranslations({ locale, namespace: "Home" }),
-      getTranslations({ locale, namespace: "Facilities" }),
-      getPublicCatalogData(locale),
-      getServerAuthContext(),
-      getPublicStaffStatusData(locale),
-      getPublicReviewsData({ filter: "all", locale, limit: 12 }),
-      getGalleryItems(),
-      cookies(),
-    ]);
+  const [
+    tHero,
+    tHome,
+    tFac,
+    catalog,
+    authCtx,
+    staffStatus,
+    reviewsData,
+    galleryItems,
+    cookieStore,
+  ] = await Promise.all([
+    getTranslations({ locale, namespace: "Hero" }),
+    getTranslations({ locale, namespace: "Home" }),
+    getTranslations({ locale, namespace: "Facilities" }),
+    getPublicCatalogData(locale),
+    getServerAuthContext(),
+    getPublicStaffStatusData(locale),
+    getPublicReviewsData({ filter: "all", locale, limit: 12 }),
+    getGalleryItems(),
+    cookies(),
+  ]);
 
   const hasSeenIntro = cookieStore.get("wdc_intro_seen")?.value === "true";
 
@@ -57,11 +66,11 @@ export default async function HomePage({
   const initialQuote =
     todayQuote.blockingCode === "SAME_DAY_CUTOFF"
       ? await calculateServerOrderQuote({
-          visitDate: addDaysToYmd(catalog.todayYmd, 1),
-          regulerQty: 0,
-          putihQty: 2,
-          locale,
-        })
+            visitDate: addDaysToYmd(catalog.todayYmd, 1),
+            regulerQty: 0,
+            putihQty: 2,
+            locale,
+          })
       : todayQuote;
 
   const offTrailThresholdM =
@@ -125,54 +134,73 @@ export default async function HomePage({
             </div>
 
             <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {catalog.destinations.map((dest) => (
-                <article
-                  key={dest.id}
-                  className="surface-solid-dark p-6 flex flex-col justify-between gap-5"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-heading text-xl font-bold text-kabut">
-                        {dest.name}
-                      </h3>
-                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-obsidian/80 border border-telaga-700 px-3 py-1 text-xs font-semibold text-fajar">
-                        <i
-                          className="bi bi-arrow-up-right-circle"
-                          aria-hidden="true"
-                        />
-                        <span>
-                          {tHero("elevationUnit", { value: dest.elevationM })}
+              {catalog.destinations.map((dest) => {
+                const isBendera = dest.slug === "gunung-bendera";
+                return (
+                  <article
+                    key={dest.id}
+                    className="group surface-solid-dark p-6 flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_22px_50px_rgba(0,0,0,0.65)]"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-fajar/40 bg-gradient-to-br from-fajar/25 via-hutan to-obsidian text-fajar shadow-[0_8px_20px_rgba(242,166,90,0.2)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                            <i
+                              className={
+                                isBendera
+                                  ? "bi bi-brightness-high-fill text-lg"
+                                  : "bi bi-compass-fill text-lg"
+                              }
+                              aria-hidden="true"
+                            />
+                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
+                          </span>
+                          <h3 className="font-heading text-xl font-bold text-kabut">
+                            {dest.name}
+                          </h3>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian/90 border border-telaga-700 px-3 py-1.5 text-xs font-semibold text-fajar shadow-sm">
+                          <i
+                            className="bi bi-arrow-up-right-circle"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {tHero("elevationUnit", { value: dest.elevationM })}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+                      <p className="mt-3.5 text-sm text-kabut/85 leading-relaxed">
+                        {dest.description}
+                      </p>
                     </div>
-                    <p className="mt-3 text-sm text-kabut/85">
-                      {dest.description}
-                    </p>
-                  </div>
 
-                  <dl className="grid grid-cols-2 gap-3 border-t border-kabut/15 pt-4 text-xs">
-                    <div>
-                      <dt className="text-kabut/75">{tHero("hoursLabel")}</dt>
-                      <dd className="mt-1 font-semibold text-kabut">
-                        {dest.openTime}–{dest.closeTime} WIB
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-kabut/75">
-                        {tHero("quotaTodayLabel", {
-                          date: formatVisitDateDisplay(catalog.todayYmd, locale),
-                        })}
-                      </dt>
-                      <dd className="mt-1 font-bold text-fajar">
-                        {tHero("quotaRemaining", {
-                          remaining: dest.remainingToday,
-                          capacity: dest.capacityToday,
-                        })}
-                      </dd>
-                    </div>
-                  </dl>
-                </article>
-              ))}
+                    <dl className="grid grid-cols-2 gap-3 border-t border-kabut/15 pt-4 text-xs">
+                      <div>
+                        <dt className="text-kabut/75">{tHero("hoursLabel")}</dt>
+                        <dd className="mt-1 font-semibold text-kabut">
+                          {dest.openTime}–{dest.closeTime} WIB
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-kabut/75">
+                          {tHero("quotaTodayLabel", {
+                            date: formatVisitDateDisplay(
+                              catalog.todayYmd,
+                              locale
+                            ),
+                          })}
+                        </dt>
+                        <dd className="mt-1 font-bold text-fajar">
+                          {tHero("quotaRemaining", {
+                            remaining: dest.remainingToday,
+                            capacity: dest.capacityToday,
+                          })}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                );
+              })}
             </div>
           </div>
 
@@ -182,11 +210,12 @@ export default async function HomePage({
               {tHome("rulesHeading")}
             </h2>
             <div className="mt-5 grid gap-5 md:grid-cols-3">
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
-                  <i className="bi bi-qr-code-scan text-lg" aria-hidden="true" />
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  <i className="bi bi-qr-code-scan text-xl" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
                 </span>
-                <h3 className="mt-3 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tHome("rule1Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -194,11 +223,12 @@ export default async function HomePage({
                 </p>
               </article>
 
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
-                  <i className="bi bi-people-fill text-lg" aria-hidden="true" />
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-telaga-400/50 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-telaga/35 via-obsidian to-hutan border border-telaga-400/50 text-telaga-200 shadow-[0_8px_22px_rgba(47,143,131,0.28)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  <i className="bi bi-people-fill text-xl" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-telaga-300 shadow-[0_0_8px_#2f8f83]" />
                 </span>
-                <h3 className="mt-3 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tHome("rule2Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -209,14 +239,15 @@ export default async function HomePage({
                 </p>
               </article>
 
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
                   <i
-                    className="bi bi-hourglass-split text-lg"
+                    className="bi bi-hourglass-split text-xl"
                     aria-hidden="true"
                   />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
                 </span>
-                <h3 className="mt-3 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tHome("rule3Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -267,16 +298,16 @@ export default async function HomePage({
                     key={prod.id}
                     className={
                       isPutih
-                        ? "ticket-card-putih p-6 sm:p-7 flex flex-col justify-between gap-6"
-                        : "ticket-card-reguler p-6 sm:p-7 flex flex-col justify-between gap-6"
+                        ? "group ticket-card-putih p-6 sm:p-7 flex flex-col justify-between gap-6 transition-transform duration-300 hover:-translate-y-1"
+                        : "group ticket-card-reguler p-6 sm:p-7 flex flex-col justify-between gap-6 transition-transform duration-300 hover:-translate-y-1"
                     }
                   >
                     <div>
                       <span
                         className={
                           isPutih
-                            ? "inline-flex items-center gap-1.5 rounded-full bg-hutan px-3 py-1 text-xs font-bold text-fajar"
-                            : "inline-flex items-center gap-1.5 rounded-full bg-obsidian/80 border border-telaga px-3 py-1 text-xs font-semibold text-kabut"
+                            ? "inline-flex items-center gap-1.5 rounded-full bg-hutan px-3.5 py-1 text-xs font-bold text-fajar shadow-sm"
+                            : "inline-flex items-center gap-1.5 rounded-full bg-obsidian/80 border border-telaga px-3.5 py-1 text-xs font-semibold text-kabut shadow-sm"
                         }
                       >
                         <i
@@ -405,7 +436,7 @@ export default async function HomePage({
             </div>
           </div>
 
-          {/* Fasilitas Kawasan Desa Cupang */}
+          {/* Fasilitas Kawasan Desa Cupang dengan Ikon Berkilau & Animasi Hover */}
           <div>
             <p className="text-xs font-bold tracking-wider text-fajar uppercase">
               {tFac("eyebrow")}
@@ -415,11 +446,12 @@ export default async function HomePage({
             </h2>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                   <i className="bi bi-p-circle-fill text-xl" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-fajar" />
                 </span>
-                <h3 className="mt-3.5 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tFac("f1Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -427,11 +459,15 @@ export default async function HomePage({
                 </p>
               </article>
 
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
-                  <i className="bi bi-signpost-2-fill text-xl" aria-hidden="true" />
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-telaga-400/50 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-telaga/35 via-obsidian to-hutan border border-telaga-400/50 text-telaga-200 shadow-[0_8px_22px_rgba(47,143,131,0.28)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  <i
+                    className="bi bi-signpost-2-fill text-xl"
+                    aria-hidden="true"
+                  />
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-telaga-300" />
                 </span>
-                <h3 className="mt-3.5 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tFac("f2Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -439,11 +475,15 @@ export default async function HomePage({
                 </p>
               </article>
 
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
-                  <i className="bi bi-house-heart-fill text-xl" aria-hidden="true" />
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  <i
+                    className="bi bi-house-heart-fill text-xl"
+                    aria-hidden="true"
+                  />
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-fajar" />
                 </span>
-                <h3 className="mt-3.5 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tFac("f3Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
@@ -451,11 +491,15 @@ export default async function HomePage({
                 </p>
               </article>
 
-              <article className="surface-solid-dark p-5">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-obsidian border border-telaga-700 text-fajar">
-                  <i className="bi bi-shield-check text-xl" aria-hidden="true" />
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-telaga-400/50 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-telaga/35 via-obsidian to-hutan border border-telaga-400/50 text-telaga-200 shadow-[0_8px_22px_rgba(47,143,131,0.28)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  <i
+                    className="bi bi-shield-fill-check text-xl"
+                    aria-hidden="true"
+                  />
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-telaga-300" />
                 </span>
-                <h3 className="mt-3.5 font-heading text-base font-bold text-kabut">
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
                   {tFac("f4Title")}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">

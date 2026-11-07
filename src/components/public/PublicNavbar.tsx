@@ -107,51 +107,51 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
 
   const handleMobileNavClick =
     (tab: NavTab, targetId?: string, fallbackUrl?: string) =>
-    (e: React.MouseEvent) => {
-      // 1. Langsung ubah warna tombol seketika saat disentuh/diklik
-      setActiveTab(tab);
+      (e: React.MouseEvent) => {
+        // 1. Langsung ubah warna tombol seketika saat disentuh/diklik
+        setActiveTab(tab);
 
-      if (tab === "home") {
-        const isHomePage = pathname === "/" || pathname === "/en";
-        if (isHomePage) {
-          e.preventDefault();
-          isScrollingProgrammatically.current = true;
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          window.history.replaceState(null, "", " ");
-          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-          scrollTimeoutRef.current = setTimeout(() => {
-            isScrollingProgrammatically.current = false;
-          }, 900);
-          return;
-        } else {
-          router.push("/");
-          return;
+        if (tab === "home") {
+          const isHomePage = pathname === "/" || pathname === "/en";
+          if (isHomePage) {
+            e.preventDefault();
+            isScrollingProgrammatically.current = true;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.history.replaceState(null, "", " ");
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            scrollTimeoutRef.current = setTimeout(() => {
+              isScrollingProgrammatically.current = false;
+            }, 900);
+            return;
+          } else {
+            router.push("/");
+            return;
+          }
         }
-      }
 
-      if (targetId) {
-        const el = document.getElementById(targetId);
-        if (el) {
-          e.preventDefault();
-          isScrollingProgrammatically.current = true;
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-          window.history.replaceState(null, "", `#${targetId}`);
+        if (targetId) {
+          const el = document.getElementById(targetId);
+          if (el) {
+            e.preventDefault();
+            isScrollingProgrammatically.current = true;
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            window.history.replaceState(null, "", `#${targetId}`);
 
-          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-          scrollTimeoutRef.current = setTimeout(() => {
-            isScrollingProgrammatically.current = false;
-          }, 900);
-          return;
-        } else if (fallbackUrl) {
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            scrollTimeoutRef.current = setTimeout(() => {
+              isScrollingProgrammatically.current = false;
+            }, 900);
+            return;
+          } else if (fallbackUrl) {
+            router.push(fallbackUrl);
+            return;
+          }
+        }
+
+        if (fallbackUrl) {
           router.push(fallbackUrl);
-          return;
         }
-      }
-
-      if (fallbackUrl) {
-        router.push(fallbackUrl);
-      }
-    };
+      };
 
   return (
     <>
@@ -275,16 +275,14 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#beranda"
               onClick={handleMobileNavClick("home", "beranda", "/")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
-                activeTab === "home"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "home"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-              }`}
+                }`}
             >
               <i
-                className={`${
-                  activeTab === "home" ? "bi bi-house-door-fill" : "bi bi-house-door"
-                } text-lg leading-none`}
+                className={`${activeTab === "home" ? "bi bi-house-door-fill" : "bi bi-house-door"
+                  } text-lg leading-none`}
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("home")}</span>
@@ -294,16 +292,14 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#jalur-aturan"
               onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
-                activeTab === "trail"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "trail"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-              }`}
+                }`}
             >
               <i
-                className={`${
-                  activeTab === "trail" ? "bi bi-signpost-split-fill" : "bi bi-signpost-split"
-                } text-lg leading-none`}
+                className={`${activeTab === "trail" ? "bi bi-signpost-split-fill" : "bi bi-signpost-split"
+                  } text-lg leading-none`}
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("trail")}</span>
@@ -313,18 +309,16 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#kalkulator-tiket"
               onClick={handleMobileNavClick("tickets", "kalkulator-tiket", "/#kalkulator-tiket")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
-                activeTab === "tickets"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "tickets"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-              }`}
+                }`}
             >
               <i
-                className={`${
-                  activeTab === "tickets"
+                className={`${activeTab === "tickets"
                     ? "bi bi-ticket-perforated-fill"
                     : "bi bi-ticket-perforated"
-                } text-lg leading-none`}
+                  } text-lg leading-none`}
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("tickets")}</span>
@@ -334,16 +328,14 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <a
               href="#peta-jalur"
               onClick={handleMobileNavClick("map", "peta-jalur", "/#peta-jalur")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
-                activeTab === "map"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "map"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-              }`}
+                }`}
             >
               <i
-                className={`${
-                  activeTab === "map" ? "bi bi-geo-alt-fill" : "bi bi-geo-alt"
-                } text-lg leading-none`}
+                className={`${activeTab === "map" ? "bi bi-geo-alt-fill" : "bi bi-geo-alt"
+                  } text-lg leading-none`}
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("map")}</span>
@@ -353,11 +345,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             <Link
               href={user ? user.dashboardPath : "/masuk"}
               onClick={() => setActiveTab("account")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${
-                activeTab === "account"
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "account"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-              }`}
+                }`}
             >
               {user?.image ? (
                 <Image
@@ -370,15 +361,14 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 />
               ) : (
                 <i
-                  className={`${
-                    user
+                  className={`${user
                       ? activeTab === "account"
                         ? "bi bi-person-check-fill"
                         : "bi bi-person-check"
                       : activeTab === "account"
-                      ? "bi bi-person-circle"
-                      : "bi bi-person"
-                  } text-lg leading-none`}
+                        ? "bi bi-person-circle"
+                        : "bi bi-person"
+                    } text-lg leading-none`}
                   aria-hidden="true"
                 />
               )}
