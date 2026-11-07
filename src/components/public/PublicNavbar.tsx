@@ -69,27 +69,28 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             return;
           }
 
-          // Cek posisi tiap section dari bawah ke atas
+          // Cek posisi tiap section dari bawah ke atas sesuai urutan halaman
           const sections: { id: string; tab: NavTab }[] = [
             { id: "peta-jalur", tab: "map" },
+            { id: "jalur-aturan", tab: "trail" },
+            { id: "galeri-wisata", tab: "tickets" },
             { id: "kalkulator-tiket", tab: "tickets" },
             { id: "pilihan-tiket", tab: "tickets" },
-            { id: "jalur-aturan", tab: "trail" },
           ];
 
-          const anchorY = window.innerHeight * 0.35; // 35% dari batas atas viewport
+          const anchorY = window.innerHeight * 0.4;
           for (const s of sections) {
             const el = document.getElementById(s.id);
             if (el) {
               const rect = el.getBoundingClientRect();
-              if (rect.top <= anchorY && rect.bottom > 60) {
+              if (rect.top <= anchorY) {
                 setActiveTab(s.tab);
                 return;
               }
             }
           }
 
-          // Fallback jika di atas semua section
+          // Fallback jika berada di area hero atas
           setActiveTab("home");
         });
         ticking = true;
@@ -184,16 +185,16 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
             className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 shrink-0"
           >
             <a
-              href="#jalur-aturan"
-              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
-            >
-              <span>{tNav("trail")}</span>
-            </a>
-            <a
               href="#pilihan-tiket"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
               {tNav("tickets")}
+            </a>
+            <a
+              href="#jalur-aturan"
+              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+            >
+              <span>{tNav("trail")}</span>
             </a>
             <a
               href="#peta-jalur"
@@ -265,10 +266,10 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
         </div>
       </header>
 
-      {/* Tab Bar Bawah Khusus Ponsel (§6.A) */}
+      {/* Tab Bar Bawah Khusus Ponsel (§6.A) — Selalu Terkunci di Bawah Layar Viewport */}
       <nav
         aria-label={tNav("mobileNavAria")}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-obsidian/95 backdrop-blur-2xl lg:hidden pb-[env(safe-area-inset-bottom)]"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-white/15 bg-obsidian/95 backdrop-blur-2xl lg:hidden pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(0,0,0,0.75)]"
       >
         <ul className="mx-auto grid max-w-md grid-cols-5 px-1 py-1.5 gap-1">
           <li>
@@ -290,25 +291,8 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
           </li>
           <li>
             <a
-              href="#jalur-aturan"
-              onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
-              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "trail"
-                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
-                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
-                }`}
-            >
-              <i
-                className={`${activeTab === "trail" ? "bi bi-signpost-split-fill" : "bi bi-signpost-split"
-                  } text-lg leading-none`}
-                aria-hidden="true"
-              />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("trail")}</span>
-            </a>
-          </li>
-          <li>
-            <a
-              href="#kalkulator-tiket"
-              onClick={handleMobileNavClick("tickets", "kalkulator-tiket", "/#kalkulator-tiket")}
+              href="#pilihan-tiket"
+              onClick={handleMobileNavClick("tickets", "pilihan-tiket", "/#pilihan-tiket")}
               className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "tickets"
                   ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
                   : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
@@ -322,6 +306,23 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("tickets")}</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#jalur-aturan"
+              onClick={handleMobileNavClick("trail", "jalur-aturan", "/#jalur-aturan")}
+              className={`flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-xs transition-all duration-200 cursor-pointer ${activeTab === "trail"
+                  ? "bg-fajar/15 border border-fajar/40 font-bold text-fajar shadow-md backdrop-blur-md"
+                  : "border border-transparent font-medium text-kabut/75 hover:text-kabut hover:bg-white/5"
+                }`}
+            >
+              <i
+                className={`${activeTab === "trail" ? "bi bi-signpost-split-fill" : "bi bi-signpost-split"
+                  } text-lg leading-none`}
+                aria-hidden="true"
+              />
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("trail")}</span>
             </a>
           </li>
           <li>

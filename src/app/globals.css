@@ -199,11 +199,9 @@ html {
 @keyframes pageSmoothEnter {
   0% {
     opacity: 0;
-    transform: translate3d(0, 8px, 0) scale(0.996);
   }
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -245,8 +243,7 @@ html {
 }
 
 .animate-page-smooth-in {
-  animation: pageSmoothEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
+  animation: pageSmoothEnter 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

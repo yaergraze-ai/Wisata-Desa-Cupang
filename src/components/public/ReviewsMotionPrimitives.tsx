@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import type { PublicReviewItemDto, PublicReviewPhotoDto } from "@/server/reviews/public-reviews";
@@ -54,9 +55,19 @@ export function MotionReviewModal({
     setPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
   }, [photos.length]);
 
-  // Keyboard navigation: Escape to close, Arrows to cycle photos
+  // Keyboard navigation & scroll lock: Escape to close, Arrows to cycle photos, lock page scroll
   useEffect(() => {
-    if (!review) return;
+    if (!review || typeof document === "undefined") return;
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlOverflow = htmlEl.style.overflow;
+    const prevBodyOverflow = bodyEl.style.overflow;
+    const prevBodyOverscroll = bodyEl.style.overscrollBehavior;
+
+    htmlEl.style.overflow = "hidden";
+    bodyEl.style.overflow = "hidden";
+    bodyEl.style.overscrollBehavior = "none";
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -69,10 +80,17 @@ export function MotionReviewModal({
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      htmlEl.style.overflow = prevHtmlOverflow;
+      bodyEl.style.overflow = prevBodyOverflow;
+      bodyEl.style.overscrollBehavior = prevBodyOverscroll;
+    };
   }, [review, onClose, handlePrevPhoto, handleNextPhoto]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {review ? (
         <motion.div
@@ -82,7 +100,7 @@ export function MotionReviewModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/90 p-3 sm:p-5 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-obsidian/95 p-3 sm:p-5 backdrop-blur-xl overscroll-none"
         >
           <motion.div
             initial={{ scale: 0.92, opacity: 0, y: 16 }}
@@ -311,7 +329,8 @@ export function MotionReviewModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

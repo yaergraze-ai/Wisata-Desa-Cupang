@@ -393,12 +393,12 @@ export function HeroGallery({
             });
             gsap.fromTo(
               split.chars,
-              { opacity: 0, y: 18 },
+              { opacity: 0, y: 12 },
               {
                 opacity: 1,
                 y: 0,
-                duration: 0.55,
-                stagger: 0.02,
+                duration: 0.36,
+                stagger: 0.007,
                 ease: "power3.out",
               }
             );

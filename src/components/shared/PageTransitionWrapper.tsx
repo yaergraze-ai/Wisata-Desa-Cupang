@@ -63,8 +63,8 @@ export function PageTransitionWrapper({
 
       <div
         className={cn(
-          "animate-page-smooth-in transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          overlayPhase === "entering" ? "scale-[0.996]" : "scale-100"
+          "animate-page-smooth-in transition-opacity duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          overlayPhase === "entering" ? "opacity-95" : "opacity-100"
         )}
       >
         {children}

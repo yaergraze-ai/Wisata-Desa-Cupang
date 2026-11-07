@@ -239,10 +239,9 @@
   }
 }
 
-/* Optimasi Render Seksi Bawah Lipatan & Animasi Masuk GPU expo.out (§7.1) */
+/* Seksi Bawah Lipatan (Tanpa content-visibility:auto agar position:fixed & ScrollTrigger tetap akurat) */
 .section-cv-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 680px;
+  position: relative;
 }
 
 @keyframes heroCharRise {
