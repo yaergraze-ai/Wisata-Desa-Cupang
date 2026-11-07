@@ -54,11 +54,11 @@ export function SignOutButton({
         type="button"
         disabled={loading}
         onClick={handleSignOut}
-        className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-kabut/65 hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 cursor-pointer"
+        className="btn-ui btn-danger-ui group flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold min-h-[38px] cursor-pointer"
         title={t("signOutBtn")}
       >
         <i
-          className={`bi ${loading ? "bi-arrow-repeat animate-spin" : "bi-box-arrow-right"} text-sm text-kabut/45 group-hover:text-rose-400 transition-colors`}
+          className={`bi ${loading ? "bi-arrow-repeat animate-spin" : "bi-box-arrow-right"} text-sm transition-transform duration-200 group-hover:translate-x-0.5`}
           aria-hidden="true"
         />
         <span>{t("signOutBtn")}</span>

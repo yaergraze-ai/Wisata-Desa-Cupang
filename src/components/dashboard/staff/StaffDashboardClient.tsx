@@ -668,13 +668,14 @@ export function StaffDashboardClient({
         userEmail={staff.email || "petugas@desacupang.id"}
         userAvatarImage={authCtx?.user.image}
         twoFactorEnabled={authCtx?.user.twoFactorEnabled}
+        needsPasswordSetup={authCtx?.user.needsPasswordSetup}
         locale={locale}
         tabs={sidebarTabs}
         activeTab={activeTab}
         onSelectTab={(tabId) => setActiveTab(tabId as StaffTab)}
         title="Portal Petugas Lapangan"
       />
-      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 min-w-0 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Notice Kontras Tinggi Luar Ruangan */}
         <div className="flex items-center gap-2 rounded-xl border-2 border-telaga-500 bg-obsidian px-4 py-2 text-xs font-bold text-telaga-200">
         <i className="bi bi-brightness-high-fill text-base text-fajar" aria-hidden="true" />

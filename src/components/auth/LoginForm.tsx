@@ -110,34 +110,35 @@ export function LoginForm({
 
   return (
     <div className="space-y-5">
-      {whatsappEnabled ? (
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-obsidian/80 p-1 border border-kabut/15">
-          <button
-            type="button"
-            onClick={() => setActiveTab("email")}
-            className={
-              activeTab === "email"
-                ? "btn-ui btn-fajar"
-                : "btn-ui text-kabut/85 hover:text-kabut"
-            }
-          >
-            <i className="bi bi-envelope" aria-hidden="true" />
-            <span>{t("tabEmail")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("whatsapp")}
-            className={
-              activeTab === "whatsapp"
-                ? "btn-ui btn-fajar"
-                : "btn-ui text-kabut/85 hover:text-kabut"
-            }
-          >
-            <i className="bi bi-whatsapp" aria-hidden="true" />
-            <span>{t("tabWhatsappOtp")}</span>
-          </button>
-        </div>
-      ) : null}
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-obsidian/80 p-1 border border-kabut/15">
+        <button
+          type="button"
+          onClick={() => setActiveTab("email")}
+          className={
+            activeTab === "email"
+              ? "btn-ui btn-fajar"
+              : "btn-ui text-kabut/85 hover:text-kabut"
+          }
+        >
+          <i className="bi bi-envelope" aria-hidden="true" />
+          <span>{t("tabEmail")}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("whatsapp")}
+          className={
+            activeTab === "whatsapp"
+              ? "btn-ui btn-fajar"
+              : "btn-ui text-kabut/85 hover:text-kabut"
+          }
+        >
+          <i
+            className={`bi ${whatsappEnabled ? "bi-shield-lock-fill" : "bi-envelope-check-fill"}`}
+            aria-hidden="true"
+          />
+          <span>{t("tabWhatsappOtp")}</span>
+        </button>
+      </div>
 
       {serverError ? (
         <div

@@ -48,6 +48,9 @@ export interface AuthenticatedContext {
     emergencyContact?: string | null;
     emailVerified: boolean;
     twoFactorEnabled: boolean;
+    isOAuthUser?: boolean;
+    hasPassword?: boolean;
+    needsPasswordSetup?: boolean;
     assignedGates: GateType[];
     staffProfileId: string | null;
   };
@@ -91,7 +94,15 @@ export async function getServerAuthContext(
   const [dbUser, dbSession] = await Promise.all([
     db.user.findUnique({
       where: { id: sessionRes.user.id },
-      include: { staffProfile: true },
+      include: {
+        staffProfile: true,
+        accounts: {
+          select: {
+            providerId: true,
+            password: true,
+          },
+        },
+      },
     }),
     db.session.findUnique({
       where: { id: sessionRes.session.id },
@@ -107,6 +118,24 @@ export async function getServerAuthContext(
     dbSession.expiresAt <= new Date()
   ) {
     return null;
+  }
+
+  const isOAuthUser = dbUser.accounts.some(
+    (a) => a.providerId === "google" || a.providerId === "facebook"
+  );
+  const hasPassword = dbUser.accounts.some(
+    (a) => a.providerId === "credential" && Boolean(a.password)
+  );
+  const needsPasswordSetup = isOAuthUser && !hasPassword;
+  const effectiveEmailVerified = Boolean(dbUser.emailVerified) || isOAuthUser;
+
+  if (isOAuthUser && !dbUser.emailVerified) {
+    void db.user
+      .update({
+        where: { id: dbUser.id },
+        data: { emailVerified: true },
+      })
+      .catch(() => undefined);
   }
 
   return {
@@ -130,8 +159,11 @@ export async function getServerAuthContext(
       district: dbUser.district ?? null,
       postalCode: dbUser.postalCode ?? null,
       emergencyContact: dbUser.emergencyContact ?? null,
-      emailVerified: Boolean(dbUser.emailVerified),
+      emailVerified: effectiveEmailVerified,
       twoFactorEnabled: Boolean(dbUser.twoFactorEnabled),
+      isOAuthUser,
+      hasPassword,
+      needsPasswordSetup,
       assignedGates: dbUser.staffProfile?.assignedGates ?? [],
       staffProfileId: dbUser.staffProfile?.id ?? null,
     },

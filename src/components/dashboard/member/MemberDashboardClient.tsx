@@ -816,6 +816,7 @@ export function MemberDashboardClient({
         userEmail={userEmail}
         userAvatarImage={authCtx?.user.image}
         twoFactorEnabled={authCtx?.user.twoFactorEnabled}
+        needsPasswordSetup={authCtx?.user.needsPasswordSetup}
         locale={locale}
         tabs={sidebarTabs}
         activeTab={activeTab}
@@ -830,7 +831,7 @@ export function MemberDashboardClient({
             : "Dashboard Wisatawan"
         }
       />
-      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 min-w-0 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Header Halaman Aktif */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-telaga-800/60">
           <div>
@@ -2012,7 +2013,7 @@ export function MemberDashboardClient({
                       onClick={() =>
                         void handleCancelOrder(activeCheckoutOrder.id)
                       }
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/45 bg-red-950/50 px-4 py-2.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-950 disabled:opacity-45"
+                      className="btn-ui btn-danger-ui w-full justify-center text-xs font-bold"
                     >
                       <i className="bi bi-x-circle" aria-hidden="true" />
                       <span>
@@ -2104,16 +2105,16 @@ export function MemberDashboardClient({
             </div>
 
             {/* Filter Tabs Tiket */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-kabut/10">
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-kabut/10">
               <button
                 type="button"
                 data-testid="filter-ticket-all"
                 onClick={() => setTicketFilter("all")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  "btn-ui min-h-[38px] rounded-xl px-3.5 py-1.5 text-xs font-bold",
                   ticketFilter === "all"
-                    ? "border-fajar bg-fajar text-obsidian shadow-sm"
-                    : "border-kabut/20 bg-obsidian text-kabut hover:border-kabut/40"
+                    ? "btn-fajar text-obsidian"
+                    : "btn-glass text-kabut/85"
                 )}
               >
                 <span>Semua Tiket</span>
@@ -2134,10 +2135,10 @@ export function MemberDashboardClient({
                 data-testid="filter-ticket-active"
                 onClick={() => setTicketFilter("active")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  "btn-ui min-h-[38px] rounded-xl px-3.5 py-1.5 text-xs font-bold",
                   ticketFilter === "active"
-                    ? "border-emerald-500 bg-emerald-500 text-obsidian shadow-sm"
-                    : "border-kabut/20 bg-obsidian text-kabut hover:border-emerald-500/50"
+                    ? "btn-telaga text-white"
+                    : "btn-glass text-kabut/85"
                 )}
               >
                 <i className="bi bi-qr-code text-[11px]" aria-hidden="true" />
@@ -2146,7 +2147,7 @@ export function MemberDashboardClient({
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-black",
                     ticketFilter === "active"
-                      ? "bg-obsidian/25 text-obsidian"
+                      ? "bg-obsidian/25 text-white"
                       : "bg-emerald-500/20 text-emerald-300"
                   )}
                 >
@@ -2159,10 +2160,10 @@ export function MemberDashboardClient({
                 data-testid="filter-ticket-used"
                 onClick={() => setTicketFilter("used")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                  "btn-ui min-h-[38px] rounded-xl px-3.5 py-1.5 text-xs font-bold",
                   ticketFilter === "used"
-                    ? "border-zinc-500 bg-zinc-800 text-zinc-100 shadow-sm"
-                    : "border-kabut/20 bg-obsidian text-kabut hover:border-zinc-500/50"
+                    ? "btn-hutan text-white border-fajar/50"
+                    : "btn-glass text-kabut/85"
                 )}
               >
                 <i className="bi bi-archive-fill text-[11px]" aria-hidden="true" />
@@ -2171,8 +2172,8 @@ export function MemberDashboardClient({
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-black",
                     ticketFilter === "used"
-                      ? "bg-zinc-700 text-zinc-200"
-                      : "bg-white/10 text-zinc-400"
+                      ? "bg-white/15 text-fajar"
+                      : "bg-white/10 text-zinc-300"
                   )}
                 >
                   {usedTicketsCount}
@@ -2325,7 +2326,7 @@ export function MemberDashboardClient({
                             type="button"
                             disabled={cancellingId === order.id}
                             onClick={() => void handleCancelOrder(order.id)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-400/40 bg-red-950/50 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-950 disabled:opacity-40"
+                            className="btn-ui btn-danger-ui px-3 py-2 text-xs font-bold min-h-[38px]"
                           >
                             <i className="bi bi-x-circle" aria-hidden="true" />
                             <span>{t("cancelOrderBtn")}</span>
@@ -2338,7 +2339,7 @@ export function MemberDashboardClient({
                           <button
                             type="button"
                             onClick={() => selectTab("wallet")}
-                            className="btn-ui btn-glass text-xs"
+                            className="btn-ui btn-glass text-xs min-h-[38px]"
                           >
                             <i className="bi bi-qr-code" aria-hidden="true" />
                             <span>{t("viewIssuedTicketsBtn")}</span>
@@ -2351,7 +2352,7 @@ export function MemberDashboardClient({
                               type="button"
                               data-testid={`refund-order-${order.orderNumber}`}
                               onClick={() => setRefundModalOrder(order)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-900/60 transition"
+                              className="btn-ui btn-hutan px-3 py-2 text-xs font-bold text-fajar min-h-[38px]"
                             >
                               <i
                                 className="bi bi-arrow-counterclockwise"

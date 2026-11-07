@@ -33,6 +33,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "pub-bd6baffcd2fb4583a6d96e9be2673659.r2.dev",
       },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.fbcdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "platform-lookaside.fbsbx.com",
+      },
     ],
     localPatterns: [
       {

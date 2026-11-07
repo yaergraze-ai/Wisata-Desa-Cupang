@@ -64,6 +64,7 @@ export function SuperAdminDashboardClient({
         userEmail={authCtx?.user.email ?? "root@desacupang.id"}
         userAvatarImage={authCtx?.user.image}
         twoFactorEnabled={authCtx?.user.twoFactorEnabled}
+        needsPasswordSetup={authCtx?.user.needsPasswordSetup}
         locale={locale}
         tabs={sidebarTabs}
         activeTab={activeTab}
@@ -72,7 +73,7 @@ export function SuperAdminDashboardClient({
       />
 
       {/* KONTEN UTAMA DASHBOARD SUPER ADMIN */}
-      <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 min-w-0 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* HEADER HALAMAN AKTIF */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-telaga-800/60">
           <div>

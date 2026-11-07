@@ -200,6 +200,9 @@ function createTransporter() {
     host: env.SMTP_HOST!,
     port: env.SMTP_PORT,
     secure: isSecure,
+    connectionTimeout: 4500,
+    greetingTimeout: 4500,
+    socketTimeout: 6000,
     auth: {
       user: env.SMTP_USER!,
       pass: env.SMTP_PASS!,

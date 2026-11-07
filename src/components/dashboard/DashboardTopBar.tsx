@@ -84,7 +84,10 @@ export async function DashboardTopBar({
           </div>
         </div>
       </header>
-      <GoogleFirstTimeSetupModal />
+      <GoogleFirstTimeSetupModal
+        initialNeedsSetup={authCtx.user.needsPasswordSetup}
+        initialUsername={authCtx.user.name}
+      />
     </>
   );
 }

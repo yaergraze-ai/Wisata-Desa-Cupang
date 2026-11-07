@@ -1,339 +1,621 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
+import { useState, useEffect, useRef } from "react";
 
-export interface ChatOtpCardProps {
+export type OtpChannel = "whatsapp" | "email";
+
+interface ChatOtpCardProps {
+  onSuccess: (redirectTarget?: { homePath?: string }) => void | Promise<void>;
+  onError: (msg: string | null) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
   initialPhone?: string;
   initialEmail?: string;
-  lockChannel?: "whatsapp" | "email";
-  onSuccess: (info?: { homePath?: string }) => Promise<void> | void;
-  onError: (msg: string) => void;
-  isLoading: boolean;
-  setIsLoading: (val: boolean) => void;
+  lockChannel?: OtpChannel;
 }
 
 export function ChatOtpCard({
-  initialPhone = "",
-  initialEmail = "",
-  lockChannel,
   onSuccess,
   onError,
   isLoading,
   setIsLoading,
+  initialPhone = "",
+  initialEmail = "",
+  lockChannel,
 }: ChatOtpCardProps) {
-  const [channel, setChannel] = useState<"whatsapp" | "email">(lockChannel ?? "whatsapp");
-  const [phone, setPhone] = useState(initialPhone);
+  const [channel, setChannel] = useState<OtpChannel>(lockChannel ?? "whatsapp");
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone);
   const [email, setEmail] = useState(initialEmail);
+
   const [otpSent, setOtpSent] = useState(false);
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [receivedOtp, setReceivedOtp] = useState<string | null>(null);
+  const [emailDelivered, setEmailDelivered] = useState(false);
+  const [isGoogleRecorded, setIsGoogleRecorded] = useState(false);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(0);
-  const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Timer countdown
   useEffect(() => {
     if (countdown <= 0) return;
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setCountdown((prev) => prev - 1);
     }, 1000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [countdown]);
 
-  // Handle single digit input
-  function handleDigitChange(index: number, val: string) {
-    const char = val.replace(/\D/g, "").slice(-1);
-    const newDigits = [...otpDigits];
-    newDigits[index] = char;
-    setOtpDigits(newDigits);
+  const formatPhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("0")) return "62" + digits.slice(1);
+    if (digits.startsWith("8")) return "62" + digits;
+    return digits;
+  };
 
-    if (char && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  }
+  const resetOtpFlow = (nextChannel: OtpChannel) => {
+    setChannel(nextChannel);
+    setOtpSent(false);
+    setReceivedOtp(null);
+    setEmailDelivered(false);
+    setIsGoogleRecorded(false);
+    setOtpCode(["", "", "", "", "", ""]);
+    onError(null);
+  };
 
-  function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }
+  const handleSendOtp = async () => {
+    onError(null);
 
-  function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-    const newDigits = [...otpDigits];
-    for (let i = 0; i < pasted.length; i++) {
-      newDigits[i] = pasted[i] ?? "";
-    }
-    setOtpDigits(newDigits);
-    const nextIdx = Math.min(pasted.length, 5);
-    inputRefs.current[nextIdx]?.focus();
-  }
-
-  async function handleSendOtp() {
-    onError("");
     if (channel === "whatsapp") {
-      const normalized = normalizeIndonesianWhatsapp(phone);
-      if (!normalized) {
-        onError("Masukkan nomor WhatsApp Indonesia yang valid (08... atau 628...).");
+      const formatted = formatPhone(phoneNumber);
+      if (formatted.length < 10) {
+        onError("Masukkan nomor WhatsApp yang valid (minimal 10 digit).");
         return;
       }
+
       setIsLoading(true);
       try {
         const res = await fetch("/api/auth/whatsapp-otp/request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: normalized }),
+          body: JSON.stringify({
+            phone: formatted,
+            purpose: "LOGIN",
+            locale: "id",
+          }),
         });
-        const data = (await res.json()) as { success?: boolean; error?: string; demoCode?: string };
-        if (!res.ok) throw new Error(data.error || "Gagal mengirim OTP WhatsApp.");
+
+        const data = (await res.json()) as {
+          ok?: boolean;
+          demoCode?: string;
+          error?: string;
+        };
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Gagal meminta kode OTP WhatsApp.");
+        }
 
         setOtpSent(true);
         setCountdown(60);
-        if (data.demoCode) setDemoCode(data.demoCode);
+        setIsTyping(true);
+
+        if (data.demoCode) {
+          setTimeout(() => {
+            setIsTyping(false);
+            setReceivedOtp(data.demoCode!);
+          }, 650);
+        } else {
+          setIsTyping(false);
+        }
       } catch (err: unknown) {
-        onError(err instanceof Error ? err.message : "Gagal mengirim OTP.");
+        onError(
+          err instanceof Error
+            ? err.message
+            : "Terjadi kesalahan saat mengirim OTP."
+        );
       } finally {
         setIsLoading(false);
       }
     } else {
-      if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
-        onError("Masukkan alamat email yang valid.");
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes("@")) {
+        onError("Masukkan alamat email aktif yang valid.");
         return;
       }
+
       setIsLoading(true);
       try {
         const res = await fetch("/api/user/verify-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "request" }),
+          body: JSON.stringify({
+            action: "request",
+            email: cleanEmail,
+            locale: "id",
+          }),
         });
-        const data = (await res.json()) as { ok?: boolean; error?: string; demoCode?: string };
-        if (!res.ok) throw new Error(data.error || "Gagal mengirim OTP Email.");
+
+        const data = (await res.json()) as {
+          ok?: boolean;
+          demoCode?: string;
+          delivered?: boolean;
+          isGoogleRecorded?: boolean;
+          error?: string;
+        };
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Gagal mengirim OTP ke alamat email.");
+        }
 
         setOtpSent(true);
         setCountdown(60);
-        if (data.demoCode) setDemoCode(data.demoCode);
+        setEmailDelivered(Boolean(data.delivered));
+        setIsGoogleRecorded(Boolean(data.isGoogleRecorded));
+        setIsTyping(true);
+
+        if (data.demoCode) {
+          setTimeout(() => {
+            setIsTyping(false);
+            setReceivedOtp(data.demoCode!);
+          }, 550);
+        } else {
+          setIsTyping(false);
+        }
       } catch (err: unknown) {
-        onError(err instanceof Error ? err.message : "Gagal mengirim OTP Email.");
+        onError(
+          err instanceof Error
+            ? err.message
+            : "Terjadi kesalahan saat mengirim OTP Email."
+        );
       } finally {
         setIsLoading(false);
       }
     }
-  }
+  };
 
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
-    const fullCode = otpDigits.join("");
+  const handleVerifyOtp = async () => {
+    const fullCode = otpCode.join("");
     if (fullCode.length !== 6) {
-      onError("Kode OTP harus terdiri dari 6 angka.");
+      onError("Masukkan 6 digit kode OTP secara lengkap.");
       return;
     }
 
+    onError(null);
     setIsLoading(true);
-    onError("");
+
     try {
-      let redirectTarget: { homePath?: string } | undefined;
       if (channel === "whatsapp") {
-        const normalized = normalizeIndonesianWhatsapp(phone);
+        const formatted = formatPhone(phoneNumber);
         const res = await fetch("/api/auth/whatsapp-otp/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ whatsapp: normalized, code: fullCode }),
+          body: JSON.stringify({
+            phone: formatted,
+            code: fullCode,
+            locale: "id",
+          }),
         });
-        const data = (await res.json()) as { ok?: boolean; error?: string; homePath?: string };
-        if (!res.ok) throw new Error(data.error || "Kode OTP salah atau kedaluwarsa.");
-        if (data.homePath) {
-          redirectTarget = { homePath: data.homePath };
+
+        const data = (await res.json()) as {
+          ok?: boolean;
+          homePath?: string;
+          error?: string;
+        };
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Kode OTP tidak sah atau kedaluwarsa.");
         }
+
+        await onSuccess({ homePath: data.homePath });
       } else {
+        const cleanEmail = email.trim().toLowerCase();
         const res = await fetch("/api/user/verify-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "verify", code: fullCode }),
+          body: JSON.stringify({
+            action: "verify",
+            email: cleanEmail,
+            code: fullCode,
+            locale: "id",
+          }),
         });
-        const data = (await res.json()) as { ok?: boolean; error?: string };
-        if (!res.ok) throw new Error(data.error || "Kode OTP email salah atau kedaluwarsa.");
+
+        const data = (await res.json()) as {
+          ok?: boolean;
+          homePath?: string;
+          error?: string;
+        };
+
+        if (!res.ok || !data.ok) {
+          throw new Error(
+            data.error || "Kode OTP Email tidak sah atau kedaluwarsa."
+          );
+        }
+
+        await onSuccess({ homePath: data.homePath });
       }
-      await onSuccess(redirectTarget);
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : "Verifikasi OTP gagal.");
-    } finally {
+      onError(err instanceof Error ? err.message : "Gagal memverifikasi OTP.");
       setIsLoading(false);
     }
-  }
+  };
 
-  const now = new Date();
-  const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const handleOtpDigitChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const nextOtp = [...otpCode];
+    nextOtp[index] = digit;
+    setOtpCode(nextOtp);
+
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleAutoFill = () => {
+    if (!receivedOtp) return;
+    const digits = receivedOtp.split("").slice(0, 6);
+    setOtpCode(digits);
+    onError(null);
+  };
+
+  const isEmailChannel = channel === "email";
 
   return (
     <div className="space-y-4">
-      {/* Switch Channel: WhatsApp vs Email (hanya jika channel tidak dikunci) */}
+      {/* Pilihan Saluran OTP (WhatsApp vs Email) */}
       {!lockChannel && (
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-obsidian/80 p-1 border border-white/10 text-xs font-semibold">
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-obsidian/90 p-1.5 border border-white/10">
           <button
             type="button"
-            onClick={() => {
-              setChannel("whatsapp");
-              setOtpSent(false);
-            }}
-            className={`btn-ui py-2 rounded-lg transition-all ${
+            onClick={() => resetOtpFlow("whatsapp")}
+            className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
               channel === "whatsapp"
-                ? "bg-emerald-600 text-white shadow-md"
-                : "text-kabut/70 hover:text-white"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25"
+                : "text-kabut/65 hover:text-kabut hover:bg-white/5"
             }`}
           >
-            <i className="bi bi-whatsapp mr-1.5 text-sm" />
+            <i className="bi bi-whatsapp text-sm" aria-hidden="true" />
             <span>OTP WhatsApp</span>
           </button>
           <button
             type="button"
-            onClick={() => {
-              setChannel("email");
-              setOtpSent(false);
-            }}
-            className={`btn-ui py-2 rounded-lg transition-all ${
+            onClick={() => resetOtpFlow("email")}
+            className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
               channel === "email"
-                ? "bg-fajar text-obsidian shadow-md font-bold"
-                : "text-kabut/70 hover:text-white"
+                ? "bg-fajar text-obsidian shadow-md shadow-fajar/25"
+                : "text-kabut/65 hover:text-kabut hover:bg-white/5"
             }`}
           >
-            <i className="bi bi-envelope-fill mr-1.5 text-sm" />
+            <i className="bi bi-envelope-check-fill text-sm" aria-hidden="true" />
             <span>OTP Email</span>
           </button>
         </div>
       )}
 
-      {!otpSent ? (
-        <div className="space-y-3.5">
-          {channel === "whatsapp" ? (
-            <div>
-              <label htmlFor="wa-input" className="block text-xs font-semibold text-kabut mb-1.5">
-                Nomor WhatsApp Aktif
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">
-                  +62
-                </span>
-                <input
-                  id="wa-input"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="81234567890"
-                  className="w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian pl-12 pr-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/40 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-              <p className="mt-1 text-[11px] text-kabut/60">
-                Kode verifikasi 6 digit akan dikirim instan melalui WhatsApp resmi Desa Cupang.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="email-otp-input" className="block text-xs font-semibold text-kabut mb-1.5">
-                Alamat Email Terdaftar
-              </label>
-              <input
-                id="email-otp-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                className="w-full min-h-[44px] rounded-xl border border-kabut/25 bg-obsidian px-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/40 focus:border-fajar focus:outline-none"
+      {/* Header Panel Verifikasi sesuai Saluran */}
+      <div
+        className={`flex items-center justify-between px-4 py-3 rounded-t-2xl border backdrop-blur-md ${
+          isEmailChannel
+            ? "bg-fajar/15 border-fajar/30"
+            : "bg-emerald-950/80 border-emerald-500/30"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div
+              className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-lg ${
+                isEmailChannel
+                  ? "bg-gradient-to-br from-fajar to-amber-600 text-obsidian shadow-fajar/20"
+                  : "bg-gradient-to-br from-emerald-400 to-teal-600 shadow-emerald-500/20"
+              }`}
+            >
+              <i
+                className={`bi ${
+                  isEmailChannel ? "bi-envelope-paper-fill" : "bi-whatsapp"
+                } text-xl`}
+                aria-hidden="true"
               />
-              <p className="mt-1 text-[11px] text-kabut/60">
-                Kode keamanan 6 digit akan dikirim ke kotak masuk atau folder spam surel Anda.
+            </div>
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-obsidian" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold text-kabut">
+                {isEmailChannel
+                  ? "Verifikasi OTP Email Resmi"
+                  : "Wisata Desa Cupang Bot"}
+              </span>
+              <i
+                className={`bi bi-patch-check-fill text-xs ${
+                  isEmailChannel ? "text-fajar" : "text-emerald-400"
+                }`}
+                title="Layanan Terverifikasi"
+                aria-hidden="true"
+              />
+            </div>
+            <p
+              className={`text-[11px] font-medium ${
+                isEmailChannel ? "text-fajar/90" : "text-emerald-300/80"
+              }`}
+            >
+              {isEmailChannel
+                ? "Sinkron Otomatis Akun Google & Kotak Masuk"
+                : "Layanan Verifikasi Resmi • Online"}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`text-[10px] uppercase tracking-wider font-mono px-2.5 py-1 rounded-full border ${
+            isEmailChannel
+              ? "bg-fajar/15 text-fajar border-fajar/30"
+              : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+          }`}
+        >
+          {isEmailChannel ? "SMTP & OAuth" : "Live Chat"}
+        </span>
+      </div>
+
+      {/* Area Pesan & Kode Verifikasi */}
+      <div className="relative rounded-b-2xl bg-obsidian/90 border-x border-b border-white/10 p-4 space-y-4 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(#10b981 1px, transparent 1px), radial-gradient(#f2a65a 1px, #05070e 1px)",
+            backgroundSize: "24px 24px",
+            backgroundPosition: "0 0, 12px 12px",
+          }}
+        />
+
+        <div className="relative z-10 space-y-3 min-h-[120px] flex flex-col justify-end">
+          {!otpSent && !isTyping && (
+            <div className="text-center py-4 space-y-1.5">
+              <p className="text-xs text-kabut/70 font-medium">
+                {isEmailChannel
+                  ? "Masukkan alamat email Anda (termasuk email Google yang sudah pernah masuk) untuk menerima kode 6 digit."
+                  : "Masukkan nomor WhatsApp aktif Anda dan klik kirim untuk menerima kode OTP."}
               </p>
             </div>
           )}
 
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={handleSendOtp}
-            className={`btn-ui w-full font-bold ${
-              channel === "whatsapp"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white hover:brightness-110 shadow-lg shadow-emerald-950/40"
-                : "btn-fajar"
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <i className="bi bi-arrow-repeat animate-spin mr-1.5" />
-                <span>Mengirim Kode...</span>
-              </>
-            ) : (
-              <>
-                <i className={`bi ${channel === "whatsapp" ? "bi-whatsapp" : "bi-send-fill"} mr-1.5`} />
-                <span>Kirim Kode OTP {channel === "whatsapp" ? "WhatsApp" : "Email"}</span>
-              </>
-            )}
-          </button>
-        </div>
-      ) : (
-        /* DESAIN INTERAKTIF CHAT OTP CARD */
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-3 sm:p-4 backdrop-blur-md shadow-xl overflow-hidden">
-            {/* Header Chat */}
-            <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs shadow-sm">
-                  <i className="bi bi-compass" />
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-obsidian" />
-                </span>
-                <div>
-                  <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-xs font-bold text-emerald-200">
-                      Wisata Desa Cupang Official
-                    </span>
-                    <i className="bi bi-patch-check-fill text-xs text-emerald-400" title="Akun Resmi Terverifikasi" />
-                  </div>
-                  <span className="text-[10px] text-emerald-400/80">Online • Layanan Otentikasi Resmi</span>
-                </div>
+          {isTyping && (
+            <div className="flex items-start gap-2.5 animate-fade-in">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 mt-1 ${
+                  isEmailChannel
+                    ? "bg-fajar/20 border border-fajar/40 text-fajar"
+                    : "bg-emerald-600/30 border border-emerald-500/40 text-emerald-300"
+                }`}
+              >
+                <i
+                  className={`bi ${
+                    isEmailChannel ? "bi-envelope-fill" : "bi-robot"
+                  }`}
+                  aria-hidden="true"
+                />
               </div>
-              <span className="text-[10px] font-mono text-kabut/60">{timeStr}</span>
+              <div className="bg-hutan/90 border border-white/10 rounded-2xl rounded-tl-xs px-4 py-3 inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-fajar animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 rounded-full bg-fajar animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 rounded-full bg-fajar animate-bounce" />
+                <span className="text-xs text-kabut/70 ml-1.5">
+                  {isEmailChannel
+                    ? "Mengirim kode ke email & menyiapkan verifikasi..."
+                    : "Menyiapkan kode verifikasi..."}
+                </span>
+              </div>
             </div>
+          )}
 
-            {/* Bubble Pesan WhatsApp */}
-            <div className="mt-3.5 flex flex-col items-start">
-              <div className="relative max-w-[90%] rounded-2xl rounded-tl-none bg-emerald-900/60 border border-emerald-500/30 p-3.5 text-xs text-emerald-100 shadow-md space-y-2">
-                <p className="font-medium leading-relaxed">
-                  Halo Wisatawan! 👋 Berikut adalah kode OTP verifikasi masuk akun Wisata Cirebon Anda:
+          {otpSent && !isTyping && (
+            <div className="flex items-start gap-2.5 animate-fade-in">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 mt-1 ${
+                  isEmailChannel
+                    ? "bg-fajar/20 border border-fajar/40 text-fajar"
+                    : "bg-emerald-600/30 border border-emerald-500/40 text-emerald-300"
+                }`}
+              >
+                <i
+                  className={`bi ${
+                    isEmailChannel ? "bi-envelope-check-fill" : "bi-robot"
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="bg-gradient-to-br from-hutan/95 to-obsidian/95 border border-white/15 rounded-2xl rounded-tl-xs p-3.5 max-w-[92%] shadow-xl space-y-2.5">
+                <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-1.5">
+                  <span
+                    className={`text-[11px] font-bold flex items-center gap-1.5 ${
+                      isEmailChannel ? "text-fajar" : "text-emerald-400"
+                    }`}
+                  >
+                    <i
+                      className={`bi ${
+                        isEmailChannel
+                          ? "bi-shield-fill-check"
+                          : "bi-whatsapp"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {isEmailChannel
+                        ? isGoogleRecorded
+                          ? "Email Google Terdaftar Terdeteksi"
+                          : "Pesan Resmi Portal Wisata"
+                        : "Pesan Resmi Wisata Cirebon"}
+                    </span>
+                  </span>
+                  <span className="text-[10px] text-kabut/50 font-mono">
+                    Baru saja
+                  </span>
+                </div>
+
+                <p className="text-xs text-kabut/90 leading-relaxed">
+                  {isEmailChannel ? (
+                    <>
+                      Kode OTP untuk{" "}
+                      <strong className="text-fajar">{email.trim()}</strong>{" "}
+                      {emailDelivered
+                        ? "telah dikirim ke kotak masuk email Anda dan ditampilkan di bawah ini untuk kemudahan akses:"
+                        : "siap digunakan untuk masuk ke akun resmi Anda:"}
+                    </>
+                  ) : (
+                    <>
+                      Berikut adalah kode verifikasi masuk Anda untuk portal
+                      resmi{" "}
+                      <strong className="text-emerald-300">
+                        Wisata Batu Lawang &amp; Gunung Bendera
+                      </strong>
+                      :
+                    </>
+                  )}
                 </p>
 
-                {demoCode ? (
-                  <div className="my-1.5 inline-flex items-center gap-2 rounded-xl bg-obsidian/90 border border-emerald-400/50 px-3 py-1.5">
-                    <span className="font-mono text-base font-bold tracking-widest text-emerald-300">
-                      {demoCode}
+                {receivedOtp ? (
+                  <div className="flex items-center justify-between bg-obsidian/90 border border-white/15 rounded-xl px-3.5 py-2.5">
+                    <span className="font-mono text-lg font-extrabold tracking-[0.25em] text-fajar select-all">
+                      {receivedOtp}
                     </span>
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono">
-                      OTP DEMO
-                    </span>
+                    <button
+                      type="button"
+                      onClick={handleAutoFill}
+                      className="btn-ui text-xs font-bold bg-fajar/20 hover:bg-fajar/30 text-fajar border border-fajar/40 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer min-h-0"
+                    >
+                      <i
+                        className="bi bi-magic"
+                        aria-hidden="true"
+                      />
+                      <span>Isi Otomatis</span>
+                    </button>
                   </div>
                 ) : null}
 
-                <p className="text-[11px] text-emerald-200/80">
-                  ⚠️ Kode ini bersifat rahasia dan hanya berlaku selama <strong className="text-white">5 menit</strong>. Jangan bagikan kepada siapa pun demi keamanan.
+                <p className="text-[11px] text-kabut/60 flex items-center gap-1.5">
+                  <i
+                    className="bi bi-clock-history text-fajar"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    Berlaku 5 menit. Jangan berikan kode ini kepada siapa pun.
+                  </span>
                 </p>
-
-                <div className="flex items-center justify-end gap-1 text-[10px] text-emerald-300/70 pt-1">
-                  <span>{timeStr}</span>
-                  <i className="bi bi-check2-all text-xs text-emerald-400" />
-                </div>
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Form Input 6 Digit OTP */}
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+        {/* Step 1: Input Nomor WhatsApp atau Email */}
+        <div className="relative z-10 pt-2 border-t border-white/10 space-y-3">
+          {channel === "whatsapp" ? (
             <div>
-              <label className="block text-xs font-bold text-center text-kabut/90 mb-2">
-                Masukkan 6 Digit Kode OTP
+              <label
+                htmlFor="otp-wa-input"
+                className="block text-xs font-semibold text-kabut/85 mb-1.5"
+              >
+                Nomor WhatsApp Aktif
               </label>
-              <div className="flex justify-center items-center gap-2" onPaste={handlePaste}>
-                {otpDigits.map((digit, idx) => (
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-kabut/55 text-xs font-mono">
+                    +62
+                  </span>
+                  <input
+                    id="otp-wa-input"
+                    type="tel"
+                    inputMode="numeric"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="81234567890"
+                    className="w-full rounded-xl border border-white/15 bg-hutan/85 pl-11 pr-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/35 focus:border-emerald-400 focus:outline-none transition"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isLoading || countdown > 0 || !phoneNumber.trim()}
+                  className="btn-ui px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-lg shadow-emerald-600/20 cursor-pointer"
+                >
+                  <i className="bi bi-send-fill" aria-hidden="true" />
+                  <span>
+                    {countdown > 0
+                      ? `Ulang (${countdown}d)`
+                      : otpSent
+                      ? "Kirim Ulang"
+                      : "Kirim Kode OTP"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="otp-email-input"
+                className="block text-xs font-semibold text-kabut/85 mb-1.5"
+              >
+                Alamat Email Resmi / Email Google Anda
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-fajar text-xs">
+                    <i className="bi bi-envelope-at-fill" aria-hidden="true" />
+                  </span>
+                  <input
+                    id="otp-email-input"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading || Boolean(lockChannel && initialEmail)}
+                    placeholder="nama@gmail.com"
+                    className="w-full rounded-xl border border-white/15 bg-hutan/85 pl-10 pr-3.5 py-2.5 text-sm text-kabut placeholder:text-kabut/35 focus:border-fajar focus:outline-none transition disabled:opacity-75"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isLoading || countdown > 0 || !email.trim()}
+                  className="btn-ui btn-fajar px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer"
+                >
+                  <i className="bi bi-send-check-fill" aria-hidden="true" />
+                  <span>
+                    {countdown > 0
+                      ? `Ulang (${countdown}d)`
+                      : otpSent
+                      ? "Kirim Ulang"
+                      : "Kirim OTP Email"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: 6-Box OTP Input (Selalu tampil begitu OTP terkirim) */}
+          {(otpSent || Boolean(receivedOtp)) && !isTyping && (
+            <div className="space-y-4 pt-2 border-t border-white/10 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-kabut/90">
+                  Masukkan 6 Digit Kode Verifikasi
+                </label>
+                <span
+                  className={`text-[11px] font-mono ${
+                    isEmailChannel ? "text-fajar" : "text-emerald-400"
+                  }`}
+                >
+                  {otpCode.filter(Boolean).length}/6 digit
+                </span>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2">
+                {otpCode.map((digit, idx) => (
                   <input
                     key={idx}
                     ref={(el) => {
@@ -342,60 +624,44 @@ export function ChatOtpCard({
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
+                    aria-label={`Digit OTP ${idx + 1}`}
                     value={digit}
-                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
-                    className="w-10 h-12 sm:w-12 sm:h-14 text-center font-mono text-xl sm:text-2xl font-bold rounded-xl border border-white/20 bg-obsidian/90 text-fajar focus:border-fajar focus:ring-2 focus:ring-fajar/30 focus:outline-none transition-all"
+                    className="w-full h-12 text-center font-mono text-lg font-extrabold rounded-xl border border-white/20 bg-hutan/90 text-fajar focus:border-fajar focus:ring-2 focus:ring-fajar/30 focus:outline-none transition"
                   />
                 ))}
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading || otpDigits.join("").length !== 6}
-              className="btn-ui btn-fajar w-full font-bold shadow-lg shadow-fajar/20"
-            >
-              {isLoading ? (
-                <>
-                  <i className="bi bi-arrow-repeat animate-spin mr-1.5" />
-                  <span>Memverifikasi...</span>
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-shield-check mr-1.5" />
-                  <span>Verifikasi & Masuk Akun</span>
-                </>
-              )}
-            </button>
-
-            {/* Countdown & Kirim Ulang */}
-            <div className="flex items-center justify-between text-xs pt-1 text-kabut/75">
               <button
                 type="button"
-                onClick={() => setOtpSent(false)}
-                className="hover:text-white underline underline-offset-2"
+                onClick={handleVerifyOtp}
+                disabled={isLoading || otpCode.join("").length !== 6}
+                className="btn-ui btn-fajar w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                Ganti Nomor / Email
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
+                    <span>Memverifikasi Kode...</span>
+                  </>
+                ) : (
+                  <>
+                    <i
+                      className="bi bi-shield-check text-base"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {lockChannel
+                        ? "Konfirmasi & Verifikasi Sekarang"
+                        : "Verifikasi & Masuk Sekarang"}
+                    </span>
+                  </>
+                )}
               </button>
-              {countdown > 0 ? (
-                <span className="font-mono text-kabut/60">
-                  Kirim ulang dalam <strong className="text-fajar">{countdown}d</strong>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={handleSendOtp}
-                  className="font-bold text-fajar hover:underline"
-                >
-                  Kirim Ulang Kode OTP
-                </button>
-              )}
             </div>
-          </form>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
