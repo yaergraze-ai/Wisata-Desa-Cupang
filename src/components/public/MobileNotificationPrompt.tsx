@@ -1,22 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 type NotificationState = "default" | "granted" | "denied" | "unsupported";
 
+function subscribeNoop() {
+  return () => {};
+}
+
+function getClientNotificationPermission(): NotificationState {
+  if (typeof window !== "undefined" && "Notification" in window) {
+    return Notification.permission as NotificationState;
+  }
+  return "unsupported";
+}
+
+function getServerNotificationPermission(): NotificationState {
+  return "unsupported";
+}
+
 export function MobileNotificationPrompt() {
-  const [permission, setPermission] = useState<NotificationState>("unsupported");
+  const browserPermission = useSyncExternalStore(
+    subscribeNoop,
+    getClientNotificationPermission,
+    getServerNotificationPermission
+  );
+  const [manualPermission, setManualPermission] =
+    useState<NotificationState | null>(null);
+  const permission = manualPermission ?? browserPermission;
   const [isOpen, setIsOpen] = useState(false);
   const [showAutoBanner, setShowAutoBanner] = useState(false);
   const [testSentFeedback, setTestSentFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
-      setPermission("unsupported");
       return;
     }
-
-    setPermission(Notification.permission as NotificationState);
 
     // Tampilkan banner tawaran otomatis jika izin belum pernah ditolak/diterima
     try {
@@ -86,7 +105,7 @@ export function MobileNotificationPrompt() {
 
     try {
       const result = await Notification.requestPermission();
-      setPermission(result as NotificationState);
+      setManualPermission(result as NotificationState);
       setShowAutoBanner(false);
 
       if (result === "granted") {

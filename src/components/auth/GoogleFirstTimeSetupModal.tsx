@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export function GoogleFirstTimeSetupModal() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +23,6 @@ export function GoogleFirstTimeSetupModal() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true);
     let ignore = false;
     async function checkStatus() {
       try {

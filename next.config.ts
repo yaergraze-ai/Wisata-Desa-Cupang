@@ -34,6 +34,9 @@ const nextConfig: NextConfig = {
     ],
     localPatterns: [
       {
+        pathname: "/icons/**",
+      },
+      {
         pathname: "/media/**",
       },
       {

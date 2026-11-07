@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
@@ -186,47 +187,37 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
               href="#jalur-aturan"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              <span className="xl:hidden">Jalur</span>
-              <span className="hidden xl:inline">Jalur &amp; Aturan</span>
+              <span>{tNav("trail")}</span>
             </a>
             <a
               href="#pilihan-tiket"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Tiket
+              {tNav("tickets")}
             </a>
             <a
               href="#peta-jalur"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              <span className="xl:hidden">Peta</span>
-              <span className="hidden xl:inline">Peta GPS</span>
+              <span>{tNav("map")}</span>
             </a>
             <a
               href="#petugas-siaga"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              <span className="xl:hidden">Petugas</span>
-              <span className="hidden xl:inline">Petugas Siaga</span>
-            </a>
-            <a
-              href="#galeri-wisata"
-              className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
-            >
-              <span className="xl:hidden">Galeri</span>
-              <span className="hidden xl:inline">Galeri Spot</span>
+              <span>{tNav("staff")}</span>
             </a>
             <a
               href="#ulasan-pengunjung"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Ulasan
+              {tNav("reviews")}
             </a>
             <a
               href="#kontak"
               className="min-h-[40px] shrink-0 inline-flex items-center rounded-xl px-2.5 xl:px-3 text-xs xl:text-sm font-semibold text-kabut/85 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
             >
-              Kontak
+              {tNav("contact")}
             </a>
           </nav>
 
@@ -239,9 +230,12 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 className="hidden md:inline-flex btn-ui btn-glass whitespace-nowrap items-center gap-2"
               >
                 {user.image ? (
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name}
+                    width={20}
+                    height={20}
+                    unoptimized
                     className="h-5 w-5 rounded-full object-cover border border-fajar/50"
                   />
                 ) : (
@@ -293,7 +287,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">Beranda</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("home")}</span>
             </a>
           </li>
           <li>
@@ -312,7 +306,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">Jalur</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("trail")}</span>
             </a>
           </li>
           <li>
@@ -333,7 +327,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">Tiket</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("tickets")}</span>
             </a>
           </li>
           <li>
@@ -352,7 +346,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 } text-lg leading-none`}
                 aria-hidden="true"
               />
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">Peta</span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">{tNav("map")}</span>
             </a>
           </li>
           <li>
@@ -366,9 +360,12 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
               }`}
             >
               {user?.image ? (
-                <img
+                <Image
                   src={user.image}
                   alt={user.name}
+                  width={20}
+                  height={20}
+                  unoptimized
                   className="h-5 w-5 rounded-full object-cover border border-fajar/50 mb-0.5"
                 />
               ) : (
@@ -386,7 +383,7 @@ export function PublicNavbar({ user }: { user: PublicNavbarUser | null }) {
                 />
               )}
               <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
-                {user ? "Dasbor" : "Akun"}
+                {user ? tNav("dashboard") : tNav("account")}
               </span>
             </Link>
           </li>

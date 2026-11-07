@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Role } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import type { SuperAdminUserDto } from "@/server/super-admin/user-roles-service";
 
 export function SuperAdminUsersView() {
+  const router = useRouter();
   const t = useTranslations("SuperAdminDashboard");
   const [users, setUsers] = useState<SuperAdminUserDto[]>([]);
   const [page, setPage] = useState(1);
@@ -138,7 +140,7 @@ export function SuperAdminUsersView() {
       if (data.isSelfRevoke) {
         alert("Sesi akun Anda telah berhasil dicabut. Anda akan dialihkan ke halaman masuk.");
         await fetch("/api/auth/sign-out", { method: "POST" }).catch(() => null);
-        window.location.assign("/masuk");
+        router.push("/masuk");
         return;
       }
 

@@ -8,7 +8,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
-import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { ChatOtpCard } from "@/components/auth/ChatOtpCard";
 
@@ -29,9 +28,6 @@ export function LoginForm({
   const locale = useLocale();
   const [activeTab, setActiveTab] = useState<"email" | "whatsapp">("email");
   const [serverError, setServerError] = useState<string | null>(null);
-  const [waPhone, setWaPhone] = useState("");
-  const [waOtpSent, setWaOtpSent] = useState(false);
-  const [waOtpCode, setWaOtpCode] = useState("");
   const [waLoading, setWaLoading] = useState(false);
 
   const loginSchema = z.object({
@@ -106,59 +102,6 @@ export function LoginForm({
       provider,
       callbackURL,
     });
-  }
-
-  async function handleSendWhatsappOtp() {
-    setServerError(null);
-    const normalized = normalizeIndonesianWhatsapp(waPhone);
-    if (!normalized) {
-      setServerError(t("errors.invalidWhatsapp"));
-      return;
-    }
-    setWaLoading(true);
-    try {
-      const res = await authClient.phoneNumber.sendOtp({
-        phoneNumber: normalized,
-      });
-      if (res.error) {
-        setServerError(
-          res.error.status === 429
-            ? t("errors.rateLimited")
-            : t("errors.otpSendFailed")
-        );
-        return;
-      }
-      setWaOtpSent(true);
-    } finally {
-      setWaLoading(false);
-    }
-  }
-
-  async function handleVerifyWhatsappOtp() {
-    setServerError(null);
-    const normalized = normalizeIndonesianWhatsapp(waPhone);
-    if (!normalized) {
-      setServerError(t("errors.invalidWhatsapp"));
-      return;
-    }
-    if (!/^\d{6}$/.test(waOtpCode.trim())) {
-      setServerError(t("errors.invalidTotp"));
-      return;
-    }
-    setWaLoading(true);
-    try {
-      const res = await authClient.phoneNumber.verify({
-        phoneNumber: normalized,
-        code: waOtpCode.trim(),
-      });
-      if (res.error) {
-        setServerError(t("errors.invalidTotp"));
-        return;
-      }
-      await redirectAfterLogin();
-    } finally {
-      setWaLoading(false);
-    }
   }
 
   const registerHref = nextPath
@@ -258,7 +201,7 @@ export function LoginForm({
         </form>
       ) : (
         <ChatOtpCard
-          initialPhone={waPhone}
+          initialPhone=""
           onSuccess={redirectAfterLogin}
           onError={(msg) => setServerError(msg || null)}
           isLoading={waLoading}

@@ -471,18 +471,27 @@ export function TrailNavigatorClient({
 
   // Otomatis aktifkan pencarian GPS realtime saat halaman dibuka
   useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      startGpsTracking();
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      return;
     }
-  }, [startGpsTracking]);
 
-  useEffect(() => {
+    const watchId = navigator.geolocation.watchPosition(
+      handlePositionUpdate,
+      handlePositionError,
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
+    );
+    watchIdRef.current = watchId;
+
     return () => {
-      if (watchIdRef.current !== null && typeof navigator !== "undefined") {
-        navigator.geolocation.clearWatch(watchIdRef.current);
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, []);
+  }, [handlePositionError, handlePositionUpdate]);
 
   // Pusatkan peta ke posisi pengguna (ala tombol Google Maps)
   const handleRecenterToUser = useCallback(() => {

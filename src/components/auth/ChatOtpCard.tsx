@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useTranslations } from "next-intl";
 import { normalizeIndonesianWhatsapp } from "@/lib/datetime-wib";
 
 export interface ChatOtpCardProps {
@@ -23,7 +22,6 @@ export function ChatOtpCard({
   isLoading,
   setIsLoading,
 }: ChatOtpCardProps) {
-  const t = useTranslations("Auth");
   const [channel, setChannel] = useState<"whatsapp" | "email">(lockChannel ?? "whatsapp");
   const [phone, setPhone] = useState(initialPhone);
   const [email, setEmail] = useState(initialEmail);

@@ -71,8 +71,6 @@ export interface ScanInput {
   now?: Date;
 }
 
-const PUBLIC_CODE_RE = /^(PUTIH-CBN|REG-BL)-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
-
 /**
  * Resolusi string input dari pemindai QR atau input manual menjadi kriteria pencarian tiket Prisma.
  * Mendukung:

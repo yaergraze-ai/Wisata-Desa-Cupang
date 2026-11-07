@@ -17,7 +17,14 @@ export function StaffOnDutySection({
 }: StaffOnDutySectionProps) {
   const tStaff = useTranslations("StaffPublic");
   const [data, setData] = useState<PublicStaffStatusResponse>(initialData);
+  const [prevInitialData, setPrevInitialData] =
+    useState<PublicStaffStatusResponse>(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setData(initialData);
+  }
 
   const refreshStatus = useCallback(async () => {
     setIsRefreshing(true);

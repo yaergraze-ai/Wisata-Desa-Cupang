@@ -88,7 +88,7 @@ export class LocalStorageAdapter implements StorageProvider {
       let buffer: Buffer;
       try {
         buffer = await fs.readFile(/*turbopackIgnore: true*/ fullPath);
-      } catch (err: unknown) {
+      } catch {
         // Fallback: periksa di os.tmpdir() jika berkas ditulis saat serverless
         const tmpPath = path.join(os.tmpdir(), "wisata-cirebon-uploads", cleanKey);
         buffer = await fs.readFile(/*turbopackIgnore: true*/ tmpPath);

@@ -217,10 +217,10 @@ export function HeroGallery({
 
   const initialCardStyles = useMemo(
     () =>
-      cards.map((_, idx) =>
+      Array.from({ length: totalCards }, (_, idx) =>
         buildSsrCardStyle(getCircularOffset(idx, 0, totalCards))
       ),
-    [cards, totalCards]
+    [totalCards]
   );
 
   const goToCard = useCallback(
@@ -257,7 +257,6 @@ export function HeroGallery({
   useEffect(() => {
     let cancelled = false;
     let started = false;
-    let splitRevert: (() => void) | undefined;
     let killDraggables: (() => void) | undefined;
 
     const loadGsapSuite = () => {
@@ -267,14 +266,12 @@ export function HeroGallery({
       void Promise.all([
         import("gsap"),
         import("gsap/Draggable"),
-        import("gsap/SplitText"),
-      ]).then(([gsapMod, draggableMod, splitMod]) => {
+      ]).then(([gsapMod, draggableMod]) => {
         if (cancelled) return;
         const gsap = gsapMod.default;
         const { Draggable } = draggableMod;
-        const { SplitText } = splitMod;
 
-        gsap.registerPlugin(Draggable, SplitText);
+        gsap.registerPlugin(Draggable);
         gsapRef.current = gsap;
 
         const isNarrow = window.matchMedia("(max-width: 639px)").matches;
@@ -310,11 +307,6 @@ export function HeroGallery({
         });
 
         setGsapReady(true);
-
-        if (titleRef.current) {
-          const split = SplitText.create(titleRef.current, { type: "chars" });
-          splitRevert = () => split.revert();
-        }
 
         if (stageRef.current && dragProxyRef.current) {
           const instances = Draggable.create(dragProxyRef.current, {
@@ -356,7 +348,6 @@ export function HeroGallery({
       el?.removeEventListener("keydown", loadGsapSuite);
       window.clearTimeout(timerId);
       killDraggables?.();
-      splitRevert?.();
     };
   }, [totalCards]);
 

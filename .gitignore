@@ -13,9 +13,17 @@
 .env.*
 !.env.example
 
-# Reference prototype files (kept locally on disk per AGENTS.md §8.5, excluded from git & deploy per §10.12)
+# Reference prototype files & AI agent skills (never push to GitHub or deploy)
 /referensi/
 /scratch/
+/.agent/
+/.agents/
+/skills-lock.json
+/AGENTS.md
+/.claude/
+/.cursor/
+/.windsurf/
+/CLAUDE.md
 
 # Local uploaded media (dev local storage driver)
 /public/uploads/*

@@ -1,4 +1,3 @@
-import { getTranslations } from "next-intl/server";
 import { Role } from "@prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { requirePageRole } from "@/server/auth/guards";
@@ -29,7 +28,6 @@ export default async function AdminDashboardPage({
     requireTwoFactor: false, // fleksibel untuk pengetesan
   });
 
-  const t = await getTranslations({ locale, namespace: "DashboardShell" });
   const validTabs: AdminTab[] = [
     "metrics",
     "orders",

@@ -6,6 +6,8 @@ const eslintConfig = [
     ignores: [
       ".next/**",
       "node_modules/**",
+      ".agent/**",
+      ".agents/**",
       "referensi/**",
       "public/maps/**",
       "public/maplibre-gl-worker.mjs",

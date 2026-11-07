@@ -31,11 +31,13 @@ export function MotionReviewModal({
 }: MotionReviewModalProps) {
   const [photoIndex, setPhotoIndex] = useState<number>(initialPhotoIndex);
   const [imgError, setImgError] = useState(false);
+  const [prevReviewId, setPrevReviewId] = useState(review?.id);
 
-  useEffect(() => {
+  if (review?.id !== prevReviewId) {
+    setPrevReviewId(review?.id);
     setPhotoIndex(initialPhotoIndex);
     setImgError(false);
-  }, [initialPhotoIndex, review]);
+  }
 
   const photos = review?.photos ?? [];
   const currentPhoto = photos[photoIndex] ?? null;

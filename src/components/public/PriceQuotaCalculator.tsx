@@ -31,7 +31,14 @@ export function PriceQuotaCalculator({
     return line?.qty ?? 0;
   });
   const [quote, setQuote] = useState<ServerOrderQuoteResult>(initialQuote);
+  const [prevInitialQuote, setPrevInitialQuote] =
+    useState<ServerOrderQuoteResult>(initialQuote);
   const [isLoading, setIsLoading] = useState(false);
+
+  if (initialQuote !== prevInitialQuote) {
+    setPrevInitialQuote(initialQuote);
+    setQuote(initialQuote);
+  }
 
   const isFirstMountRef = useRef(true);
   const abortRef = useRef<AbortController | null>(null);

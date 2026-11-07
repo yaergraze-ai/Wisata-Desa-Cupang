@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
@@ -208,9 +209,12 @@ export function DashboardSidebar({
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 space-y-2">
           <div className="flex items-center gap-2.5">
             {userAvatarImage ? (
-              <img
+              <Image
                 src={userAvatarImage}
                 alt={userName}
+                width={32}
+                height={32}
+                unoptimized
                 className="h-8 w-8 shrink-0 rounded-lg object-cover border border-fajar/40 shadow-sm"
               />
             ) : (

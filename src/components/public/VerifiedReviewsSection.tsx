@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -52,8 +52,16 @@ export function VerifiedReviewsSection({
   const tRev = useTranslations("ReviewsPublic");
   const [filter, setFilter] = useState<ReviewDestinationFilter>(initialData.filter);
   const [data, setData] = useState<PublicReviewsResponse>(initialData);
+  const [prevInitialData, setPrevInitialData] =
+    useState<PublicReviewsResponse>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSwitchedTab, setHasSwitchedTab] = useState(false);
+
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setData(initialData);
+    setFilter(initialData.filter);
+  }
 
   // Filter Bintang (undefined = Semua, atau 5, 4, 3, 2, 1)
   const [starFilter, setStarFilter] = useState<number | null>(null);
@@ -61,19 +69,14 @@ export function VerifiedReviewsSection({
   // Pagination / Limit Tampilan ("Lihat Lainnya")
   const INITIAL_VISIBLE_COUNT = 6;
   const [visibleCount, setVisibleCount] = useState<number>(INITIAL_VISIBLE_COUNT);
+  const [shuffleKey, setShuffleKey] = useState<number>(0);
 
-  // Daftar ulasan acak otomatis
-  const [shuffledReviews, setShuffledReviews] = useState<PublicReviewItemDto[]>([]);
-
-  useEffect(() => {
-    // Acak ulasan secara otomatis saat data diterima/berubah
-    if (data.reviews.length > 0) {
-      setShuffledReviews(shuffleArray(data.reviews));
-    } else {
-      setShuffledReviews([]);
-    }
-    setVisibleCount(INITIAL_VISIBLE_COUNT);
-  }, [data.reviews]);
+  // Urutan deterministik saat SSR/hydration; acak saat pengguna menekan tombol Acak Tampilan
+  const shuffledReviews = useMemo(() => {
+    if (data.reviews.length === 0) return [];
+    if (shuffleKey === 0) return data.reviews;
+    return shuffleArray(data.reviews);
+  }, [data.reviews, shuffleKey]);
 
   // State modal ulasan interaktif
   const [activeModalData, setActiveModalData] = useState<{
@@ -92,6 +95,7 @@ export function VerifiedReviewsSection({
     setHasSwitchedTab(true);
     setFilter(nextFilter);
     setStarFilter(null);
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
     setIsLoading(true);
     try {
       const qs = new URLSearchParams({
@@ -138,7 +142,7 @@ export function VerifiedReviewsSection({
   }
 
   function handleReshuffle() {
-    setShuffledReviews(shuffleArray(data.reviews));
+    setShuffleKey((prev) => prev + 1);
     setVisibleCount(INITIAL_VISIBLE_COUNT);
   }
 

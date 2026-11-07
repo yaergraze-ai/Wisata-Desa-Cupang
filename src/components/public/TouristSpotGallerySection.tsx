@@ -76,6 +76,7 @@ export function TouristSpotGallerySection({
         formData.append("title", uploadTitle.trim());
         formData.append("category", uploadCategory);
         formData.append("caption", uploadCaption.trim());
+        if (userName) formData.append("uploaderName", userName.trim());
 
         const res = await fetch("/api/gallery", {
           method: "POST",

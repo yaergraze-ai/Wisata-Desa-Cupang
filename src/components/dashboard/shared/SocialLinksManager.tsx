@@ -35,11 +35,11 @@ export function SocialLinksManager({ userRole }: SocialLinksManagerProps) {
   const [proposeNote, setProposeNote] = useState("");
   const [isProposing, setIsProposing] = useState(false);
 
-  async function loadData() {
+  async function refreshData() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/settings/social-links");
-      const data = await res.json() as {
+      const data = (await res.json()) as {
         tiktokUrl: string;
         instagramUrl: string;
         requests: SocialRequest[];
@@ -57,7 +57,30 @@ export function SocialLinksManager({ userRole }: SocialLinksManagerProps) {
   }
 
   useEffect(() => {
-    loadData();
+    let ignore = false;
+    async function initLoad() {
+      try {
+        const res = await fetch("/api/admin/settings/social-links");
+        const data = (await res.json()) as {
+          tiktokUrl: string;
+          instagramUrl: string;
+          requests: SocialRequest[];
+        };
+        if (!ignore && res.ok) {
+          setTiktokUrl(data.tiktokUrl);
+          setInstagramUrl(data.instagramUrl);
+          setRequests(data.requests || []);
+        }
+      } catch {
+        if (!ignore) setError("Gagal memuat data tautan media sosial.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    initLoad();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   async function handleAdminSave(platform: "TIKTOK" | "INSTAGRAM") {
@@ -75,7 +98,7 @@ export function SocialLinksManager({ userRole }: SocialLinksManagerProps) {
       const data = await res.json() as { error?: string; message?: string };
       if (!res.ok) throw new Error(data.error || "Gagal menyimpan tautan.");
       setMessage(data.message || "Tautan berhasil disimpan!");
-      await loadData();
+      await refreshData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan tautan.");
     } finally {
@@ -104,7 +127,7 @@ export function SocialLinksManager({ userRole }: SocialLinksManagerProps) {
       setMessage(data.message || "Pengajuan berhasil dikirim ke Admin!");
       setProposeUrl("");
       setProposeNote("");
-      await loadData();
+      await refreshData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal mengajukan tautan.");
     } finally {
@@ -122,7 +145,7 @@ export function SocialLinksManager({ userRole }: SocialLinksManagerProps) {
       const data = await res.json() as { error?: string; message?: string };
       if (!res.ok) throw new Error(data.error || "Gagal memproses pengajuan.");
       setMessage(data.message || "Keputusan berhasil disimpan!");
-      await loadData();
+      await refreshData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal memproses pengajuan.");
     }

@@ -6,7 +6,7 @@ import { extractTicketLookupCriteria } from "@/server/scan/scan-service";
 
 export async function POST(request: NextRequest) {
   try {
-    const authCtx = await requireApiRole(
+    await requireApiRole(
       [Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN],
       {
         headers: request.headers,

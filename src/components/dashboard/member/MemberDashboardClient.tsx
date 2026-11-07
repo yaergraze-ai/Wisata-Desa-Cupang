@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { OrderStatus, TicketStatus, Role } from "@prisma/client";
@@ -94,7 +95,6 @@ export function MemberDashboardClient({
 }: MemberDashboardClientProps) {
   const t = useTranslations("MemberDashboard");
   const tCalc = useTranslations("Calculator");
-  const tShell = useTranslations("DashboardShell");
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<MemberDashboardTab>(initialTab);
@@ -525,6 +525,7 @@ export function MemberDashboardClient({
       setActiveCheckoutOrder(json.order);
       setOrders((prev) => [json.order!, ...prev]);
       setNowMs(Date.now());
+      setLoadingQris(true);
       setWizardStep(2);
       toast.success(t("orderCreatedToast"));
       void refreshServerQuote(visitDate, regulerQty, putihQty);
@@ -539,7 +540,6 @@ export function MemberDashboardClient({
   useEffect(() => {
     if (wizardStep === 2 && activeCheckoutOrder) {
       let isMounted = true;
-      setLoadingQris(true);
       fetch(`/api/orders/${encodeURIComponent(activeCheckoutOrder.id)}/qris`)
         .then((r) => r.json())
         .then((data) => {
@@ -555,7 +555,7 @@ export function MemberDashboardClient({
         isMounted = false;
       };
     }
-  }, [wizardStep, activeCheckoutOrder?.id]);
+  }, [wizardStep, activeCheckoutOrder]);
 
   async function handleFakeScan(orderId: string) {
     setIsFakeScanning(true);
@@ -685,6 +685,7 @@ export function MemberDashboardClient({
   function handleResumePendingOrder(order: SerializedOrderSummary) {
     setActiveCheckoutOrder(order);
     setNowMs(Date.now());
+    setLoadingQris(true);
     setWizardStep(2);
     selectTab("buy");
   }
@@ -730,27 +731,32 @@ export function MemberDashboardClient({
   const regulerLine = quote.lines.find((l) => l.code === "REGULER_BL");
   const blockingMessage = renderBlockingMessage();
 
-  const tabs: Array<{ id: MemberDashboardTab; label: string; icon: string; badge?: number }> = [
-    { id: "overview", label: t("tabOverview"), icon: "bi-grid-1x2" },
-    { id: "buy", label: t("tabBuy"), icon: "bi-ticket-perforated" },
-    {
-      id: "wallet",
-      label: t("tabWallet"),
-      icon: "bi-qr-code",
-      badge: activeTickets.length > 0 ? activeTickets.length : undefined,
-    },
-    {
-      id: "orders",
-      label: t("tabOrders"),
-      icon: "bi-receipt",
-      badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
-    },
-    {
-      id: "profile",
-      label: t("tabProfile"),
-      icon: "bi-person-gear",
-    },
-  ];
+  const tabs = useMemo<
+    Array<{ id: MemberDashboardTab; label: string; icon: string; badge?: number }>
+  >(
+    () => [
+      { id: "overview", label: t("tabOverview"), icon: "bi-grid-1x2" },
+      { id: "buy", label: t("tabBuy"), icon: "bi-ticket-perforated" },
+      {
+        id: "wallet",
+        label: t("tabWallet"),
+        icon: "bi-qr-code",
+        badge: activeTickets.length > 0 ? activeTickets.length : undefined,
+      },
+      {
+        id: "orders",
+        label: t("tabOrders"),
+        icon: "bi-receipt",
+        badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
+      },
+      {
+        id: "profile",
+        label: t("tabProfile"),
+        icon: "bi-person-gear",
+      },
+    ],
+    [activeTickets.length, pendingOrders.length, t]
+  );
 
   function formatOrderStatusLabel(status: OrderStatus): {
     label: string;
@@ -1130,13 +1136,13 @@ export function MemberDashboardClient({
                     Pengalaman nyata dari wisatawan pemegang e-ticket resmi (ditampilkan acak)
                   </p>
                 </div>
-                <a
+                <Link
                   href="/#ulasan-pengunjung"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-fajar hover:underline self-start sm:self-auto"
                 >
                   <span>Lihat Semua Ulasan & Bintang</span>
                   <i className="bi bi-arrow-up-right text-[10px]" aria-hidden="true" />
-                </a>
+                </Link>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1815,9 +1821,12 @@ export function MemberDashboardClient({
                                 </div>
                               ) : qrisData?.qrDataUrl ? (
                                 <div className="relative">
-                                  <img
+                                  <Image
                                     src={qrisData.qrDataUrl}
                                     alt={`QRIS ${activeCheckoutOrder.orderNumber}`}
+                                    width={208}
+                                    height={208}
+                                    unoptimized
                                     className="h-52 w-52 rounded-lg object-contain bg-white p-1 border border-slate-200 shadow-sm"
                                   />
                                   {isFakeScanning ? (

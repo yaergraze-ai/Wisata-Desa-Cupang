@@ -1,4 +1,8 @@
 referensi/
+.agent/
+.agents/
+skills-lock.json
+AGENTS.md
 tests/
 playwright-report/
 test-results/

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -70,21 +71,26 @@ export default async function LocaleLayout({
   }
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const [messages, cookieStore] = await Promise.all([
+    getMessages(),
+    cookies(),
+  ]);
+  const hasSeenIntro = cookieStore.get("wdc_intro_seen")?.value === "true";
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html
+      lang={locale}
+      data-theme="dark"
+      data-scroll-behavior="smooth"
+      className={hasSeenIntro ? "dark wdc-intro-dismissed" : "dark"}
+      suppressHydrationWarning
+    >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');document.documentElement.setAttribute('data-theme','dark');if(localStorage.getItem('wdc_cinematic_intro_seen')==='true'||document.cookie.indexOf('wdc_intro_seen=true')!==-1){document.documentElement.classList.add('wdc-intro-dismissed');if(document.cookie.indexOf('wdc_intro_seen=true')===-1){document.cookie='wdc_intro_seen=true; path=/; max-age=31536000; SameSite=Lax';}}}catch(e){}})();`,
-          }}
-        />
         <style
           dangerouslySetInnerHTML={{
             __html: `
               html.wdc-intro-dismissed #wdc-cinematic-intro { display: none !important; }
-              html:not(.wdc-intro-dismissed) { overflow: hidden; }
+              html:not(.wdc-intro-dismissed):has(#wdc-cinematic-intro) { overflow: hidden; }
               #wdc-cinematic-intro {
                 position: fixed;
                 inset: 0;
