@@ -117,168 +117,10 @@ export default async function HomePage({
           />
         </div>
 
-        {/* 2. Tentang Jalur, Kuota Destinasi, Aturan Tiket, Linimasa SVG & Kalkulator Server (§6.A & §7.2) */}
-        <section
-          id="jalur-aturan"
-          className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 scroll-mt-24 space-y-14"
-        >
-          {/* Kartu Destinasi & Kuota Harian Langsung */}
-          <div>
-            <div className="max-w-2xl">
-              <h2 className="font-heading text-2xl font-bold text-kabut sm:text-3xl">
-                {tHome("destinationsHeading")}
-              </h2>
-              <p className="mt-2 text-sm text-kabut/85">
-                {tHome("destinationsLead")}
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {catalog.destinations.map((dest) => {
-                const isBendera = dest.slug === "gunung-bendera";
-                return (
-                  <article
-                    key={dest.id}
-                    className="group surface-solid-dark p-6 flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_22px_50px_rgba(0,0,0,0.65)]"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-fajar/40 bg-gradient-to-br from-fajar/25 via-hutan to-obsidian text-fajar shadow-[0_8px_20px_rgba(242,166,90,0.2)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                            <i
-                              className={
-                                isBendera
-                                  ? "bi bi-brightness-high-fill text-lg"
-                                  : "bi bi-compass-fill text-lg"
-                              }
-                              aria-hidden="true"
-                            />
-                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
-                          </span>
-                          <h3 className="font-heading text-xl font-bold text-kabut">
-                            {dest.name}
-                          </h3>
-                        </div>
-                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian/90 border border-telaga-700 px-3 py-1.5 text-xs font-semibold text-fajar shadow-sm">
-                          <i
-                            className="bi bi-arrow-up-right-circle"
-                            aria-hidden="true"
-                          />
-                          <span>
-                            {tHero("elevationUnit", { value: dest.elevationM })}
-                          </span>
-                        </span>
-                      </div>
-                      <p className="mt-3.5 text-sm text-kabut/85 leading-relaxed">
-                        {dest.description}
-                      </p>
-                    </div>
-
-                    <dl className="grid grid-cols-2 gap-3 border-t border-kabut/15 pt-4 text-xs">
-                      <div>
-                        <dt className="text-kabut/75">{tHero("hoursLabel")}</dt>
-                        <dd className="mt-1 font-semibold text-kabut">
-                          {dest.openTime}–{dest.closeTime} WIB
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-kabut/75">
-                          {tHero("quotaTodayLabel", {
-                            date: formatVisitDateDisplay(
-                              catalog.todayYmd,
-                              locale
-                            ),
-                          })}
-                        </dt>
-                        <dd className="mt-1 font-bold text-fajar">
-                          {tHero("quotaRemaining", {
-                            remaining: dest.remainingToday,
-                            capacity: dest.capacityToday,
-                          })}
-                        </dd>
-                      </div>
-                    </dl>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 3 Aturan Resmi Gerbang & Kuota (Seluruh Angka dari SiteSetting DB!) */}
-          <div>
-            <h2 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
-              {tHome("rulesHeading")}
-            </h2>
-            <div className="mt-5 grid gap-5 md:grid-cols-3">
-              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
-                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-                  <i className="bi bi-qr-code-scan text-xl" aria-hidden="true" />
-                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
-                </span>
-                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
-                  {tHome("rule1Title")}
-                </h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
-                  {tHome("rule1Desc")}
-                </p>
-              </article>
-
-              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-telaga-400/50 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
-                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-telaga/35 via-obsidian to-hutan border border-telaga-400/50 text-telaga-200 shadow-[0_8px_22px_rgba(47,143,131,0.28)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                  <i className="bi bi-people-fill text-xl" aria-hidden="true" />
-                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-telaga-300 shadow-[0_0_8px_#2f8f83]" />
-                </span>
-                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
-                  {tHome("rule2Title")}
-                </h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
-                  {tHome("rule2Desc", {
-                    maxTickets: initialQuote.maxTicketsPerOrder,
-                    windowDays: initialQuote.bookingWindowDays,
-                  })}
-                </p>
-              </article>
-
-              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
-                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-                  <i
-                    className="bi bi-hourglass-split text-xl"
-                    aria-hidden="true"
-                  />
-                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
-                </span>
-                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
-                  {tHome("rule3Title")}
-                </h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
-                  {tHome("rule3Desc", {
-                    cutoffMins: initialQuote.sameDayCloseBufferMinutes,
-                    paymentMins: initialQuote.paymentWindowMinutes,
-                  })}
-                </p>
-              </article>
-            </div>
-          </div>
-
-          {/* Kalkulator Harga & Cek Kuota Server */}
-          <PriceQuotaCalculator locale={locale} initialQuote={initialQuote} />
-
-          {/* Linimasa SVG Scrub 4 Tahap + Pratinjau Peta Koridor Jalur */}
-          <TrailTimelineAndMapSection
-            offTrailThresholdM={
-              Number.parseInt(catalog.settings["offTrailThresholdM"] ?? "", 10) ||
-              offTrailThresholdM
-            }
-            destinations={catalog.destinations}
-            trailPoints={catalog.trailPoints}
-            mediaSlots={catalog.mediaSlots}
-          />
-        </section>
-
-        {/* 3. Perbandingan Tiket Putih vs Tiket Reguler & Fasilitas Kawasan (§6.A & §7.3) */}
+        {/* 2. Pilihan Tiket Resmi (Tiket Putih vs Tiket Reguler) & Kalkulator Kuota Server — Tepat Setelah Hero/Card (§6.A & §7.3) */}
         <section
           id="pilihan-tiket"
-          className="section-cv-auto mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 scroll-mt-24 space-y-14"
+          className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-24 space-y-10 sm:space-y-14"
         >
           <div>
             <div className="max-w-2xl">
@@ -290,7 +132,7 @@ export default async function HomePage({
               </p>
             </div>
 
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="mt-6 sm:mt-8 grid gap-5 sm:gap-6 md:grid-cols-2">
               {catalog.products.map((prod) => {
                 const isPutih = prod.code === "TIKET_PUTIH";
                 return (
@@ -298,8 +140,8 @@ export default async function HomePage({
                     key={prod.id}
                     className={
                       isPutih
-                        ? "group ticket-card-putih p-6 sm:p-7 flex flex-col justify-between gap-6 transition-transform duration-300 hover:-translate-y-1"
-                        : "group ticket-card-reguler p-6 sm:p-7 flex flex-col justify-between gap-6 transition-transform duration-300 hover:-translate-y-1"
+                        ? "group ticket-card-putih p-5 sm:p-7 flex flex-col justify-between gap-5 sm:gap-6 transition-transform duration-300 hover:-translate-y-1"
+                        : "group ticket-card-reguler p-5 sm:p-7 flex flex-col justify-between gap-5 sm:gap-6 transition-transform duration-300 hover:-translate-y-1"
                     }
                   >
                     <div>
@@ -339,7 +181,7 @@ export default async function HomePage({
                       <div className="ticket-perforation-divider my-4" />
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
-                          <p className="font-heading text-3xl font-extrabold">
+                          <p className="font-heading text-2xl sm:text-3xl font-extrabold">
                             {formatRupiah(prod.totalPrice, locale)}
                           </p>
                           <p
@@ -436,6 +278,173 @@ export default async function HomePage({
             </div>
           </div>
 
+          {/* Kalkulator Harga & Cek Kuota Server */}
+          <PriceQuotaCalculator locale={locale} initialQuote={initialQuote} />
+        </section>
+
+        {/* 3. Spot & Galeri Foto Pengunjung */}
+        <div className="section-cv-auto">
+          <TouristSpotGallerySection
+            initialItems={galleryItems}
+            userRole={authCtx?.user.role}
+            userName={authCtx?.user.name}
+          />
+        </div>
+
+        {/* 4. Tentang Destinasi, Aturan Resmi Gerbang, Linimasa SVG & Fasilitas Kawasan (§6.A & §7.2) */}
+        <section
+          id="jalur-aturan"
+          className="section-cv-auto mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-24 space-y-10 sm:space-y-14"
+        >
+          {/* Kartu Destinasi & Kuota Harian Langsung */}
+          <div>
+            <div className="max-w-2xl">
+              <h2 className="font-heading text-2xl font-bold text-kabut sm:text-3xl">
+                {tHome("destinationsHeading")}
+              </h2>
+              <p className="mt-2 text-sm text-kabut/85">
+                {tHome("destinationsLead")}
+              </p>
+            </div>
+
+            <div className="mt-6 sm:mt-8 grid gap-5 sm:gap-6 md:grid-cols-2">
+              {catalog.destinations.map((dest) => {
+                const isBendera = dest.slug === "gunung-bendera";
+                return (
+                  <article
+                    key={dest.id}
+                    className="group surface-solid-dark p-5 sm:p-6 flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_22px_50px_rgba(0,0,0,0.65)]"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-fajar/40 bg-gradient-to-br from-fajar/25 via-hutan to-obsidian text-fajar shadow-[0_8px_20px_rgba(242,166,90,0.2)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                            <i
+                              className={
+                                isBendera
+                                  ? "bi bi-brightness-high-fill text-lg"
+                                  : "bi bi-compass-fill text-lg"
+                              }
+                              aria-hidden="true"
+                            />
+                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
+                          </span>
+                          <h3 className="font-heading text-xl font-bold text-kabut">
+                            {dest.name}
+                          </h3>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-obsidian/90 border border-telaga-700 px-3 py-1.5 text-xs font-semibold text-fajar shadow-sm">
+                          <i
+                            className="bi bi-arrow-up-right-circle"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {tHero("elevationUnit", { value: dest.elevationM })}
+                          </span>
+                        </span>
+                      </div>
+                      <p className="mt-3.5 text-sm text-kabut/85 leading-relaxed">
+                        {dest.description}
+                      </p>
+                    </div>
+
+                    <dl className="grid grid-cols-2 gap-3 border-t border-kabut/15 pt-4 text-xs">
+                      <div>
+                        <dt className="text-kabut/75">{tHero("hoursLabel")}</dt>
+                        <dd className="mt-1 font-semibold text-kabut">
+                          {dest.openTime}–{dest.closeTime} WIB
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-kabut/75">
+                          {tHero("quotaTodayLabel", {
+                            date: formatVisitDateDisplay(
+                              catalog.todayYmd,
+                              locale
+                            ),
+                          })}
+                        </dt>
+                        <dd className="mt-1 font-bold text-fajar">
+                          {tHero("quotaRemaining", {
+                            remaining: dest.remainingToday,
+                            capacity: dest.capacityToday,
+                          })}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3 Aturan Resmi Gerbang & Kuota (Seluruh Angka dari SiteSetting DB!) */}
+          <div>
+            <h2 className="font-heading text-xl font-bold text-kabut sm:text-2xl">
+              {tHome("rulesHeading")}
+            </h2>
+            <div className="mt-5 grid gap-4 sm:gap-5 md:grid-cols-3">
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  <i className="bi bi-qr-code-scan text-xl" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
+                </span>
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
+                  {tHome("rule1Title")}
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
+                  {tHome("rule1Desc")}
+                </p>
+              </article>
+
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-telaga-400/50 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-telaga/35 via-obsidian to-hutan border border-telaga-400/50 text-telaga-200 shadow-[0_8px_22px_rgba(47,143,131,0.28)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  <i className="bi bi-people-fill text-xl" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-telaga-300 shadow-[0_0_8px_#2f8f83]" />
+                </span>
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
+                  {tHome("rule2Title")}
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
+                  {tHome("rule2Desc", {
+                    maxTickets: initialQuote.maxTicketsPerOrder,
+                    windowDays: initialQuote.bookingWindowDays,
+                  })}
+                </p>
+              </article>
+
+              <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
+                <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  <i
+                    className="bi bi-hourglass-split text-xl"
+                    aria-hidden="true"
+                  />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-fajar shadow-[0_0_8px_#f2a65a]" />
+                </span>
+                <h3 className="mt-4 font-heading text-base font-bold text-kabut">
+                  {tHome("rule3Title")}
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-kabut/85">
+                  {tHome("rule3Desc", {
+                    cutoffMins: initialQuote.sameDayCloseBufferMinutes,
+                    paymentMins: initialQuote.paymentWindowMinutes,
+                  })}
+                </p>
+              </article>
+            </div>
+          </div>
+
+          {/* Linimasa SVG Scrub 4 Tahap + Pratinjau Peta Koridor Jalur */}
+          <TrailTimelineAndMapSection
+            offTrailThresholdM={
+              Number.parseInt(catalog.settings["offTrailThresholdM"] ?? "", 10) ||
+              offTrailThresholdM
+            }
+            destinations={catalog.destinations}
+            trailPoints={catalog.trailPoints}
+            mediaSlots={catalog.mediaSlots}
+          />
+
           {/* Fasilitas Kawasan Desa Cupang dengan Ikon Berkilau & Animasi Hover */}
           <div>
             <p className="text-xs font-bold tracking-wider text-fajar uppercase">
@@ -445,7 +454,7 @@ export default async function HomePage({
               {tFac("heading")}
             </h2>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <article className="group surface-solid-dark p-5 transition-all duration-300 hover:-translate-y-1 hover:border-fajar/45 hover:shadow-[0_20px_44px_rgba(0,0,0,0.6)]">
                 <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fajar/25 via-obsidian to-telaga-950 border border-fajar/45 text-fajar shadow-[0_8px_22px_rgba(242,166,90,0.22)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                   <i className="bi bi-p-circle-fill text-xl" aria-hidden="true" />
@@ -509,15 +518,6 @@ export default async function HomePage({
             </div>
           </div>
         </section>
-
-        {/* 3. Spot & Galeri Foto Pengunjung */}
-        <div className="section-cv-auto">
-          <TouristSpotGallerySection
-            initialItems={galleryItems}
-            userRole={authCtx?.user.role}
-            userName={authCtx?.user.name}
-          />
-        </div>
 
         {/* 4. Petugas Siaga WIB (§5.7) */}
         <div className="section-cv-auto">

@@ -47,9 +47,9 @@ function getCircularOffset(index: number, active: number, total: number): number
 
 function getCardTransform(offset: number, isMobile: boolean) {
   const abs = Math.abs(offset);
-  const stepX = isMobile ? 28 : 56;
-  const stepZ = isMobile ? -55 : -95;
-  const rotY = isMobile ? -6 : -11;
+  const stepX = isMobile ? 34 : 56;
+  const stepZ = isMobile ? -50 : -95;
+  const rotY = isMobile ? -7 : -11;
 
   if (abs === 0) {
     return {
@@ -66,21 +66,21 @@ function getCardTransform(offset: number, isMobile: boolean) {
   if (abs === 1) {
     return {
       x: offset * stepX,
-      y: isMobile ? 10 : 14,
+      y: isMobile ? 8 : 14,
       z: stepZ,
       rotateY: offset * rotY,
-      scale: 0.91,
-      opacity: 0.84,
+      scale: isMobile ? 0.9 : 0.91,
+      opacity: 0.86,
       zIndex: 20,
     };
   }
 
   return {
-    x: offset * (stepX * 1.55),
-    y: isMobile ? 20 : 28,
-    z: stepZ * 1.8,
-    rotateY: offset * (rotY * 1.35),
-    scale: 0.82,
+    x: offset * (stepX * 1.48),
+    y: isMobile ? 16 : 28,
+    z: stepZ * 1.75,
+    rotateY: offset * (rotY * 1.3),
+    scale: isMobile ? 0.8 : 0.82,
     opacity: 0.42,
     zIndex: 10,
   };
@@ -585,9 +585,9 @@ export function HeroGallery({
           );
         })}
 
-        {/* Scrim Gradien Berlapis untuk Kontras Teks WCAG AA */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-r from-obsidian/95 via-obsidian/80 to-obsidian/45" />
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-obsidian via-obsidian/35 to-obsidian/65" />
+        {/* Scrim Gradien Berlapis untuk Kontras Teks WCAG AA & Visibilitas Latar di Mobile */}
+        <div className="absolute inset-0 z-20 bg-obsidian/55 lg:bg-transparent lg:bg-gradient-to-r lg:from-obsidian/95 lg:via-obsidian/80 lg:to-obsidian/45" />
+        <div className="absolute inset-0 z-20 bg-gradient-to-b from-obsidian/80 via-obsidian/30 to-obsidian lg:bg-gradient-to-t lg:from-obsidian lg:via-obsidian/35 lg:to-obsidian/65" />
       </div>
 
       {/* Pengumuman ARIA Live saat kartu berganti */}
@@ -599,20 +599,20 @@ export function HeroGallery({
         })}
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
-        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-8">
-          {/* Kolom Kiri (7 kolom): Tipografi Display, Statistik Langsung & Pemilihan Paket */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-fajar/40 bg-obsidian/85 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-fajar shadow-[0_4px_20px_rgba(242,166,90,0.18)] backdrop-blur-md">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-fajar/20 text-fajar">
-                  <i className="bi bi-geo-alt-fill text-xs" aria-hidden="true" />
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-4 pb-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-5">
+          {/* BLOK 1 (Mobile: Pertama di Atas, Desktop: Kiri Baris 1) — Nama Wisata & Identitas Kawasan */}
+          <div className="order-1 lg:order-1 lg:col-span-7 space-y-2.5 sm:space-y-3 text-center lg:text-left">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-fajar/40 bg-obsidian/85 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold tracking-wide text-fajar shadow-[0_4px_20px_rgba(242,166,90,0.18)] backdrop-blur-md">
+                <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full bg-fajar/20 text-fajar">
+                  <i className="bi bi-geo-alt-fill text-[10px] sm:text-xs" aria-hidden="true" />
                 </span>
                 <span>{tHero("eyebrow")}</span>
               </div>
 
-              {/* Indikator Latar Aktif Sesuai Nama Kartu */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-xs font-bold text-kabut backdrop-blur-md shadow-sm transition-all duration-300">
+              {/* Indikator Spot Aktif Sesuai Nama Kartu (Desktop) */}
+              <div className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-xs font-bold text-kabut backdrop-blur-md shadow-sm transition-all duration-300">
                 <i
                   className={cn("bi text-fajar", activeCard.icon)}
                   aria-hidden="true"
@@ -621,86 +621,165 @@ export function HeroGallery({
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="font-heading text-xs sm:text-sm font-extrabold tracking-[0.28em] text-telaga-400 uppercase">
+            <div className="space-y-1.5 sm:space-y-2.5">
+              <p className="font-heading text-[11px] sm:text-sm font-extrabold tracking-[0.28em] text-telaga-400 uppercase">
                 {tHero("displayTitle")}
               </p>
               <h1
                 ref={displayHeadlineRef}
-                className="font-heading text-3xl font-extrabold tracking-tight text-kabut sm:text-5xl lg:text-[3.35rem] lg:leading-[1.08]"
+                className="font-heading text-2xl font-extrabold tracking-tight text-kabut sm:text-4xl lg:text-[3.35rem] leading-[1.15] lg:leading-[1.08]"
               >
                 {tHero("headline")}
               </h1>
-              <p
-                ref={subheadlineRef}
-                className="max-w-2xl text-sm leading-relaxed text-kabut/90 sm:text-base"
-              >
-                {tHero("subheadline")}
-              </p>
+            </div>
+          </div>
+
+          {/* BLOK 2 (Mobile: Tepat di Bawah Nama Wisata, Desktop: Kolom Kanan Penuh) — Tumpukan 5 Kartu Foto 3D Bernama */}
+          <div className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-3 flex flex-col items-center self-center">
+            <div
+              ref={cardStageRef}
+              className="relative h-[320px] sm:h-[420px] w-full max-w-[350px] sm:max-w-[390px] flex items-center justify-center select-none touch-pan-y"
+              style={{ perspective: "1200px" }}
+            >
+              {/* Proxy elemen tak terlihat untuk GSAP Draggable */}
+              <div
+                ref={dragProxyRef}
+                className="pointer-events-none absolute inset-0"
+                aria-hidden="true"
+              />
+
+              {cards.map((card, idx) => {
+                const isCurrent = idx === activeIndex;
+                const initialOffset = getCircularOffset(
+                  idx,
+                  activeIndex,
+                  cards.length
+                );
+                const initialTf = getCardTransform(initialOffset, false);
+                const isCardLoaded = Boolean(loadedCardMap[card.id]);
+
+                return (
+                  <article
+                    key={card.id}
+                    ref={(el) => {
+                      cardElsRef.current[idx] = el;
+                    }}
+                    onClick={() => goToCard(idx)}
+                    style={{
+                      transform: `translate3d(${initialTf.x}px, ${initialTf.y}px, ${initialTf.z}px) rotateY(${initialTf.rotateY}deg) scale(${initialTf.scale})`,
+                      opacity: initialTf.opacity,
+                      zIndex: initialTf.zIndex,
+                    }}
+                    className={cn(
+                      "group absolute w-[246px] sm:w-[310px] h-[308px] sm:h-[395px] rounded-[24px] overflow-hidden cursor-pointer border transition-shadow duration-300",
+                      isCurrent
+                        ? "border-fajar/85 shadow-[0_26px_64px_rgba(0,0,0,0.82)] ring-2 ring-fajar/35"
+                        : "border-white/20 shadow-[0_14px_34px_rgba(0,0,0,0.6)] hover:border-white/40"
+                    )}
+                  >
+                    {/* Shadow Skeleton Saat Gambar Kartu Sedang Dimuat */}
+                    <div
+                      aria-hidden="true"
+                      className={cn(
+                        "absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 transition-opacity duration-500",
+                        isCardLoaded
+                          ? "opacity-0 pointer-events-none"
+                          : "opacity-100 skeleton-shimmer shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
+                      )}
+                    />
+
+                    <Image
+                      src={card.media.url}
+                      alt={card.media.alt || card.title}
+                      fill
+                      sizes="(max-width: 640px) 246px, 310px"
+                      quality={72}
+                      onLoad={() =>
+                        setLoadedCardMap((prev) =>
+                          prev[card.id] ? prev : { ...prev, [card.id]: true }
+                        )
+                      }
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-obsidian/15" />
+
+                    {/* Baris Atas Kartu: Ikon Berkilau + Nama Spot Jelas */}
+                    <div className="absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-300 group-hover:scale-110",
+                          card.accentBadgeClass
+                        )}
+                      >
+                        <i className={cn("bi text-sm sm:text-base", card.icon)} aria-hidden="true" />
+                      </span>
+
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-obsidian/85 backdrop-blur-md border border-white/20 px-2.5 py-1 sm:px-3 text-[11px] font-extrabold text-kabut shadow-md">
+                        <span className="h-1.5 w-1.5 rounded-full bg-fajar" />
+                        <span>{card.shortLabel}</span>
+                      </span>
+                    </div>
+
+                    {/* Konten Bawah Kartu */}
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+                      <span className="inline-block rounded-md bg-obsidian/80 border border-white/15 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-fajar uppercase">
+                        {card.badge}
+                      </span>
+                      <h2 className="font-heading text-sm sm:text-lg font-extrabold text-kabut leading-snug drop-shadow-sm">
+                        {card.title}
+                      </h2>
+                      <p className="text-[11px] sm:text-xs font-semibold text-kabut/90">
+                        {card.meta}
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
-            {/* Pita Statistik Fakta Destinasi dengan Ikon Berkilau */}
-            <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs font-semibold text-kabut">
-              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3.5 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
-                  <i className="bi bi-clock-history text-xs" aria-hidden="true" />
-                </span>
-                <span>
-                  {batuLawang?.openTime ?? "06:00"}–
-                  {batuLawang?.closeTime ?? "17:00"} WIB
-                </span>
-              </span>
-              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3.5 py-2 shadow-md shadow-black/40 transition-all hover:border-telaga-400/50">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-telaga/20 border border-telaga-400/35 text-telaga-200 transition-transform group-hover:scale-110">
-                  <i className="bi bi-signpost-split-fill text-xs" aria-hidden="true" />
-                </span>
-                <span>
-                  {tHero("trailLengthStat", {
-                    meters: totalTrailMeters,
-                    posts: 4,
-                  })}
-                </span>
-              </span>
-              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3.5 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
-                  <i className="bi bi-brightness-high-fill text-xs" aria-hidden="true" />
-                </span>
-                <span>
-                  {tHero("elevationUnit", { value: summitElevation })} (
-                  {tHero("climbDurationStat", { mins: totalTrailMinutes })})
-                </span>
-              </span>
+            {/* Pemilih Kartu Bernama */}
+            <div
+              role="tablist"
+              aria-label={tHero("galleryRegionAria")}
+              className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-md"
+            >
+              {cards.map((card, idx) => {
+                const isCurrent = idx === activeIndex;
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isCurrent}
+                    onClick={() => goToCard(idx)}
+                    className={cn(
+                      "group inline-flex min-h-[38px] items-center gap-1.5 sm:gap-2 rounded-full border px-3 py-1.5 sm:px-3.5 text-xs font-bold transition-all duration-300 cursor-pointer",
+                      isCurrent
+                        ? "border-fajar bg-fajar text-obsidian shadow-[0_6px_20px_rgba(242,166,90,0.35)] scale-105"
+                        : "border-white/15 bg-obsidian/85 text-kabut/85 hover:border-fajar/45 hover:text-kabut backdrop-blur-md"
+                    )}
+                  >
+                    <i
+                      className={cn(
+                        "bi text-xs transition-transform duration-300 group-hover:scale-110",
+                        card.icon,
+                        isCurrent ? "text-obsidian" : "text-fajar"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span>{card.shortLabel}</span>
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Baris Tombol Aksi Utama & Sekunder */}
-            <div className="flex flex-wrap items-center gap-3.5 pt-1">
-              <button
-                type="button"
-                onClick={() => scrollToCalculatorWithPackage(selectedPackage)}
-                className="group btn-ui btn-fajar text-sm sm:text-base px-6 py-3.5 shadow-[0_10px_28px_rgba(242,166,90,0.28)]"
-              >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-obsidian/20 text-obsidian transition-transform group-hover:rotate-6 group-hover:scale-110">
-                  <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
-                </span>
-                <span>{tHero("ctaPrimary")}</span>
-              </button>
-
-              <Link
-                href="/jalur"
-                className="group btn-ui btn-glass text-sm sm:text-base px-5 py-3.5"
-              >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-fajar/20 border border-fajar/35 text-fajar transition-transform group-hover:rotate-12 group-hover:scale-110">
-                  <i className="bi bi-compass-fill" aria-hidden="true" />
-                </span>
-                <span>{tHero("ctaMap")}</span>
-              </Link>
-            </div>
-
-            {/* Panel Kaca Pemilihan Paket Resmi (Harga & Kuota Server) */}
-            <div className="surface-glass p-4 sm:p-5 space-y-4 max-w-2xl shadow-[0_20px_50px_rgba(0,0,0,0.55)]">
+          {/* BLOK 3 (Mobile: Tepat Setelah Card Foto -> Tiket!, Desktop: Kiri Baris 3) — Panel Kaca Pemilihan Paket Tiket Resmi */}
+          <div className="order-3 lg:order-4 lg:col-span-7">
+            <div className="surface-glass p-4 sm:p-5 space-y-4 max-w-2xl mx-auto lg:mx-0 shadow-[0_20px_50px_rgba(0,0,0,0.55)]">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-fajar/20 border border-fajar/40 text-fajar shadow-sm">
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-fajar/20 border border-fajar/40 text-fajar shadow-sm">
                     <i className="bi bi-shield-fill-check text-sm" aria-hidden="true" />
                   </span>
                   <span className="text-xs font-extrabold tracking-wider text-fajar uppercase">
@@ -749,7 +828,7 @@ export function HeroGallery({
                         </div>
                       </div>
                       {selectedPackage === "REGULER_BL" && (
-                        <span className="rounded-md bg-fajar px-2 py-0.5 text-[11px] font-extrabold text-obsidian">
+                        <span className="rounded-md bg-fajar px-2 py-0.5 text-[11px] font-extrabold text-obsidian shrink-0">
                           {tHero("panelSelected")}
                         </span>
                       )}
@@ -825,7 +904,7 @@ export function HeroGallery({
                         </div>
                       </div>
                       {selectedPackage === "TIKET_PUTIH" && (
-                        <span className="rounded-md bg-hutan px-2 py-0.5 text-[11px] font-extrabold text-fajar">
+                        <span className="rounded-md bg-hutan px-2 py-0.5 text-[11px] font-extrabold text-fajar shrink-0">
                           {tHero("panelSelected")}
                         </span>
                       )}
@@ -871,8 +950,8 @@ export function HeroGallery({
               </div>
 
               {selectedProductSummary && (
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <p className="text-xs text-kabut/90">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <p className="text-xs text-kabut/90 text-center sm:text-left">
                     {tHero("basePlusParking", {
                       base: formatRupiah(selectedProductSummary.basePrice, locale),
                       parking: formatRupiah(
@@ -884,157 +963,84 @@ export function HeroGallery({
                   <button
                     type="button"
                     onClick={() => scrollToCalculatorWithPackage(selectedPackage)}
-                    className="btn-ui btn-primary text-xs px-4 py-2.5 min-h-[44px]"
+                    className="btn-ui btn-fajar w-full sm:w-auto justify-center text-xs px-4 py-3 sm:py-2.5 min-h-[44px] shadow-[0_10px_24px_rgba(242,166,90,0.25)]"
                   >
+                    <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
                     <span>
                       {tHero("panelSingleCta", {
                         packageName: selectedProductSummary.name,
                       })}
                     </span>
-                    <i className="bi bi-arrow-right" aria-hidden="true" />
                   </button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Kolom Kanan (5 kolom): Tumpukan 5 Kartu 3D Perspektif Bernama */}
-          <div className="lg:col-span-5 flex flex-col items-center">
-            <div
-              ref={cardStageRef}
-              className="relative h-[370px] sm:h-[430px] w-full max-w-[390px] flex items-center justify-center select-none touch-pan-y"
-              style={{ perspective: "1200px" }}
+          {/* BLOK 4 (Mobile: Di Bawah Panel Tiket, Desktop: Kiri Baris 2) — Deskripsi, Statistik Fakta & Navigasi Cepat */}
+          <div className="order-4 lg:order-3 lg:col-span-7 space-y-4">
+            <p
+              ref={subheadlineRef}
+              className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-xs sm:text-base leading-relaxed text-kabut/90"
             >
-              {/* Proxy elemen tak terlihat untuk GSAP Draggable */}
-              <div
-                ref={dragProxyRef}
-                className="pointer-events-none absolute inset-0"
-                aria-hidden="true"
-              />
+              {tHero("subheadline")}
+            </p>
 
-              {cards.map((card, idx) => {
-                const isCurrent = idx === activeIndex;
-                const initialOffset = getCircularOffset(
-                  idx,
-                  activeIndex,
-                  cards.length
-                );
-                const initialTf = getCardTransform(initialOffset, false);
-                const isCardLoaded = Boolean(loadedCardMap[card.id]);
-
-                return (
-                  <article
-                    key={card.id}
-                    ref={(el) => {
-                      cardElsRef.current[idx] = el;
-                    }}
-                    onClick={() => goToCard(idx)}
-                    style={{
-                      transform: `translate3d(${initialTf.x}px, ${initialTf.y}px, ${initialTf.z}px) rotateY(${initialTf.rotateY}deg) scale(${initialTf.scale})`,
-                      opacity: initialTf.opacity,
-                      zIndex: initialTf.zIndex,
-                    }}
-                    className={cn(
-                      "group absolute w-[268px] sm:w-[310px] h-[345px] sm:h-[395px] rounded-[24px] overflow-hidden cursor-pointer border transition-shadow duration-300",
-                      isCurrent
-                        ? "border-fajar/85 shadow-[0_26px_64px_rgba(0,0,0,0.82)] ring-2 ring-fajar/35"
-                        : "border-white/20 shadow-[0_14px_34px_rgba(0,0,0,0.6)] hover:border-white/40"
-                    )}
-                  >
-                    {/* Shadow Skeleton Saat Gambar Kartu Sedang Dimuat */}
-                    <div
-                      aria-hidden="true"
-                      className={cn(
-                        "absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 transition-opacity duration-500",
-                        isCardLoaded
-                          ? "opacity-0 pointer-events-none"
-                          : "opacity-100 skeleton-shimmer shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
-                      )}
-                    />
-
-                    <Image
-                      src={card.media.url}
-                      alt={card.media.alt || card.title}
-                      fill
-                      sizes="(max-width: 640px) 268px, 310px"
-                      quality={72}
-                      onLoad={() =>
-                        setLoadedCardMap((prev) =>
-                          prev[card.id] ? prev : { ...prev, [card.id]: true }
-                        )
-                      }
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-obsidian/15" />
-
-                    {/* Baris Atas Kartu: Ikon Berkilau + Nama Spot Jelas (Bukan Angka/Card-1) */}
-                    <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-300 group-hover:scale-110",
-                          card.accentBadgeClass
-                        )}
-                      >
-                        <i className={cn("bi text-base", card.icon)} aria-hidden="true" />
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-obsidian/85 backdrop-blur-md border border-white/20 px-3 py-1 text-[11px] font-extrabold text-kabut shadow-md">
-                        <span className="h-1.5 w-1.5 rounded-full bg-fajar" />
-                        <span>{card.shortLabel}</span>
-                      </span>
-                    </div>
-
-                    {/* Konten Bawah Kartu */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 space-y-2">
-                      <span className="inline-block rounded-md bg-obsidian/80 border border-white/15 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-fajar uppercase">
-                        {card.badge}
-                      </span>
-                      <h2 className="font-heading text-base sm:text-lg font-extrabold text-kabut leading-snug drop-shadow-sm">
-                        {card.title}
-                      </h2>
-                      <p className="text-xs font-semibold text-kabut/90">
-                        {card.meta}
-                      </p>
-                    </div>
-                  </article>
-                );
-              })}
+            {/* Pita Statistik Fakta Destinasi */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs font-semibold text-kabut">
+              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
+                  <i className="bi bi-clock-history text-xs" aria-hidden="true" />
+                </span>
+                <span>
+                  {batuLawang?.openTime ?? "06:00"}–
+                  {batuLawang?.closeTime ?? "17:00"} WIB
+                </span>
+              </span>
+              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-telaga-400/50">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-telaga/20 border border-telaga-400/35 text-telaga-200 transition-transform group-hover:scale-110">
+                  <i className="bi bi-signpost-split-fill text-xs" aria-hidden="true" />
+                </span>
+                <span>
+                  {tHero("trailLengthStat", {
+                    meters: totalTrailMeters,
+                    posts: 4,
+                  })}
+                </span>
+              </span>
+              <span className="group inline-flex items-center gap-2 rounded-xl bg-obsidian/85 border border-kabut/20 px-3 py-2 shadow-md shadow-black/40 transition-all hover:border-fajar/45">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-fajar/15 border border-fajar/30 text-fajar transition-transform group-hover:scale-110">
+                  <i className="bi bi-brightness-high-fill text-xs" aria-hidden="true" />
+                </span>
+                <span>
+                  {tHero("elevationUnit", { value: summitElevation })} (
+                  {tHero("climbDurationStat", { mins: totalTrailMinutes })})
+                </span>
+              </span>
             </div>
 
-            {/* Pemilih Kartu Bernama (Menggantikan Tombol Panah & Titik Anonim) */}
-            <div
-              role="tablist"
-              aria-label={tHero("galleryRegionAria")}
-              className="mt-4 flex flex-wrap items-center justify-center gap-2 max-w-md"
-            >
-              {cards.map((card, idx) => {
-                const isCurrent = idx === activeIndex;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isCurrent}
-                    onClick={() => goToCard(idx)}
-                    className={cn(
-                      "group inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all duration-300 cursor-pointer",
-                      isCurrent
-                        ? "border-fajar bg-fajar text-obsidian shadow-[0_6px_20px_rgba(242,166,90,0.35)] scale-105"
-                        : "border-white/15 bg-obsidian/80 text-kabut/85 hover:border-fajar/45 hover:text-kabut backdrop-blur-md"
-                    )}
-                  >
-                    <i
-                      className={cn(
-                        "bi text-xs transition-transform duration-300 group-hover:scale-110",
-                        card.icon,
-                        isCurrent ? "text-obsidian" : "text-fajar"
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span>{card.shortLabel}</span>
-                  </button>
-                );
-              })}
+            {/* Baris Tombol Aksi Utama & Sekunder */}
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => scrollToCalculatorWithPackage(selectedPackage)}
+                className="group btn-ui btn-fajar w-full sm:w-auto justify-center text-sm sm:text-base px-6 py-3.5 shadow-[0_10px_28px_rgba(242,166,90,0.28)]"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-obsidian/20 text-obsidian transition-transform group-hover:rotate-6 group-hover:scale-110">
+                  <i className="bi bi-ticket-perforated-fill" aria-hidden="true" />
+                </span>
+                <span>{tHero("ctaPrimary")}</span>
+              </button>
+
+              <Link
+                href="/jalur"
+                className="group btn-ui btn-glass w-full sm:w-auto justify-center text-sm sm:text-base px-5 py-3.5"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-fajar/20 border border-fajar/35 text-fajar transition-transform group-hover:rotate-12 group-hover:scale-110">
+                  <i className="bi bi-compass-fill" aria-hidden="true" />
+                </span>
+                <span>{tHero("ctaMap")}</span>
+              </Link>
             </div>
           </div>
         </div>
