@@ -282,7 +282,7 @@ export function TouristSpotGallerySection({
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div key={activeCategory} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-page-smooth-in">
           {filteredItems.map((item) => {
             const isLoaded = Boolean(loadedMap[item.id]);
             return (
@@ -305,7 +305,7 @@ export function TouristSpotGallerySection({
                       "absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 transition-opacity duration-500",
                       isLoaded
                         ? "opacity-0 pointer-events-none"
-                        : "opacity-100 animate-pulse shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
+                        : "opacity-100 skeleton-shimmer shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
                     )}
                   />
 
@@ -425,7 +425,7 @@ export function TouristSpotGallerySection({
               {!modalImageLoaded ? (
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 animate-pulse shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]"
+                  className="absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 skeleton-shimmer shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]"
                 />
               ) : null}
               <Image

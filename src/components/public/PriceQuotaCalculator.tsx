@@ -336,128 +336,142 @@ export function PriceQuotaCalculator({
           </div>
         </div>
 
-        {/* Rincian Server & Status Kuota per Destinasi (Dengan Shadow Skeleton Saat Loading) */}
+        {/* Rincian Server & Status Kuota per Destinasi (Crossfade Shadow Skeleton Mulus) */}
         <div className="relative flex flex-col justify-between rounded-2xl border border-kabut/20 bg-obsidian p-5 lg:col-span-5 shadow-[0_18px_44px_rgba(0,0,0,0.65)] overflow-hidden">
-          {isLoading ? (
-            <div
-              aria-hidden="true"
-              className="space-y-4 animate-pulse py-1"
-            >
-              <div className="h-3.5 w-40 rounded-md bg-telaga/30" />
+          {/* Shadow Skeleton Overlay yang Bertransisi Opacity Mulus Tanpa Mengubah Tinggi Panel */}
+          <div
+            aria-hidden="true"
+            className={cn(
+              "absolute inset-0 z-10 bg-obsidian/95 backdrop-blur-sm p-5 flex flex-col justify-between transition-opacity duration-300 ease-out",
+              isLoading
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="space-y-4">
+              <div className="h-3.5 w-40 rounded-md bg-telaga/30 skeleton-shimmer" />
               <div className="space-y-2.5">
-                <div className="h-10 w-full rounded-xl bg-gradient-to-r from-hutan-800 via-hutan-900 to-obsidian border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.65)]" />
-                <div className="h-10 w-full rounded-xl bg-gradient-to-r from-hutan-800 via-hutan-900 to-obsidian border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.65)]" />
+                <div className="h-10 w-full rounded-xl bg-gradient-to-r from-hutan-800 via-hutan-900 to-obsidian border border-white/10 skeleton-shimmer shadow-[0_10px_24px_rgba(0,0,0,0.65)]" />
+                <div className="h-10 w-full rounded-xl bg-gradient-to-r from-hutan-800 via-hutan-900 to-obsidian border border-white/10 skeleton-shimmer shadow-[0_10px_24px_rgba(0,0,0,0.65)]" />
               </div>
-              <div className="h-3.5 w-36 rounded-md bg-telaga/30 pt-2" />
+              <div className="h-3.5 w-36 rounded-md bg-telaga/30 skeleton-shimmer pt-2" />
               <div className="space-y-2.5">
-                <div className="h-5 w-full rounded-lg bg-white/10" />
-                <div className="h-5 w-full rounded-lg bg-white/10" />
-                <div className="h-5 w-full rounded-lg bg-white/10" />
-                <div className="h-10 w-full rounded-xl bg-fajar/20 border border-fajar/30 shadow-[0_12px_28px_rgba(242,166,90,0.2)] mt-2" />
+                <div className="h-5 w-full rounded-lg bg-white/10 skeleton-shimmer" />
+                <div className="h-5 w-full rounded-lg bg-white/10 skeleton-shimmer" />
+                <div className="h-5 w-full rounded-lg bg-white/10 skeleton-shimmer" />
+                <div className="h-10 w-full rounded-xl bg-fajar/20 border border-fajar/30 skeleton-shimmer shadow-[0_12px_28px_rgba(242,166,90,0.2)] mt-2" />
               </div>
-              <div className="h-12 w-full rounded-xl bg-fajar/30 shadow-[0_14px_32px_rgba(242,166,90,0.25)] mt-4" />
             </div>
-          ) : (
-            <>
-              <div>
-                <p className="text-xs font-bold tracking-wider text-telaga-200 uppercase">
-                  {tCalc("quotaStatusHeading")}
-                </p>
-                <div className="mt-2.5 space-y-2">
-                  {quote.destinations.map((dest) => (
-                    <div
-                      key={dest.id}
-                      className={cn(
-                        "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs",
-                        dest.sufficient
-                          ? "border-telaga-700 bg-hutan/65 text-kabut"
-                          : "border-fajar bg-fajar/15 text-fajar"
-                      )}
-                    >
-                      <span className="font-semibold">{dest.name}</span>
-                      <span className="font-bold">
-                        {dest.sufficient
-                          ? tCalc("quotaAvailableBadge", {
-                              remaining: dest.remaining,
-                              capacity: dest.capacity,
-                            })
-                          : tCalc("quotaInsufficientBadge", {
-                              remaining: dest.remaining,
-                              requested: dest.requested,
-                            })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            <div className="h-12 w-full rounded-xl bg-fajar/30 skeleton-shimmer shadow-[0_14px_32px_rgba(242,166,90,0.25)] mt-4" />
+          </div>
 
-                <p className="mt-5 text-xs font-bold tracking-wider text-telaga-200 uppercase">
-                  {tCalc("breakdownHeading")}
-                </p>
-                <dl className="mt-2.5 space-y-2 text-sm">
-                  <div className="flex items-center justify-between text-kabut/85">
-                    <dt>{tCalc("visitorsCountLabel")}</dt>
-                    <dd className="font-semibold text-kabut">
-                      {tCalc("visitorsCountValue", {
-                        count: quote.totalVisitors,
-                        max: quote.maxTicketsPerOrder,
-                      })}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between text-kabut/85">
-                    <dt>{tCalc("baseTicketsLabel")}</dt>
-                    <dd className="font-semibold text-kabut">
-                      {formatRupiah(quote.baseSubtotal, locale)}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between text-kabut/85">
-                    <dt>{tCalc("parkingLevyLabel")}</dt>
-                    <dd className="font-semibold text-kabut">
-                      {formatRupiah(quote.parkingSubtotal, locale)}
-                    </dd>
-                  </div>
-                  <div className="flex items-baseline justify-between border-t border-kabut/15 pt-3">
-                    <dt className="font-heading text-base font-bold text-kabut">
-                      {tCalc("grandTotalLabel")}
-                    </dt>
-                    <dd className="font-heading text-2xl font-extrabold text-fajar">
-                      {formatRupiah(quote.grandTotal, locale)}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="mt-5">
-                {blockingMessage ? (
-                  <div
-                    role="alert"
-                    className="mb-3 rounded-xl border border-fajar/60 bg-fajar/15 px-3.5 py-2.5 text-xs font-semibold text-fajar"
-                  >
-                    <i
-                      className="bi bi-exclamation-triangle-fill mr-1.5"
-                      aria-hidden="true"
-                    />
-                    <span>{blockingMessage}</span>
-                  </div>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={handleProceedToCheckout}
-                  disabled={!quote.canCheckout || isLoading}
-                  className="w-full btn-ui btn-fajar"
+          <div
+            className={cn(
+              "transition-all duration-300 ease-out",
+              isLoading ? "opacity-25 scale-[0.99]" : "opacity-100 scale-100"
+            )}
+          >
+            <p className="text-xs font-bold tracking-wider text-telaga-200 uppercase">
+              {tCalc("quotaStatusHeading")}
+            </p>
+            <div className="mt-2.5 space-y-2">
+              {quote.destinations.map((dest) => (
+                <div
+                  key={dest.id}
+                  className={cn(
+                    "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-colors duration-300",
+                    dest.sufficient
+                      ? "border-telaga-700 bg-hutan/65 text-kabut"
+                      : "border-fajar bg-fajar/15 text-fajar"
+                  )}
                 >
-                  <i
-                    className="bi bi-arrow-right-circle-fill text-base"
-                    aria-hidden="true"
-                  />
-                  <span>{tCalc("ctaProceed")}</span>
-                </button>
-                <p className="mt-2 text-center text-xs text-kabut/75">
-                  {tCalc("ctaLoginNote")}
-                </p>
+                  <span className="font-semibold">{dest.name}</span>
+                  <span className="font-bold">
+                    {dest.sufficient
+                      ? tCalc("quotaAvailableBadge", {
+                          remaining: dest.remaining,
+                          capacity: dest.capacity,
+                        })
+                      : tCalc("quotaInsufficientBadge", {
+                          remaining: dest.remaining,
+                          requested: dest.requested,
+                        })}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-5 text-xs font-bold tracking-wider text-telaga-200 uppercase">
+              {tCalc("breakdownHeading")}
+            </p>
+            <dl className="mt-2.5 space-y-2 text-sm">
+              <div className="flex items-center justify-between text-kabut/85">
+                <dt>{tCalc("visitorsCountLabel")}</dt>
+                <dd className="font-semibold text-kabut">
+                  {tCalc("visitorsCountValue", {
+                    count: quote.totalVisitors,
+                    max: quote.maxTicketsPerOrder,
+                  })}
+                </dd>
               </div>
-            </>
-          )}
+              <div className="flex items-center justify-between text-kabut/85">
+                <dt>{tCalc("baseTicketsLabel")}</dt>
+                <dd className="font-semibold text-kabut">
+                  {formatRupiah(quote.baseSubtotal, locale)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between text-kabut/85">
+                <dt>{tCalc("parkingLevyLabel")}</dt>
+                <dd className="font-semibold text-kabut">
+                  {formatRupiah(quote.parkingSubtotal, locale)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-kabut/15 pt-3">
+                <dt className="font-heading text-base font-bold text-kabut">
+                  {tCalc("grandTotalLabel")}
+                </dt>
+                <dd className="font-heading text-2xl font-extrabold text-fajar">
+                  {formatRupiah(quote.grandTotal, locale)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div
+            className={cn(
+              "mt-5 transition-opacity duration-300",
+              isLoading ? "opacity-25" : "opacity-100"
+            )}
+          >
+            {blockingMessage ? (
+              <div
+                role="alert"
+                className="mb-3 rounded-xl border border-fajar/60 bg-fajar/15 px-3.5 py-2.5 text-xs font-semibold text-fajar"
+              >
+                <i
+                  className="bi bi-exclamation-triangle-fill mr-1.5"
+                  aria-hidden="true"
+                />
+                <span>{blockingMessage}</span>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={handleProceedToCheckout}
+              disabled={!quote.canCheckout || isLoading}
+              className="w-full btn-ui btn-fajar"
+            >
+              <i
+                className="bi bi-arrow-right-circle-fill text-base"
+                aria-hidden="true"
+              />
+              <span>{tCalc("ctaProceed")}</span>
+            </button>
+            <p className="mt-2 text-center text-xs text-kabut/75">
+              {tCalc("ctaLoginNote")}
+            </p>
+          </div>
         </div>
       </div>
     </div>

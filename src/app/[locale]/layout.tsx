@@ -5,6 +5,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import { AmbientBackground } from "@/components/public/AmbientBackground";
 import { DeferredToaster } from "@/components/shared/DeferredToaster";
+import { PageTransitionWrapper } from "@/components/shared/PageTransitionWrapper";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { routing } from "@/i18n/routing";
@@ -115,7 +116,7 @@ export default async function LocaleLayout({
         <AmbientBackground />
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
-            {children}
+            <PageTransitionWrapper>{children}</PageTransitionWrapper>
             <ServiceWorkerRegister />
             <DeferredToaster />
           </NextIntlClientProvider>

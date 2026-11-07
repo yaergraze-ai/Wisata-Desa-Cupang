@@ -337,11 +337,11 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
 
       {isLoading ? (
         <div aria-busy="true" aria-label={t("loadingSlots")} className="space-y-4">
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-page-smooth-in">
             {Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-white/10 bg-obsidian/75 overflow-hidden shadow-[0_18px_44px_rgba(0,0,0,0.65)] animate-pulse"
+                className="rounded-2xl skeleton-shadow-panel skeleton-shimmer overflow-hidden"
               >
                 <div className="aspect-video w-full bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 shadow-inner" />
                 <div className="p-4 space-y-3">
@@ -359,7 +359,7 @@ export function AdminMediaClient({ locale }: AdminMediaClientProps) {
           {t("emptySlots")}
         </div>
       ) : (
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-page-smooth-in">
           {slots.map((item) => {
             const isDefault = item.asset.isDefault;
             const friendly = getSlotFriendlyMeta(item, locale);

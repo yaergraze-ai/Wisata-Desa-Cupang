@@ -541,7 +541,7 @@ export function HeroGallery({
             "absolute inset-0 bg-gradient-to-br from-hutan-900 via-obsidian to-telaga-950 transition-opacity duration-700",
             isActiveBgLoaded
               ? "opacity-0"
-              : "opacity-100 animate-pulse shadow-[inset_0_0_120px_rgba(0,0,0,0.9)]"
+              : "opacity-100 skeleton-shimmer shadow-[inset_0_0_120px_rgba(0,0,0,0.9)]"
           )}
         />
 
@@ -948,7 +948,7 @@ export function HeroGallery({
                         "absolute inset-0 bg-gradient-to-br from-hutan-800 via-obsidian to-telaga-950 transition-opacity duration-500",
                         isCardLoaded
                           ? "opacity-0 pointer-events-none"
-                          : "opacity-100 animate-pulse shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
+                          : "opacity-100 skeleton-shimmer shadow-[inset_0_0_50px_rgba(0,0,0,0.85)]"
                       )}
                     />
 

@@ -23,6 +23,11 @@ export function LocaleSwitcher({
       typeof window !== "undefined" ? window.location.search : "";
     const target = rawSearch ? `${pathname}${rawSearch}` : pathname;
     router.replace(target, { locale: nextLocale, scroll: false });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent("wisata:page-transition-start"));
+      });
+    }
   }
 
   if (compact) {
@@ -40,7 +45,7 @@ export function LocaleSwitcher({
           onClick={() => switchLocale("id")}
           aria-pressed={locale === "id"}
           className={cn(
-            "rounded px-2 py-0.5 transition-colors cursor-pointer",
+            "rounded px-2 py-0.5 transition-all duration-200 cursor-pointer",
             locale === "id"
               ? "bg-white/15 text-kabut font-bold shadow-xs"
               : "text-kabut/50 hover:text-kabut"
@@ -53,7 +58,7 @@ export function LocaleSwitcher({
           onClick={() => switchLocale("en")}
           aria-pressed={locale === "en"}
           className={cn(
-            "rounded px-2 py-0.5 transition-colors cursor-pointer",
+            "rounded px-2 py-0.5 transition-all duration-200 cursor-pointer",
             locale === "en"
               ? "bg-white/15 text-kabut font-bold shadow-xs"
               : "text-kabut/50 hover:text-kabut"
@@ -79,7 +84,7 @@ export function LocaleSwitcher({
         onClick={() => switchLocale("id")}
         aria-pressed={locale === "id"}
         className={cn(
-          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all cursor-pointer",
+          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all duration-200 cursor-pointer",
           locale === "id"
             ? "bg-white/15 border border-white/25 text-kabut font-bold shadow-sm backdrop-blur-sm"
             : "text-kabut/75 hover:text-kabut hover:bg-white/5"
@@ -92,7 +97,7 @@ export function LocaleSwitcher({
         onClick={() => switchLocale("en")}
         aria-pressed={locale === "en"}
         className={cn(
-          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all cursor-pointer",
+          "min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] rounded-lg px-2.5 py-1 transition-all duration-200 cursor-pointer",
           locale === "en"
             ? "bg-white/15 border border-white/25 text-kabut font-bold shadow-sm backdrop-blur-sm"
             : "text-kabut/75 hover:text-kabut hover:bg-white/5"

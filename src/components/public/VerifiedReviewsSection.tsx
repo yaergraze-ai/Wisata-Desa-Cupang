@@ -317,7 +317,7 @@ export function VerifiedReviewsSection({
           {Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="rounded-3xl border border-telaga-700/60 bg-gradient-to-br from-hutan/80 to-obsidian p-5 space-y-4 shadow-[0_22px_54px_rgba(0,0,0,0.72)]"
+              className="rounded-3xl skeleton-shadow-panel skeleton-shimmer p-5 space-y-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -338,7 +338,7 @@ export function VerifiedReviewsSection({
           ))}
         </div>
       ) : null}
-      <div className={cn("transition-opacity duration-300", isLoading ? "hidden" : "opacity-100")}>
+      <div className={cn("transition-all duration-500 ease-out", isLoading ? "hidden" : "opacity-100 animate-page-smooth-in")}>
         {displayedReviews.length === 0 ? (
           <div className="surface-solid-dark p-8 text-center rounded-3xl border border-telaga-800">
             <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-obsidian border border-telaga-700 text-fajar">
